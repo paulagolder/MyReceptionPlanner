@@ -79,7 +79,18 @@ duplicate in the Guests tab.
   guests have each need; how many of each dish, and at each table; everyone
   with a need or a note, where they sit and what they chose; choices that do
   not suit; and who has yet to choose. *Save as PDF…* makes a copy for the
-  caterers. *Check…* also says who has yet to choose and any unsuitable
+  caterers.
+- **Reports ▾ → Kitchen quantities…**: course by course, how many of each
+  dish to make, and how many of those must meet a dietary need or have a
+  note ("Risotto 12, of which 3 vg, 1 nf"), with how many have still to
+  choose or are places not yet named, and any choices that do not suit.
+- **Reports ▾ → Service by table…**: which dish goes to which seat. For each
+  table or pew in turn, a line for each seat with someone in it, in seat
+  order: the guest, their dish for each course, their needs and note; under
+  it the table's dishes counted, to plate up a table at a time. Invited
+  guests without a seat come last. "?" is a dish not yet chosen, "–" a place
+  not yet named. *Save as PDF, a page per table…* gives a sheet for each
+  table. *Check…* also says who has yet to choose and any unsuitable
   choices, and the table plan PDF gives each guest's needs after their name.
 
 ### Seated events, halls and unreserved parties

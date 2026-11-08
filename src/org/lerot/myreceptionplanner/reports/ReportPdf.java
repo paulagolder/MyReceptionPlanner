@@ -18,13 +18,36 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-// The catering list (see CateringReport) as an A4 PDF for the caterers
-public class CateringPdf
+/*
+ * A report (see Report) as an A4 PDF: portrait, or landscape when its tables
+ * are wide; each section kept on one page where it fits, or each on a page
+ * of its own (service by table, one sheet for each table).
+ */
+public class ReportPdf
 {
 	private static final BaseColor GREY = new BaseColor(0x6E, 0x6E, 0x72);
 	private static final BaseColor BAND = new BaseColor(0xF4, 0xF1, 0xEA);
 
-	public static void write(CateringReport report, Path file) throws IOException
+	// each column as wide as its longest cell (within reason), so a seat number takes little room
+	private static float[] widths(Report.Section s, int cols)
+	{
+		float[] w = new float[cols];
+		for (int c = 0; c < cols; c++)
+		{
+			int most = c < s.columns().size() ? Math.min(s.columns().get(c).length() + 2, 16) : 1;
+			for (List<String> r : s.rows())
+				if (c < r.size()) most = Math.max(most, r.get(c).length());
+			w[c] = Math.max(5, Math.min(30, most));
+		}
+		return w;
+	}
+
+	public static void write(Report report, Path file) throws IOException
+	{
+		write(report, file, false);
+	}
+
+	public static void write(Report report, Path file, boolean pagePerSection) throws IOException
 	{
 		try
 		{
@@ -34,7 +57,8 @@ public class CateringPdf
 					heading = new Font(bold, 13), head = new Font(bold, 10), cell = new Font(regular, 10),
 					note = new Font(regular, 10, Font.NORMAL, GREY);
 			Files.createDirectories(file.toAbsolutePath().getParent());
-			Document doc = new Document(PageSize.A4, 40, 40, 40, 40);
+			int widest = report.sections.stream().mapToInt(s -> s.columns().size()).max().orElse(1);
+			Document doc = new Document(widest > 6 ? PageSize.A4.rotate() : PageSize.A4, 40, 40, 40, 40);
 			try (OutputStream out = Files.newOutputStream(file))
 			{
 				PdfWriter.getInstance(doc, out);
@@ -45,9 +69,17 @@ public class CateringPdf
 				Paragraph p = new Paragraph(report.subtitle, sub);
 				p.setSpacingAfter(10);
 				doc.add(p);
-				for (CateringReport.Section s : report.sections)
+				boolean first = true;
+				for (Report.Section s : report.sections)
 				{
+					if (pagePerSection && !first)
+					{
+						doc.newPage();
+						doc.add(new Paragraph(report.title + "  ·  " + report.subtitle, sub));
+					}
+					first = false;
 					Paragraph h = new Paragraph(s.heading().replace("⚠ ", "! "), heading);
+					h.setKeepTogether(true);
 					h.setSpacingBefore(10);
 					h.setSpacingAfter(4);
 					doc.add(h);
@@ -56,7 +88,10 @@ public class CateringPdf
 						int cols = s.columns().isEmpty() ? s.rows().get(0).size() : s.columns().size();
 						PdfPTable t = new PdfPTable(cols);
 						t.setWidthPercentage(100);
+						t.setWidths(widths(s, cols));
 						t.setHorizontalAlignment(PdfPTable.ALIGN_LEFT);
+						t.setHeaderRows(s.columns().isEmpty() ? 0 : 1);
+						t.setKeepTogether(true);
 						for (String c : s.columns())
 						{
 							PdfPCell pc = new PdfPCell(new Phrase(c, head));
