@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A placeholder emblem for MyReceptionPlanner: two entwined hearts, an initial in each
+     (change the letters to the couple's), with a sprig of leaves. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 170" width="240" height="170">
+  <defs>
+    <path id="heart" d="M50 88 C20 66 0 46 0 26 C0 10 12 0 26 0 C37 0 46 7 50 16 C54 7 63 0 74 0 C88 0 100 10 100 26 C100 46 80 66 50 88 Z"/>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E3B85A"/>
+      <stop offset="1" stop-color="#A9781C"/>
+    </linearGradient>
+  </defs>
+  <!-- leaves -->
+  <g fill="#8FA98A">
+    <path d="M120 150 C100 150 86 142 76 128 C94 128 108 136 120 150 Z"/>
+    <path d="M120 150 C140 150 154 142 164 128 C146 128 132 136 120 150 Z"/>
+    <path d="M120 156 C112 142 112 130 120 118 C128 130 128 142 120 156 Z" fill="#7C9877"/>
+  </g>
+  <!-- the hearts: both filled first, then the outlines, the right over the left
+       except at the top, where the left passes over, so they interlock -->
+  <use href="#heart" transform="translate(42 24) rotate(-12 50 44)" fill="#F6E7EA"/>
+  <use href="#heart" transform="translate(98 30) rotate(12 50 44)" fill="#F6E7EA"/>
+  <use href="#heart" transform="translate(42 24) rotate(-12 50 44)" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linejoin="round"/>
+  <use href="#heart" transform="translate(98 30) rotate(12 50 44)" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linejoin="round"/>
+  <clipPath id="cross"><rect x="112" y="18" width="40" height="44"/></clipPath>
+  <use href="#heart" transform="translate(42 24) rotate(-12 50 44)" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linejoin="round" clip-path="url(#cross)"/>
+  <!-- the initials -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="38" fill="#8C3B4A" text-anchor="middle">
+    <text x="90" y="78">I</text>
+    <text x="149" y="86">L</text>
+  </g>
+  <!-- sparkles -->
+  <g fill="#D9A93F">
+    <path d="M30 30 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 Z"/>
+    <path d="M212 36 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2 Z"/>
+    <path d="M200 110 l1.5 4.5 4.5 1.5 -4.5 1.5 -1.5 4.5 -1.5 -4.5 -4.5 -1.5 4.5 -1.5 Z"/>
+  </g>
+</svg>

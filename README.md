@@ -238,6 +238,17 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 - With a table selected: arrow keys nudge it, R / Shift+R turn it, Delete removes it.
 - Ctrl + mouse wheel, or Zoom in / Zoom out, zooms.
 
+### The occasion's emblem
+
+**Occasion ▾ → Occasion details…** has an *Emblem*: an SVG picture that heads
+the table plan, the letters and the reports (catering, kitchen, service),
+drawn as lines and shapes so it prints sharp at any size. *Import SVG…* takes
+any SVG file (from Inkscape, say); *Hearts* (two entwined hearts with an
+initial in each, I and L) and *Bells* are samples to start from. It is kept
+as `emblem.svg` in the occasion's folder: open it in Inkscape or a text
+editor to change the initials or the colours. Emails and WhatsApp messages
+are plain text, so they cannot carry it.
+
 ### Messages to the guests
 
 Messages go to each party's lead, from the details in **Occasion ▾ →
@@ -297,6 +308,7 @@ international number for WhatsApp.
 
 Each occasion is a folder (by default under `~/Documents/MyReceptions`):
 
+- `emblem.svg`: the occasion's emblem, if it has one
 - `occasion.xml`: the occasion's name and date, who messages are from and
   how to reply, the message templates and a log of messages sent, its list
   of events, and the

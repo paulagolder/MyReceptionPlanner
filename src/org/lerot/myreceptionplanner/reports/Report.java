@@ -15,6 +15,7 @@ public class Report
 
 	public final String title;
 	public final String subtitle;
+	public String emblem;  // the occasion's SVG emblem, for the top of the page; null for none
 	public final List<Section> sections = new ArrayList<>();
 
 	protected Report(String title, String subtitle)

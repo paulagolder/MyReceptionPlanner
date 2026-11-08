@@ -49,7 +49,8 @@ public class LettersPdf
 			Document doc = new Document(PageSize.A4, 64, 64, 56, 56);
 			try (OutputStream out = Files.newOutputStream(file))
 			{
-				PdfWriter.getInstance(doc, out);
+				PdfWriter writer = PdfWriter.getInstance(doc, out);
+				var picture = Emblem.parse(occasion.getEmblem());
 				doc.addTitle(occasion.getName());
 				doc.addCreator("MyReceptionPlanner");
 				doc.open();
@@ -58,6 +59,13 @@ public class LettersPdf
 				{
 					if (!first) doc.newPage();
 					first = false;
+					if (picture != null)
+					{
+						// the emblem at the top left, beside who the letter is from
+						com.itextpdf.text.Image img = Emblem.pdfImage(writer.getDirectContent(), picture, 64);
+						img.setAbsolutePosition(doc.left(), doc.top() - img.getHeight() + 10);
+						writer.getDirectContent().addImage(img);
+					}
 					Paragraph from = new Paragraph(occasion.getSender(), strong);
 					from.setAlignment(Element.ALIGN_RIGHT);
 					doc.add(from);

@@ -50,6 +50,14 @@ public class TablePlanPdf
 
 				float titleSize = 22, subSize = 14;
 				float top = page.getHeight() - MARGIN;
+				var picture = Emblem.parse(occasion.getEmblem());
+				if (picture != null)
+				{
+					// the emblem at the top left, as tall as the heading
+					com.itextpdf.text.Image img = Emblem.pdfImage(cb, picture, titleSize + subSize * 2.4f);
+					img.setAbsolutePosition(MARGIN, top - img.getHeight());
+					cb.addImage(img);
+				}
 				text(cb, bold, titleSize, TEXT, occasion.heading(), page.getWidth() / 2, top - titleSize, true);
 				text(cb, regular, subSize, GREY, occasion.headingOf(event), page.getWidth() / 2,
 						top - titleSize - subSize * 1.6f, true);

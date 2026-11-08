@@ -61,7 +61,26 @@ public class ReportPdf
 			Document doc = new Document(widest > 6 ? PageSize.A4.rotate() : PageSize.A4, 40, 40, 40, 40);
 			try (OutputStream out = Files.newOutputStream(file))
 			{
-				PdfWriter.getInstance(doc, out);
+				PdfWriter writer = PdfWriter.getInstance(doc, out);
+				var picture = Emblem.parse(report.emblem);
+				if (picture != null)
+				{
+					// the emblem at the top right of every page
+					writer.setPageEvent(new com.itextpdf.text.pdf.PdfPageEventHelper()
+					{
+						public void onEndPage(PdfWriter w, Document d)
+						{
+							try
+							{
+								com.itextpdf.text.Image img = Emblem.pdfImage(w.getDirectContent(), picture, 44);
+								img.setAbsolutePosition(d.right() - img.getWidth(), d.top() - img.getHeight() + 8);
+								w.getDirectContent().addImage(img);
+							} catch (DocumentException ignored)
+							{
+							}
+						}
+					});
+				}
 				doc.addTitle(report.subtitle);
 				doc.addCreator("MyReceptionPlanner");
 				doc.open();

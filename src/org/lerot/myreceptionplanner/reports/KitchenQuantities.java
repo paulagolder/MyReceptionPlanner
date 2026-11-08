@@ -23,6 +23,7 @@ public class KitchenQuantities extends Report
 	public KitchenQuantities(Occasion occasion, Event event)
 	{
 		super(occasion.heading(), "Kitchen quantities: " + occasion.headingOf(event));
+		emblem = occasion.getEmblem();
 		int named = (int) event.invited().stream().filter(Guest::isNamed).count();
 		int notNamed = Catering.notNamed(event);
 		if (!event.hasMenu())

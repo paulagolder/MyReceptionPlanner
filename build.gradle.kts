@@ -42,6 +42,7 @@ dependencies {
     implementation("org.dom4j:dom4j:2.2.0")                 // tables.xml, guests.xml
     implementation("org.xerial:sqlite-jdbc:3.53.4.0")       // reading MyContacts' database
     implementation("com.itextpdf:itextpdf:5.5.13.6")        // PDF reports, as in MyContacts
+    implementation("com.github.weisj:jsvg:2.1.0")           // drawing the occasion's SVG emblem
 
     // JUnit, for the tests only
     testImplementation(platform("org.junit:junit-bom:6.1.3"))

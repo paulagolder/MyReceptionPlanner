@@ -24,6 +24,7 @@ public class CateringReport extends Report
 	public CateringReport(Occasion occasion, Event event)
 	{
 		super(occasion.heading(), "Catering: " + occasion.headingOf(event));
+		emblem = occasion.getEmblem();
 		int invited = event.invited().size();
 
 		List<List<String>> needs = new ArrayList<>();

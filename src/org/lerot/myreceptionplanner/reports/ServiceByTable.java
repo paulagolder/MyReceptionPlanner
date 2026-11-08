@@ -25,6 +25,7 @@ public class ServiceByTable extends Report
 	public ServiceByTable(Occasion occasion, Event event)
 	{
 		super(occasion.heading(), "Service by table: " + occasion.headingOf(event));
+		emblem = occasion.getEmblem();
 		if (!event.isSeated())
 		{
 			sections.add(new Section("No seats", List.of(), List.of(),

@@ -27,6 +27,7 @@ public class Occasion
 	private String sender = "";        // who messages are from, "Lydia and Isaac"
 	private String replyTo = "";       // how to reply, "lydia@example.com or 07700 900123"
 	private String countryCode = "44"; // for making phone numbers international (WhatsApp)
+	private String emblem;             // the occasion's SVG emblem, as text; null for none
 	private final List<MessageTemplate> templates = Messages.standard();
 	private final List<Messages.Sent> sent = new ArrayList<>();
 	// guests whose invitations have been settled; anyone else is new
@@ -47,6 +48,11 @@ public class Occasion
 	public void setDate(LocalDate date) { this.date = date; }
 
 	public GuestList getGuests() { return guests; }
+
+	// the emblem's SVG text, or null; it heads the printed documents
+	public String getEmblem() { return emblem; }
+
+	public void setEmblem(String svg) { emblem = svg == null || svg.isBlank() ? null : svg; }
 
 	public String getSender() { return sender; }
 

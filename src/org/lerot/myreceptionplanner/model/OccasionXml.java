@@ -33,7 +33,9 @@ import java.time.format.DateTimeParseException;
  *   </occasion>
  *
  * from, reply and countrycode are for messages to the guests; a template's
- * text is kept a line at a time; sent records each message prepared.
+ * text is kept a line at a time; sent records each message prepared. The
+ * occasion's emblem, if it has one, is the SVG file named by emblem="emblem.svg"
+ * beside occasion.xml.
  *
  * Each event's file holds where and when it is, the ids of the guests it
  * invites, its tables (see PlanXml) and who sits where, by guest id, table id and chair (counted from 1 as in the
@@ -63,6 +65,7 @@ import java.time.format.DateTimeParseException;
 public class OccasionXml
 {
 	public static final String FILE = "occasion.xml";
+	public static final String EMBLEM = "emblem.svg";
 
 	public static boolean isOccasion(Path folder)
 	{
@@ -77,6 +80,7 @@ public class OccasionXml
 		if (!occasion.getSender().isEmpty()) root.addAttribute("from", occasion.getSender());
 		if (!occasion.getReplyTo().isEmpty()) root.addAttribute("reply", occasion.getReplyTo());
 		root.addAttribute("countrycode", occasion.getCountryCode());
+		if (occasion.getEmblem() != null) root.addAttribute("emblem", EMBLEM);
 		for (Event e : occasion.events())
 			root.addElement("event").addAttribute("file", e.getFile());
 		GuestXml.write(occasion.getGuests(), root);
@@ -96,6 +100,9 @@ public class OccasionXml
 		}
 		Files.createDirectories(folder);
 		write(doc, folder.resolve(FILE));
+		if (occasion.getEmblem() != null)
+			Files.writeString(folder.resolve(EMBLEM), occasion.getEmblem(), java.nio.charset.StandardCharsets.UTF_8);
+		else Files.deleteIfExists(folder.resolve(EMBLEM));
 		for (Event e : occasion.events())
 			write(event(e), folder.resolve(e.getFile()));
 	}
@@ -157,6 +164,9 @@ public class OccasionXml
 		occasion.setSender(root.attributeValue("from"));
 		occasion.setReplyTo(root.attributeValue("reply"));
 		occasion.setCountryCode(root.attributeValue("countrycode"));
+		String emblem = root.attributeValue("emblem");
+		if (emblem != null && Files.isRegularFile(folder.resolve(emblem)))
+			occasion.setEmblem(Files.readString(folder.resolve(emblem), java.nio.charset.StandardCharsets.UTF_8));
 		Element te = root.element("templates");
 		if (te != null)
 		{

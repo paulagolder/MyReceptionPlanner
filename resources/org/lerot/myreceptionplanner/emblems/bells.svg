@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A placeholder emblem for MyReceptionPlanner: two wedding bells tied with a bow. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" width="240" height="180">
+  <defs>
+    <linearGradient id="bell" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#B8862A"/>
+      <stop offset="0.45" stop-color="#F0D27A"/>
+      <stop offset="1" stop-color="#A9781C"/>
+    </linearGradient>
+    <g id="aBell">
+      <path d="M0 -52 C-18 -52 -28 -36 -28 -14 C-28 10 -32 24 -44 34 L44 34 C32 24 28 10 28 -14 C28 -36 18 -52 0 -52 Z"
+            fill="url(#bell)" stroke="#8A6414" stroke-width="2.5" stroke-linejoin="round"/>
+      <rect x="-46" y="32" width="92" height="7" rx="3.5" fill="#C9973A" stroke="#8A6414" stroke-width="2"/>
+      <circle cx="0" cy="46" r="7" fill="#C9973A" stroke="#8A6414" stroke-width="2"/>
+      <circle cx="0" cy="-56" r="5" fill="none" stroke="#8A6414" stroke-width="3"/>
+    </g>
+  </defs>
+  <use href="#aBell" transform="translate(82 100) rotate(-16)"/>
+  <use href="#aBell" transform="translate(158 100) rotate(16)"/>
+  <!-- the bow -->
+  <g fill="#D99AA3" stroke="#A9606B" stroke-width="2" stroke-linejoin="round">
+    <path d="M120 44 C104 26 86 26 88 40 C90 52 106 52 120 46 Z"/>
+    <path d="M120 44 C136 26 154 26 152 40 C150 52 134 52 120 46 Z"/>
+    <path d="M116 48 C110 62 100 74 92 82 L100 86 C108 76 116 64 120 52 Z"/>
+    <path d="M124 48 C130 62 140 74 148 82 L140 86 C132 76 124 64 120 52 Z"/>
+    <circle cx="120" cy="46" r="7"/>
+  </g>
+  <!-- sparkles -->
+  <g fill="#D9A93F">
+    <path d="M40 40 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 Z"/>
+    <path d="M200 50 l2.5 7 7 2.5 -7 2.5 -2.5 7 -2.5 -7 -7 -2.5 7 -2.5 Z"/>
+    <path d="M210 140 l1.5 4.5 4.5 1.5 -4.5 1.5 -1.5 4.5 -1.5 -4.5 -4.5 -1.5 4.5 -1.5 Z"/>
+    <path d="M28 132 l1.5 4.5 4.5 1.5 -4.5 1.5 -1.5 4.5 -1.5 -4.5 -4.5 -1.5 4.5 -1.5 Z"/>
+  </g>
+</svg>
