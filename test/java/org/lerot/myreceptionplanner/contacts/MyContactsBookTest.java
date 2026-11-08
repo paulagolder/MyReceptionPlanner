@@ -71,6 +71,39 @@ class MyContactsBookTest
 	}
 
 	@Test
+	void someoneWithNoAddressTakesTheirHouseholds() throws Exception
+	{
+		Path db = folder.resolve("test.sqlite");
+		try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db))
+		{
+			c.createStatement().executeUpdate("create table attributeValues (cid INT, root TEXT, qualifier TEXT, value TEXT)");
+			add(c, 7, "name", "", "{ Sn:'Perks', Fn:'Tim and Clair' }");
+			add(c, 7, "address", "", "{ street:'2 Mill Lane', city:'Tamworth' }");
+			add(c, 7, "phone", "", "01827 000000");
+			add(c, 7, "email", "", "household@example.com");
+			add(c, 11, "name", "", "{ Sn:'Perks', Fn:'Tim' }");
+			add(c, 11, "memberof", "000007", "000007");
+			add(c, 11, "mobile", "", "07700 900456");
+			add(c, 12, "name", "", "{ Sn:'Perks', Fn:'Clair' }");
+			add(c, 12, "address", "", "{ street:'Her own flat' }");
+			add(c, 7, "hasmember", "000012", "000012");   // linked from the group's side
+			add(c, 13, "name", "", "{ Sn:'Nobody', Fn:'Ned' }");
+		}
+		var all = new MyContactsBook(db).all();
+		var tim = all.stream().filter(e -> e.name().equals("Tim Perks")).findFirst().orElseThrow();
+		assertEquals("2 Mill Lane\nTamworth", tim.address());
+		assertEquals("01827 000000", tim.phone());
+		assertEquals("07700 900456", tim.mobile());
+		assertEquals("", tim.email(), "email stays their own");
+		assertEquals("Tim and Clair Perks", tim.addressFrom());
+		var clair = all.stream().filter(e -> e.name().equals("Clair Perks")).findFirst().orElseThrow();
+		assertEquals("Her own flat", clair.address(), "an address of one's own comes first");
+		assertEquals("01827 000000", clair.phone(), "but the household phone fills the gap");
+		var ned = all.stream().filter(e -> e.name().equals("Ned Nobody")).findFirst().orElseThrow();
+		assertEquals("", ned.addressFrom());
+	}
+
+	@Test
 	void aMissingDatabaseIsReported()
 	{
 		assertThrows(IOException.class, () -> new MyContactsBook(folder.resolve("none.sqlite")).all());

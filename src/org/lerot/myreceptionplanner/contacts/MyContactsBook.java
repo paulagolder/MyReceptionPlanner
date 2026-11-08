@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,11 +25,18 @@ import java.util.Properties;
  * address, phone, mobile, email ...) and qualifier tells apart several of
  * one kind ("" for the main one, "home", "alt1" ...). Names and addresses are
  * stored as { key:'value', ... }.
+ *
+ * A person may belong to a household or other group, itself a contact: a
+ * memberof row on the person or a hasmember row on the group holds the other's
+ * id ("000107"). Someone with no address or home phone of their own takes the
+ * first group's that has one, as MyContacts does; mobile and email stay their own.
  */
 public class MyContactsBook
 {
 	// a contact found in MyContacts, with what the planner copies from it
-	public record Entry(int cid, String name, String address, String phone, String mobile, String email)
+	// addressFrom names the group the address (and phone) came from, or is ""
+	public record Entry(int cid, String name, String address, String phone, String mobile, String email,
+			String addressFrom)
 	{
 		// the line before the last of the address (usually the town), to tell
 		// people of the same name apart
@@ -73,16 +81,28 @@ public class MyContactsBook
 	public List<Entry> all() throws IOException
 	{
 		Map<Integer, Map<String, String>> fields = new LinkedHashMap<>();
+		Map<Integer, List<Integer>> groups = new HashMap<>();  // person -> groups, in the order found
 		try (Connection c = open();
 			 PreparedStatement st = c.prepareStatement("select cid, root, qualifier, value from attributeValues "
-					 + "where root in ('name', 'tid', 'address', 'phone', 'mobile', 'email') order by cid"))
+					 + "where root in ('name', 'tid', 'address', 'phone', 'mobile', 'email', 'memberof', 'hasmember') "
+					 + "order by cid"))
 		{
 			ResultSet rs = st.executeQuery();
 			while (rs.next())
 			{
+				int cid = rs.getInt(1);
+				String root = rs.getString(2).toLowerCase();
 				String qualifier = rs.getString(3) == null ? "" : rs.getString(3).trim().toLowerCase();
-				String key = rs.getString(2).toLowerCase() + "|" + qualifier;
-				fields.computeIfAbsent(rs.getInt(1), k -> new LinkedHashMap<>()).put(key, rs.getString(4));
+				String value = rs.getString(4);
+				if (root.equals("memberof") || root.equals("hasmember"))
+				{
+					Integer other = linkedId(value, qualifier);
+					if (other == null) continue;
+					if (root.equals("memberof")) addGroup(groups, cid, other);
+					else addGroup(groups, other, cid);
+					continue;
+				}
+				fields.computeIfAbsent(cid, k -> new LinkedHashMap<>()).put(root + "|" + qualifier, value);
 			}
 		} catch (SQLException e)
 		{
@@ -95,11 +115,55 @@ public class MyContactsBook
 			String name = name(pick(m, "name"));
 			if (name.isEmpty()) name = pick(m, "tid");
 			if (name.isEmpty()) continue;
-			entries.add(new Entry(f.getKey(), name, address(pick(m, "address", "", "home")),
-					plain(pick(m, "phone", "", "home")), plain(pick(m, "mobile")), plain(pick(m, "email"))));
+			String address = address(pick(m, "address", "", "home"));
+			String phone = plain(pick(m, "phone", "", "home"));
+			String from = "";
+			for (int gid : groups.getOrDefault(f.getKey(), List.of()))
+			{
+				if (!address.isEmpty() && !phone.isEmpty()) break;
+				Map<String, String> g = fields.get(gid);
+				if (g == null || gid == f.getKey()) continue;
+				String groupAddress = address(pick(g, "address", "", "home"));
+				String groupPhone = plain(pick(g, "phone", "", "home"));
+				boolean used = false;
+				if (address.isEmpty() && !groupAddress.isEmpty())
+				{
+					address = groupAddress;
+					used = true;
+				}
+				if (phone.isEmpty() && !groupPhone.isEmpty())
+				{
+					phone = groupPhone;
+					used = true;
+				}
+				if (used && from.isEmpty()) from = groupName(g);
+			}
+			entries.add(new Entry(f.getKey(), name, address, phone, plain(pick(m, "mobile")), plain(pick(m, "email")), from));
 		}
 		entries.sort(Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER));
 		return entries;
+	}
+
+	private static void addGroup(Map<Integer, List<Integer>> groups, int member, int group)
+	{
+		List<Integer> list = groups.computeIfAbsent(member, k -> new ArrayList<>());
+		if (!list.contains(group)) list.add(group);
+	}
+
+	// the other contact's id, "000107", in the value or else the qualifier
+	private static Integer linkedId(String value, String qualifier)
+	{
+		for (String s : new String[] { value, qualifier })
+		{
+			if (s != null && s.trim().matches("\\d+")) return Integer.valueOf(s.trim());
+		}
+		return null;
+	}
+
+	private static String groupName(Map<String, String> g)
+	{
+		String name = name(pick(g, "name"));
+		return name.isEmpty() ? pick(g, "tid") : name;
 	}
 
 	private Connection open() throws SQLException

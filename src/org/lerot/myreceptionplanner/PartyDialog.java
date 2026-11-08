@@ -311,7 +311,8 @@ public class PartyDialog
 		phone.setText(chosen.phone());
 		mobile.setText(chosen.mobile());
 		email.setText(chosen.email());
-		contactSource = "MyContacts";
+		contactSource = chosen.addressFrom().isEmpty() ? "MyContacts"
+				: "MyContacts (address from " + chosen.addressFrom() + ")";
 		showSource();
 	}
 

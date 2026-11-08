@@ -46,7 +46,11 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 - The lead's **address, phone, mobile, WhatsApp and email** can be typed in,
   or copied from MyContacts with **Find in MyContacts…**. The details are
   copied once and not kept in step: MyContacts is only read, never changed.
-  (MyContacts has no WhatsApp field; *Same as mobile* fills it in.)
+  Someone with no address or home phone of their own (Tim Perks, say) takes
+  them from the household or group contact they belong to in MyContacts
+  (Tim & Claire Perks); the dialog says where they came from. Mobile and
+  email are only ever their own. (MyContacts has no WhatsApp field; *Same as
+  mobile* fills it in.)
 - The lead can't be removed or moved to another party. Removing a party
   removes its places not named yet; its named guests stay, in no party.
 - On an empty seat in the Table tab, choosing a party seats one of its places
