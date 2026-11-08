@@ -1,0 +1,201 @@
+package org.lerot.myreceptionplanner.model;
+
+import org.junit.jupiter.api.Test;
+
+import java.awt.geom.Point2D;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// Table shapes: places, chairs and finding a table under the mouse
+class TableTest
+{
+	@Test
+	void roundTableHasAChairForEachPlaceStartingAtTheTop()
+	{
+		RoundTable t = new RoundTable(1, "Table 1", 10);
+		List<Point2D> seats = t.seats();
+		assertEquals(10, seats.size());
+		assertEquals(0, seats.get(0).getX(), 0.001);
+		assertTrue(seats.get(0).getY() < 0, "seat 1 is above the centre");
+		for (Point2D s : seats)
+			assertFalse(t.top().contains(s), "chairs are round the table, not on it");
+	}
+
+	@Test
+	void roundTableGrowsWithItsPlaces()
+	{
+		assertTrue(new RoundTable(1, "", 12).diameter() > new RoundTable(2, "", 8).diameter());
+	}
+
+	@Test
+	void rectTableHasPlacesOnBothSidesAndBothEnds()
+	{
+		RectTable t = new RectTable(1, "Top", 6, 1);
+		assertEquals(14, t.places());
+		assertEquals(14, t.seats().size());
+		assertEquals(360, t.length(), 0.001);
+	}
+
+	@Test
+	void rectTableCanHaveNoEndPlaces()
+	{
+		RectTable t = new RectTable(1, "Top", 4, 0);
+		assertEquals(8, t.seats().size());
+	}
+
+	@Test
+	void containsFollowsTheTableWhenItIsTurned()
+	{
+		// 240 cm long and 80 wide, turned a quarter so it runs top to bottom
+		RectTable t = new RectTable(1, "Long", 4, 0);
+		t.moveTo(500, 500);
+		t.setRotation(90);
+		assertTrue(t.contains(new Point2D.Double(500, 600)));
+		assertFalse(t.contains(new Point2D.Double(600, 500)));
+	}
+
+	@Test
+	void rotationStaysBetween0And360()
+	{
+		RoundTable t = new RoundTable(1, "", 8);
+		t.setRotation(-15);
+		assertEquals(345, t.getRotation(), 0.001);
+		t.setRotation(375);
+		assertEquals(15, t.getRotation(), 0.001);
+	}
+
+	@Test
+	void thereIsOnlyOneHeadTable()
+	{
+		Plan plan = new Plan();
+		Table a = new RoundTable(1, "A", 8);
+		Table b = new RectTable(2, "B", 5, 0);
+		plan.add(a);
+		plan.add(b);
+		plan.setHead(a);
+		plan.setHead(b);
+		assertFalse(a.isHead());
+		assertTrue(b.isHead());
+		assertEquals(b, plan.head().orElseThrow());
+	}
+
+	@Test
+	void seatsAreNumberedClockwiseFromSeatOne()
+	{
+		RoundTable t = new RoundTable(1, "", 8);
+		assertEquals(1, t.seatNumber(0));
+		t.setFirstSeat(6);
+		assertEquals(1, t.seatNumber(6));
+		assertEquals(2, t.seatNumber(7));
+		assertEquals(3, t.seatNumber(0));
+		assertEquals(8, t.seatNumber(5));
+	}
+
+	@Test
+	void disabledSeatsAreNotUsablePlaces()
+	{
+		Plan plan = new Plan();
+		RectTable t = new RectTable(1, "", 4, 1);
+		plan.add(t);
+		t.setDisabled(3, true);
+		t.setDisabled(4, true);
+		assertTrue(t.isDisabled(3));
+		assertEquals(10, t.places());
+		assertEquals(8, t.usablePlaces());
+		assertEquals(8, plan.places());
+		t.setDisabled(3, false);
+		assertEquals(9, t.usablePlaces());
+	}
+
+	@Test
+	void seatOneCannotBeDisabled()
+	{
+		RoundTable t = new RoundTable(1, "", 8);
+		t.setDisabled(2, true);
+		t.setFirstSeat(2);
+		assertFalse(t.isDisabled(2), "making a seat seat 1 enables it");
+		t.setDisabled(2, true);
+		assertFalse(t.isDisabled(2));
+	}
+
+	@Test
+	void changingThePlacesResetsTheSeats()
+	{
+		RoundTable t = new RoundTable(1, "", 8);
+		t.setFirstSeat(3);
+		t.setDisabled(5, true);
+		t.setPlaces(8);  // no change
+		assertEquals(3, t.getFirstSeat());
+		t.setPlaces(10);
+		assertEquals(0, t.getFirstSeat());
+		assertTrue(t.getDisabledSeats().isEmpty());
+	}
+
+	@Test
+	void chairAtFindsTheChairUnderTheMouseWhenTurned()
+	{
+		RoundTable t = new RoundTable(1, "", 8);
+		t.moveTo(500, 500);
+		t.setRotation(90);  // the starting chair is now on the right
+		Point2D first = t.seatOnFloor(0);
+		assertTrue(first.getX() > 500);
+		assertEquals(0, t.chairAt(first));
+		assertEquals(-1, t.chairAt(new Point2D.Double(500, 500)));
+	}
+
+	@Test
+	void aNewHeadTableSeatsOnlySeatOnesSideAndTheEnds()
+	{
+		Plan plan = new Plan();
+		RectTable t = new RectTable(1, "Top", 4, 1);  // chairs: 0-3 far side, 4 right, 5-8 near side, 9 left
+		plan.add(t);
+		plan.setHead(t);
+		assertEquals(java.util.Set.of(5, 6, 7, 8), t.getDisabledSeats());
+		assertEquals(6, t.usablePlaces());
+	}
+
+	@Test
+	void theHeadTableDisablesTheSideAcrossFromSeatOne()
+	{
+		Plan plan = new Plan();
+		RectTable t = new RectTable(1, "Top", 3, 0);  // 0-2 far side, 3-5 near side
+		plan.add(t);
+		t.setFirstSeat(4);
+		plan.setHead(t);
+		assertEquals(java.util.Set.of(0, 1, 2), t.getDisabledSeats());
+	}
+
+	@Test
+	void theHeadTableKeepsItsSeatingWhenItsPlacesChange()
+	{
+		Plan plan = new Plan();
+		RectTable t = new RectTable(1, "Top", 3, 0);
+		plan.add(t);
+		plan.setHead(t);
+		t.setDisabled(4, false);
+		t.setPlaces(5, 0);
+		assertEquals(java.util.Set.of(5, 6, 7, 8, 9), t.getDisabledSeats());
+	}
+
+	@Test
+	void loadingAHeadTableKeepsTheSeatsAsSaved() throws Exception
+	{
+		java.nio.file.Path file = java.nio.file.Files.createTempFile("tables", ".xml");
+		java.nio.file.Files.writeString(file, "<tables><table id=\"1\" shape=\"rectangle\" "
+				+ "sideplaces=\"3\" endplaces=\"0\" head=\"true\" disabled=\"4\"/></tables>");
+		Table t = PlanXml.load(file).find(1).orElseThrow();
+		assertEquals(java.util.Set.of(3), t.getDisabledSeats());
+		java.nio.file.Files.delete(file);
+	}
+
+	@Test
+	void aRoundHeadTableKeepsAllItsSeats()
+	{
+		Plan plan = new Plan();
+		RoundTable t = new RoundTable(1, "", 8);
+		plan.add(t);
+		plan.setHead(t);
+		assertTrue(t.getDisabledSeats().isEmpty());
+	}
+}
