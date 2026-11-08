@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MyReceptionPlanner's icon: a round table seen from above, with its chairs and a heart. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E3B85A"/>
+      <stop offset="1" stop-color="#A9781C"/>
+    </linearGradient>
+    <circle id="chair" cx="128" cy="40" r="20" fill="#E9E4DA" stroke="#8A8A8E" stroke-width="5"/>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="#F4F1EA"/>
+  <g>
+    <use href="#chair"/>
+    <use href="#chair" transform="rotate(45 128 128)"/>
+    <use href="#chair" transform="rotate(90 128 128)"/>
+    <use href="#chair" transform="rotate(135 128 128)"/>
+    <use href="#chair" transform="rotate(180 128 128)"/>
+    <use href="#chair" transform="rotate(225 128 128)"/>
+    <use href="#chair" transform="rotate(270 128 128)"/>
+    <use href="#chair" transform="rotate(315 128 128)"/>
+  </g>
+  <circle cx="128" cy="128" r="60" fill="#FFFFFF" stroke="#B8860B" stroke-width="7"/>
+  <path transform="translate(101 105) scale(0.54)" d="M50 88 C20 66 0 46 0 26 C0 10 12 0 26 0 C37 0 46 7 50 16 C54 7 63 0 74 0 C88 0 100 10 100 26 C100 46 80 66 50 88 Z"
+        fill="url(#gold)"/>
+</svg>

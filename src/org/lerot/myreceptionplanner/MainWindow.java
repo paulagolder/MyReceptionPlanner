@@ -39,6 +39,9 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 {
 	private static final Preferences PREFS = Preferences.userNodeForPackage(MainWindow.class);
 	private static final String LAST_OCCASION = "lastOccasion";
+	// " 1.2.0" from the jar's manifest; "" when run from the build
+	private static final String VERSION = MainWindow.class.getPackage().getImplementationVersion() == null ? ""
+			: " " + MainWindow.class.getPackage().getImplementationVersion();
 
 	private Occasion occasion;
 	private Event event;          // the one shown
@@ -83,6 +86,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		add(status, BorderLayout.SOUTH);
 		showOccasion(blankOccasion(), null);
 		openLastOccasion();
+		java.net.URL icon = MainWindow.class.getResource("icon.png");
+		if (icon != null) setIconImage(new ImageIcon(icon).getImage());
 		setSize(1150, 760);
 		setLocationRelativeTo(null);
 	}
@@ -774,7 +779,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 	private void updateTitle()
 	{
-		setTitle((unsaved ? "• " : "") + occasion.getName() + " — " + event.getName() + " — MyReceptionPlanner");
+		setTitle((unsaved ? "• " : "") + occasion.getName() + " — " + event.getName() + " — MyReceptionPlanner" + VERSION);
 		Plan plan = plan();
 		String head = plan.head().map(t -> "head table: " + plan.label(t)).orElse("no head table");
 		String people = switch (event.getKind())

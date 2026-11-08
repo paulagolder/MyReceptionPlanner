@@ -1,0 +1,48 @@
+# Builds the MyReceptionPlanner installer, with its own Java: a .deb for
+# Linux (Windows to come: it needs an .ico icon in packaging/).
+#
+#  - "Run workflow" on the repository's Actions page builds it; download it
+#    from the run's page (Artifacts).
+#  - Pushing a version tag also puts it on a release page:
+#        git tag v1.0.0 && git push origin v1.0.0
+name: Package
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write   # to create the release
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Version (from the tag, e.g. v1.2.0)
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then v="${GITHUB_REF_NAME#v}"; else v=1.0.0; fi
+          echo "APP_VERSION=$v" >> "$GITHUB_ENV"
+
+      - name: Tests
+        run: xvfb-run ./gradlew test
+
+      - name: Linux installer
+        run: ./gradlew packageApp -PappVersion=$APP_VERSION
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: MyReceptionPlanner-Linux
+          path: build/package/*
+      - name: Release page
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: build/package/*

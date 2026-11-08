@@ -3,10 +3,29 @@
 Plan the tables at a reception: lay out the tables, seat the guests, and print
 the table plan, a list for each table and a place card for each guest.
 
+## Installing
+
+On Linux (Debian, Ubuntu, Mint), download `myreceptionplanner_<version>_amd64.deb`
+from the latest release on GitHub and install it:
+
+    sudo apt install ./myreceptionplanner_1.0.0_amd64.deb
+
+It brings its own Java, so nothing else is needed. MyReceptionPlanner is then
+in the Office menu, and in `/opt/myreceptionplanner`. A newer version
+installs over the old; `sudo apt remove myreceptionplanner` takes it away.
+Your occasions, in `~/Documents/MyReceptions`, are not touched.
+
 ## Commands (from this folder)
 
     ./gradlew run     start the app
     ./gradlew test    run the automated tests
+    ./gradlew packageApp -PappVersion=1.0.0
+                      build the installer (a .deb on Linux) in build/package
+
+A release is made by pushing a version tag; GitHub then builds the
+installer and puts it on a release page:
+
+    git tag v1.0.0 && git push origin v1.0.0
 
 ## Using it
 
