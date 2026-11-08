@@ -20,12 +20,14 @@ import java.io.IOException;
  *       <guest id="2" gender="u" plus="1"/>
  *     </party>
  *     <guest id="3" name="Father Brown" gender="m"/>
+ *     <distinct a="3" b="9"/>
  *   </guests>
  *
  * gender is f, m or u (not known). lead is the id of the party's lead guest;
  * a party without a name of its own goes by the lead's. A guest with no name
  * is a place kept for one of the party, shown as the lead's name +plus. A
- * guest outside any party sits directly under guests.
+ * guest outside any party sits directly under guests. distinct records two
+ * guests whose names are alike but who are said to be different people.
  */
 public class GuestXml
 {
@@ -46,6 +48,11 @@ public class GuestXml
 		for (Guest g : list.guests())
 		{
 			if (g.getParty() == null) addGuest(root, g);
+		}
+		for (String pair : list.distinctPairs())
+		{
+			String[] ab = pair.split(":");
+			root.addElement("distinct").addAttribute("a", ab[0]).addAttribute("b", ab[1]);
 		}
 	}
 
@@ -100,6 +107,13 @@ public class GuestXml
 		}
 		for (Element ge : root.elements("guest"))
 			list.addGuest(guest(ge, null));
+		for (Element de : root.elements("distinct"))
+		{
+			int a = PlanXml.number(de, "a", 0), b = PlanXml.number(de, "b", 0);
+			boolean known = list.guests().stream().anyMatch(g -> g.getId() == a)
+					&& list.guests().stream().anyMatch(g -> g.getId() == b);
+			if (known && a != b) list.markDistinct(a, b);
+		}
 		return list;
 	}
 

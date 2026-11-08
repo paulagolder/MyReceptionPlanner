@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 
 // The parties and guests of an occasion; where they sit is kept by each event
@@ -20,6 +22,11 @@ public class GuestList
 
 	private final List<Party> parties = new ArrayList<>();
 	private final List<Guest> guests = new ArrayList<>();
+	// pairs of guests said not to be the same person, as "smaller id:larger id"
+	private final Set<String> distinct = new TreeSet<>();
+
+	// a guest whose name is like another's, and why
+	public record Likeness(Guest a, Guest b, String why) {}
 
 	public List<Party> parties() { return Collections.unmodifiableList(parties); }
 
@@ -49,6 +56,7 @@ public class GuestList
 	public void removeParty(Party party)
 	{
 		parties.remove(party);
+		guests.stream().filter(g -> g.getParty() == party && !g.isNamed()).toList().forEach(this::forget);
 		guests.removeIf(g -> g.getParty() == party && !g.isNamed());
 		for (Guest g : guests)
 		{
@@ -90,6 +98,7 @@ public class GuestList
 				.limit(members.size() - places)
 				.toList();
 		guests.removeAll(going);
+		going.forEach(this::forget);
 		return going;
 	}
 
@@ -104,11 +113,67 @@ public class GuestList
 
 	void addGuest(Guest guest) { guests.add(guest); }
 
+	// ---- names alike ----
+
+	/*
+	 * The named guests whose names are like this one, and why (see
+	 * NameMatch), leaving out the guest being named and anyone already said
+	 * not to be them.
+	 */
+	public List<Likeness> like(String name, Guest self)
+	{
+		List<Likeness> out = new ArrayList<>();
+		if (name == null || name.isBlank()) return out;
+		for (Guest g : guests)
+		{
+			if (g == self || !g.isNamed() || (self != null && isDistinct(self, g))) continue;
+			NameMatch.why(name, g.getName()).ifPresent(w -> out.add(new Likeness(self, g, w)));
+		}
+		return out;
+	}
+
+	// every pair of named guests whose names are alike, but not those said to be different people
+	public List<Likeness> alike()
+	{
+		List<Likeness> out = new ArrayList<>();
+		List<Guest> named = guests.stream().filter(Guest::isNamed).toList();
+		for (int i = 0; i < named.size(); i++)
+			for (int j = i + 1; j < named.size(); j++)
+			{
+				Guest a = named.get(i), b = named.get(j);
+				if (isDistinct(a, b)) continue;
+				NameMatch.why(a.getName(), b.getName()).ifPresent(w -> out.add(new Likeness(a, b, w)));
+			}
+		return out;
+	}
+
+	// they are two people, whatever their names
+	public void markDistinct(Guest a, Guest b)
+	{
+		distinct.add(pair(a.getId(), b.getId()));
+	}
+
+	public boolean isDistinct(Guest a, Guest b)
+	{
+		return distinct.contains(pair(a.getId(), b.getId()));
+	}
+
+	// for saving: "3:9" ...
+	public Set<String> distinctPairs() { return Collections.unmodifiableSet(distinct); }
+
+	void markDistinct(int a, int b) { distinct.add(pair(a, b)); }
+
+	private static String pair(int a, int b)
+	{
+		return Math.min(a, b) + ":" + Math.max(a, b);
+	}
+
 	// the lead cannot be removed; returns false if not
 	public boolean removeGuest(Guest guest)
 	{
 		if (guest.isLead()) return false;
 		guests.remove(guest);
+		forget(guest);
 		return true;
 	}
 
@@ -139,6 +204,12 @@ public class GuestList
 		if (lead.getParty() != party || !lead.isNamed())
 			throw new IllegalArgumentException("the lead must be one of the party's named guests");
 		party.setLead(lead);
+	}
+
+	// no pairs kept for a guest who has left
+	private void forget(Guest g)
+	{
+		distinct.removeIf(p -> p.startsWith(g.getId() + ":") || p.endsWith(":" + g.getId()));
 	}
 
 	private int nextPlus(Party party)

@@ -195,7 +195,20 @@ public class PartyDialog
 					JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 			if (answer != JOptionPane.OK_OPTION) return null;
 			if (memberTable.isEditing()) memberTable.getCellEditor().stopCellEditing();
-			if (!leadName.getText().isBlank()) return apply();
+			if (!leadName.getText().isBlank())
+			{
+				List<Pending> alike = namesAlike();
+				if (alike.isEmpty() || sameAnyway(parent, alike))
+				{
+					Party p = apply();
+					for (Pending a : alike)
+					{
+						if (a.other() != null && a.row().guest != null) guests.markDistinct(a.row().guest, a.other());
+					}
+					return p;
+				}
+				continue;
+			}
 			JOptionPane.showMessageDialog(parent, "A party needs a lead guest's name.", title,
 					JOptionPane.WARNING_MESSAGE);
 		}
@@ -243,6 +256,59 @@ public class PartyDialog
 		}
 		updatePlacesLimit();
 		memberModel.fireTableDataChanged();
+	}
+
+	// a name in the dialog like another: a guest elsewhere on the list, or another name here
+	private record Pending(Row row, Guest other, String otherName, String why) {}
+
+	// the names typed or changed here that look like someone already on the list, or like each other
+	private List<Pending> namesAlike()
+	{
+		rows.get(0).name = leadName.getText().trim();
+		List<Guest> here = rows.stream().map(r -> r.guest).filter(g -> g != null).toList();
+		List<Pending> out = new ArrayList<>();
+		for (int i = 0; i < rows.size(); i++)
+		{
+			Row r = rows.get(i);
+			if (!r.named() || (r.guest != null && r.guest.getName().equals(r.name))) continue;
+			for (var l : guests.like(r.name, r.guest))
+			{
+				if (!here.contains(l.b())) out.add(new Pending(r, l.b(), l.b().getName()
+						+ (l.b().getParty() == null ? "" : " (" + l.b().getParty().getName() + ")"), l.why()));
+			}
+			for (int j = 0; j < rows.size(); j++)
+			{
+				Row o = rows.get(j);
+				if (j == i || !o.named() || (j < i && changed(o))) continue;
+				org.lerot.myreceptionplanner.model.NameMatch.why(r.name, o.name)
+						.ifPresent(w -> out.add(new Pending(r, o.guest, o.name + " (in this party)", w)));
+			}
+		}
+		return out;
+	}
+
+	private static boolean changed(Row r)
+	{
+		return r.named() && (r.guest == null || !r.guest.getName().equals(r.name));
+	}
+
+	// true to save anyway: they are different people
+	private boolean sameAnyway(Component parent, List<Pending> alike)
+	{
+		StringBuilder html = new StringBuilder("<html><body style='width:380px'>"
+				+ "These names look like others on the guest list:<ul>");
+		for (Pending a : alike)
+			html.append("<li><b>").append(escape(a.row().name)).append("</b> and <b>").append(escape(a.otherName()))
+					.append("</b> — ").append(escape(a.why())).append("</li>");
+		html.append("</ul>Each person should be on the list only once, in one party.</body></html>");
+		Object[] options = { "Save: they are different people", "Go back" };
+		return JOptionPane.showOptionDialog(parent, new JLabel(html.toString()), "Already on the guest list?",
+				JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]) == 0;
+	}
+
+	private static String escape(String s)
+	{
+		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 
 	private Party apply()

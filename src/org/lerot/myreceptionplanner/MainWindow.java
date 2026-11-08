@@ -149,6 +149,12 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JMenuItem check = reports.add("Check…");
 		check.setToolTipText("Spare places at the tables, and guests not yet seated");
 		check.addActionListener(e -> ChecksDialog.show(this, occasion, event));
+		JMenuItem alike = reports.add("Names alike…");
+		alike.setToolTipText("Guests whose names suggest they are on the list twice");
+		alike.addActionListener(e ->
+		{
+			if (NamesAlikeDialog.show(this, occasion.getGuests())) changed();
+		});
 		reports.addSeparator();
 		reports.add("Table plan (PDF)…").addActionListener(e -> tablePlanPdf());
 		bar.add(dropDown("Reports", reports));

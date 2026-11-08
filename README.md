@@ -33,6 +33,29 @@ On the right of the toolbar:
   *Open occasion…*.
 - **Save…** saves the whole occasion.
 
+### One person, once
+
+Each person should be on the guest list only once, in one party. Whenever a
+name is typed (in the seat list, the guest list or a party), it is compared
+with everyone already on the list, ignoring titles, accents, punctuation and
+case. You're warned, with who and why, if it has:
+
+- the same name, or the same first name and surname with a different middle name;
+- first names that are forms of one name: Tom / Thomas / Tommy, Kate /
+  Catherine / Kath, Bill / William, Steve / Stephen / Steven …;
+- an initial for the first name (T Perks / Thomas Perks), or a first name
+  that starts the other (Jos / Joshua);
+- spellings a slip apart (Clair / Claire, Perks / Parks);
+- the names the other way round (Perks Tom).
+
+A name of one word, or of more than one person ("Tim & Claire Perks"), only
+matches the same name. Answer *A different person* to go ahead (those two are
+then never flagged again), or *Go back*. When typing a new name into an empty
+seat, you can instead seat the guest already on the list. **Reports ▾ →
+Names alike…** lists every pair alike across the occasion; mark a pair *Not
+the same person* to leave it out from now on, or rename or remove a real
+duplicate in the Guests tab.
+
 ### Seated events, halls and unreserved parties
 
 Each event is one of three types, set in *New event…* or *Event details…*:
@@ -200,7 +223,8 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 Each occasion is a folder (by default under `~/Documents/MyReceptions`):
 
 - `occasion.xml`: the occasion's name and date, its list of events, and the
-  guest list: the parties, their leads and contact details, and their guests
+  guest list: the parties, their leads and contact details, their guests,
+  and pairs of guests with names alike who are different people
 - one file for each event, named after it when it was made (such as
   `wedding-breakfast.xml`): its name, type, place, date and time, who is
   invited, its tables and pews (shapes, positions, turns, numbers, seat 1,

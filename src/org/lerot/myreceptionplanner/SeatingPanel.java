@@ -305,10 +305,24 @@ public class SeatingPanel extends JPanel
 					if (g == null && name.isEmpty()) return;
 					if (g == null)
 					{
-						g = guests.addGuest(name, Gender.UNKNOWN, lastParty);
+						// someone already on the list may be meant: seat them instead
+						List<GuestList.Likeness> like = guests.like(name, null);
+						NameCheck.Answer a = like.isEmpty() ? NameCheck.Answer.DIFFERENT
+								: NameCheck.ask(SeatingPanel.this, name, like, like.size() == 1);
+						if (a == NameCheck.Answer.BACK) return;
+						if (a == NameCheck.Answer.USE_EXISTING) g = like.get(0).b();
+						else
+						{
+							g = guests.addGuest(name, Gender.UNKNOWN, lastParty);
+							NameCheck.remember(guests, g, like);
+						}
 						event.invite(g);
 						seating.seat(g, seat);
-					} else guests.rename(g, name);
+					} else
+					{
+						if (NameCheck.ask(SeatingPanel.this, guests, name, g, false) != NameCheck.Answer.DIFFERENT) return;
+						guests.rename(g, name);
+					}
 				}
 				case 2 ->
 				{
@@ -345,6 +359,8 @@ public class SeatingPanel extends JPanel
 			return g;
 		}
 	}
+
+	private Component this_() { return this; }
 
 	private List<Guest> invitedNotSeated()
 	{
@@ -589,7 +605,11 @@ public class SeatingPanel extends JPanel
 			Guest g = rows.get(row);
 			switch (col)
 			{
-				case 0 -> guests.rename(g, value.toString());
+				case 0 ->
+				{
+					if (NameCheck.ask(this_(), guests, value.toString(), g, false) != NameCheck.Answer.DIFFERENT) return;
+					guests.rename(g, value.toString());
+				}
 				case 1 -> g.setGender((Gender) value);
 				case 2 ->
 				{
