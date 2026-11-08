@@ -32,6 +32,9 @@ public class RectTable extends Table
 	public int places() { return 2 * sidePlaces + 2 * endPlaces; }
 
 	@Override
+	protected Table sameShape(int id) { return new RectTable(id, "", sidePlaces, endPlaces); }
+
+	@Override
 	public String arrangement() { return SHAPE + " " + sidePlaces + "x" + endPlaces; }
 
 	public int getSidePlaces() { return sidePlaces; }

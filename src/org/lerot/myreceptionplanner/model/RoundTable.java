@@ -27,6 +27,9 @@ public class RoundTable extends Table
 	public int places() { return places; }
 
 	@Override
+	protected Table sameShape(int id) { return new RoundTable(id, "", places); }
+
+	@Override
 	public String arrangement() { return SHAPE + " " + places; }
 
 	public void setPlaces(int places)

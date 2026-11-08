@@ -63,6 +63,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private final JMenuItem turnRightItem = new JMenuItem("Turn right 15°");
 	private final JMenuItem enableSeatsItem = new JMenuItem("Enable all seats");
 	private final JMenuItem deleteItem = new JMenuItem("Delete");
+	private final JMenuItem duplicateItem = new JMenuItem("Duplicate");
 	private final JMenuItem renumberItem = new JMenuItem("Renumber tables…");
 
 	public MainWindow()
@@ -121,12 +122,15 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		turnRightItem.addActionListener(e -> planPanel.turn(PlanPanel.ROTATE_STEP));
 		enableSeatsItem.addActionListener(e -> planPanel.enableAllSeats());
 		deleteItem.addActionListener(e -> deleteRequested(planPanel.getSelected()));
+		duplicateItem.addActionListener(e -> duplicateRequested(planPanel.getSelected()));
+		duplicateItem.setAccelerator(KeyStroke.getKeyStroke("ctrl D"));
 		turnLeftItem.setAccelerator(KeyStroke.getKeyStroke("shift R"));
 		turnRightItem.setAccelerator(KeyStroke.getKeyStroke("R"));
 		editItem.setAccelerator(KeyStroke.getKeyStroke("ENTER"));
 		deleteItem.setAccelerator(KeyStroke.getKeyStroke("DELETE"));
 		JPopupMenu edit = new JPopupMenu();
 		edit.add(editItem);
+		edit.add(duplicateItem);
 		edit.add(turnLeftItem);
 		edit.add(turnRightItem);
 		edit.addSeparator();
@@ -353,6 +357,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		turnLeftItem.setEnabled(selected != null);
 		turnRightItem.setEnabled(selected != null);
 		deleteItem.setEnabled(selected != null);
+		duplicateItem.setEnabled(selected != null);
 		enableSeatsItem.setEnabled(selected != null && !selected.getDisabledSeats().isEmpty());
 	}
 
@@ -404,6 +409,21 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		plan().remove(table);
 		planChanged();
 		planPanel.planUpdated();
+	}
+
+	// a copy of the table a little below and to the right, chosen to drag into place
+	@Override
+	public void duplicateRequested(Table table)
+	{
+		if (table == null) return;
+		Plan plan = plan();
+		Table copy = table.duplicate(plan.nextId(), 80, 80);
+		plan.add(copy);
+		plan.numberUnnumbered();
+		planPanel.select(copy);
+		planChanged();
+		planPanel.planUpdated();
+		planPanel.requestFocusInWindow();
 	}
 
 	// ---- SeatingPanel.Listener ----

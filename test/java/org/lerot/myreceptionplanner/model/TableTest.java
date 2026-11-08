@@ -271,4 +271,36 @@ class TableTest
 		plan.add(t);
 		return t;
 	}
+
+	@Test
+	void aDuplicateIsTheSameTableOffsetAndGoesItsOwnWay()
+	{
+		Plan plan = new Plan();
+		RectTable head = new RectTable(1, "Top table", 4, 1);
+		head.moveTo(500, 300);
+		head.setRotation(30);
+		plan.add(head);
+		plan.setHead(head);           // disables the far side
+		head.setFirstSeat(6);
+		plan.renumber();
+
+		Table copy = head.duplicate(plan.nextId(), 80, 80);
+		plan.add(copy);
+		plan.numberUnnumbered();
+		assertEquals(2, copy.getId());
+		assertEquals(head.arrangement(), copy.arrangement());
+		assertEquals(580, copy.getX());
+		assertEquals(380, copy.getY());
+		assertEquals(30, copy.getRotation());
+		assertEquals(6, copy.getFirstSeat());
+		assertEquals(head.getDisabledSeats(), copy.getDisabledSeats());
+		assertFalse(copy.isHead(), "only one head table");
+		assertFalse(copy.hasName());
+		assertEquals("Table 1", plan.label(copy));
+
+		((RectTable) copy).setPlaces(6, 0);
+		copy.setRotation(0);
+		assertEquals(4, head.getSidePlaces(), "the original is not changed");
+		assertEquals(30, head.getRotation());
+	}
 }

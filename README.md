@@ -82,8 +82,13 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 ### Layout
 
 - **Add table ▾** → Round table / Rectangular table puts a new table in view.
-- **Table ▾** acts on the selected table: Edit…, Turn left / Turn right (15°),
-  Enable all seats and Delete. Right-clicking a table gives the same menu.
+- **Table ▾** acts on the selected table: Edit…, Duplicate, Turn left / Turn
+  right (15°), Enable all seats and Delete. Right-clicking a table gives the
+  same menu.
+- **Duplicate** (Ctrl+D) makes a copy of the table a little below and to the
+  right: the same shape, places, turn, seat 1 and disabled chairs, with the
+  next number, but not the original's own name, head-table status or guests.
+  From then on the two are separate.
   It also has Renumber tables… (see below).
 - Drag a table to move it. Turn it about its centre by dragging the round
   handle above the selected table (15° steps; hold Shift for any angle), with

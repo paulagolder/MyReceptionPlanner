@@ -41,6 +41,8 @@ public class PlanPanel extends JPanel
 		void editRequested(Table table);
 
 		void deleteRequested(Table table);
+
+		void duplicateRequested(Table table);
 	}
 
 	private static final double GRID = 100;         // cm between grid lines
@@ -458,6 +460,7 @@ public class PlanPanel extends JPanel
 			menu.addSeparator();
 		}
 		menu.add("Edit…").addActionListener(a -> listener.editRequested(t));
+		menu.add("Duplicate").addActionListener(a -> listener.duplicateRequested(t));
 		menu.add("Turn left 15°").addActionListener(a -> turn(-ROTATE_STEP));
 		menu.add("Turn right 15°").addActionListener(a -> turn(ROTATE_STEP));
 		JMenuItem enableAll = menu.add("Enable all seats");
@@ -508,6 +511,11 @@ public class PlanPanel extends JPanel
 				case KeyEvent.VK_UP -> nudge(0, -NUDGE);
 				case KeyEvent.VK_DOWN -> nudge(0, NUDGE);
 				case KeyEvent.VK_R -> turn(e.isShiftDown() ? -ROTATE_STEP : ROTATE_STEP);
+				case KeyEvent.VK_D ->
+				{
+					if (!e.isControlDown()) return;
+					listener.duplicateRequested(selected);
+				}
 				case KeyEvent.VK_DELETE, KeyEvent.VK_BACK_SPACE -> listener.deleteRequested(selected);
 				case KeyEvent.VK_ENTER -> listener.editRequested(selected);
 				default -> { return; }

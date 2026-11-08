@@ -46,8 +46,27 @@ public abstract class Table
 		setName(name);
 	}
 
-	// the shape's name in tables.xml
+	// the shape's name in the event's file
 	public abstract String shape();
+
+	// a new table of the same shape and places, with this id
+	protected abstract Table sameShape(int id);
+
+	/*
+	 * A copy with its own id, standing offset by dx, dy: the same shape,
+	 * places, turn, seat 1 and disabled chairs, but not its own name nor
+	 * being the head table. It goes its own way after.
+	 */
+	public Table duplicate(int id, double dx, double dy)
+	{
+		Table t = sameShape(id);
+		t.moveTo(Math.max(0, x + dx), Math.max(0, y + dy));
+		t.setRotation(rotation);
+		t.setFirstSeat(firstSeat);
+		for (int chair : disabledSeats)
+			t.setDisabled(chair, true);
+		return t;
+	}
 
 	public abstract int places();
 
