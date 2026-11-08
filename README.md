@@ -152,6 +152,12 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
   like a table. Pews are numbered on their own ("Pew 1", "Pew 2" …), across
   each row and then the next row back; their seats are numbered from seat 1
   towards the far end, so make the seat by the aisle seat 1.
+- **Add table ▾ → Altar / speakers' table** puts down a table with no
+  chairs, there to show which way the room faces. Its length is given in
+  seats along its front (in Edit), so it lines up with the pews or tables
+  around it. It takes no number, plays no part in seating, places or checks,
+  and is called "Altar" unless you give it a name (such as "Speakers'
+  table"). It shows on the table plan PDF too.
 - **Reserved and open seats.** Every seat is *reserved* (it can be given to
   a guest), *open access* (anyone may sit there; no one is given it) or
   disabled. Table chairs start reserved and pew seats open. Right-click a

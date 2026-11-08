@@ -1,6 +1,7 @@
 package org.lerot.myreceptionplanner;
 
 import net.miginfocom.swing.MigLayout;
+import org.lerot.myreceptionplanner.model.Altar;
 import org.lerot.myreceptionplanner.model.Pew;
 import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.RectTable;
@@ -33,7 +34,12 @@ public class TableDialog
 		form.add(nameHint, "skip, gapbottom 6");
 
 		JSpinner places = null, side = null, end = null;
-		if (table instanceof Pew pew)
+		if (table instanceof Altar altar)
+		{
+			places = new JSpinner(new SpinnerNumberModel(altar.getLength(), 1, 30, 1));
+			form.add(new JLabel("Length (seats along the front)"));
+			form.add(places, "growx");
+		} else if (table instanceof Pew pew)
 		{
 			places = new JSpinner(new SpinnerNumberModel(pew.places(), 1, 40, 1));
 			form.add(new JLabel("Seats"));
@@ -57,7 +63,7 @@ public class TableDialog
 		form.add(new JLabel("Turned (degrees clockwise)"));
 		form.add(turn, "growx");
 		JCheckBox head = new JCheckBox("Head table", table.isHead());
-		if (!(table instanceof Pew)) form.add(head, "skip");
+		if (!(table instanceof Pew) && !(table instanceof Altar)) form.add(head, "skip");
 		boolean seatsAsStarted = table instanceof Pew ? table.reservedPlaces() == 0 : table.getOpenSeats().isEmpty();
 		if (table.getFirstSeat() != 0 || !table.getDisabledSeats().isEmpty() || !seatsAsStarted)
 		{
@@ -75,7 +81,9 @@ public class TableDialog
 		if (answer != JOptionPane.OK_OPTION) return false;
 
 		table.setName(name.getText());
-		if (table instanceof Pew pew)
+		if (table instanceof Altar altar)
+			altar.setLength((Integer) places.getValue());
+		else if (table instanceof Pew pew)
 			pew.setPlaces((Integer) places.getValue());
 		else if (table instanceof RoundTable round)
 			round.setPlaces((Integer) places.getValue());

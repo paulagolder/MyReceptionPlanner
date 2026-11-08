@@ -1,5 +1,6 @@
 package org.lerot.myreceptionplanner;
 
+import org.lerot.myreceptionplanner.model.Altar;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
 import org.lerot.myreceptionplanner.model.Pew;
@@ -219,7 +220,7 @@ public class PlanPanel extends JPanel
 			}
 		}
 		Shape top = t.top();
-		g.setColor(t instanceof Pew ? Theme.SEAT : Theme.TABLE);
+		g.setColor(t instanceof Pew ? Theme.SEAT : t instanceof Altar ? Theme.ALTAR : Theme.TABLE);
 		g.fill(top);
 		Color edge = t == selected ? Theme.ACCENT : t.isHead() ? Theme.HEAD : Theme.EDGE;
 		float width = t == selected || t.isHead() ? 3f : 1.5f;
@@ -281,7 +282,8 @@ public class PlanPanel extends JPanel
 		Font font = getFont().deriveFont(Font.BOLD);
 		g.setFont(font);
 		FontMetrics fm = g.getFontMetrics();
-		String[] lines = { plan.label(t), t.isHead() && t.hasName() ? "head table" : placesText(t) };
+		String[] lines = t instanceof Altar ? new String[] { plan.label(t) }
+				: new String[] { plan.label(t), t.isHead() && t.hasName() ? "head table" : placesText(t) };
 		double cx = t.getX() * scale, cy = t.getY() * scale;
 		double top = cy - lines.length * fm.getHeight() / 2.0 + fm.getAscent();
 		for (int i = 0; i < lines.length; i++)

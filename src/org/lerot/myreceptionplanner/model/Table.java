@@ -67,7 +67,7 @@ public abstract class Table
 		Table t = sameShape(id);
 		t.moveTo(Math.max(0, x + dx), Math.max(0, y + dy));
 		t.setRotation(rotation);
-		t.setFirstSeat(firstSeat);
+		if (places() > 0) t.setFirstSeat(firstSeat);
 		t.setAllOpen(false);
 		for (int chair : openSeats)
 			t.setOpen(chair, true);

@@ -71,7 +71,8 @@ public class TablePlanLayout
 			int most = 1;
 			for (Table t : row)
 			{
-				List<Line> l = seated ? withOpenSeats(seated(t, seating), t)
+				List<Line> l = t.places() == 0 ? List.of()
+						: seated ? withOpenSeats(seated(t, seating), t)
 						: List.of(new Line(t.usablePlaces() + (t instanceof Pew ? " seats" : " places"), true));
 				rowLines.add(l);
 				most = Math.max(most, l.size());

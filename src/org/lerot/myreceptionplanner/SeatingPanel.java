@@ -156,7 +156,8 @@ public class SeatingPanel extends JPanel
 			return;
 		}
 		tableTitle.setText("<html><b>" + escape(plan.label(table)) + "</b>&nbsp;&nbsp;"
-				+ seating.seatedAt(table.getId()).size() + " of " + table.usablePlaces() + " seats taken</html>");
+				+ (table.places() == 0 ? "no seats"
+				: seating.seatedAt(table.getId()).size() + " of " + table.reservedPlaces() + " seats taken") + "</html>");
 	}
 
 	// ---- the Table tab ----

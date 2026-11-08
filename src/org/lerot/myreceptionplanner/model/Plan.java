@@ -141,6 +141,7 @@ public class Plan
 	{
 		if (table.hasName()) return table.getName();
 		if (table.isHead()) return "Head table";
+		if (!table.isNumbered()) return table.series();
 		return table.series() + " " + table.getNumber();
 	}
 

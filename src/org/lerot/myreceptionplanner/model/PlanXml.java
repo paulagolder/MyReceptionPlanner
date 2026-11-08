@@ -23,7 +23,8 @@ import java.io.IOException;
  * name chairs by counting clockwise from 1 at the shape's starting chair (the
  * top of a round table, the left end of the far side of a rectangular one,
  * the left end of a pew); they are left out when there is nothing to say.
- * Pews and tables are numbered each on their own.
+ * Pews and tables are numbered each on their own. An altar (shape="altar",
+ * length="4" seats along its front) has no chairs and no number.
  */
 public class PlanXml
 {
@@ -40,6 +41,9 @@ public class PlanXml
 			if (t instanceof RoundTable || t instanceof Pew)
 			{
 				e.addAttribute("places", Integer.toString(t.places()));
+			} else if (t instanceof Altar altar)
+			{
+				e.addAttribute("length", Integer.toString(altar.getLength()));
 			} else if (t instanceof RectTable rect)
 			{
 				e.addAttribute("sideplaces", Integer.toString(rect.getSidePlaces()));
@@ -74,6 +78,7 @@ public class PlanXml
 				case RectTable.SHAPE -> new RectTable(id, name,
 						number(e, "sideplaces", 4), number(e, "endplaces", 0));
 				case Pew.SHAPE -> new Pew(id, name, number(e, "places", 8));
+				case Altar.SHAPE -> new Altar(id, name, number(e, "length", 4));
 				default -> throw new IOException("Table " + id + " has an unknown shape: " + shape);
 			};
 			t.setNumber(number(e, "number", 0));

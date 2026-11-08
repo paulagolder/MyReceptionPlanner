@@ -115,6 +115,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		add.add("Round table").addActionListener(e -> addTable(true));
 		add.add("Rectangular table").addActionListener(e -> addTable(false));
 		add.add("Pew (a row of seats)").addActionListener(e -> addPew());
+		add.addSeparator();
+		add.add("Altar / speakers' table").addActionListener(e -> addAltar());
 		addTableButton = dropDown("Add table", add);
 		bar.add(addTableButton);
 
@@ -356,10 +358,21 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		planPanel.requestFocusInWindow();
 	}
 
+	// no chairs: only to show which way the room faces
+	private void addAltar()
+	{
+		place(new org.lerot.myreceptionplanner.model.Altar(plan().nextId(), "", 4));
+	}
+
 	private void addPew()
 	{
+		place(new org.lerot.myreceptionplanner.model.Pew(plan().nextId(), "", 8));
+	}
+
+	// in view, a little apart from the last one added, and chosen
+	private void place(Table t)
+	{
 		Plan plan = plan();
-		Table t = new org.lerot.myreceptionplanner.model.Pew(plan.nextId(), "", 8);
 		Point2D c = planPanel.visibleCentre();
 		double step = 40 * (plan.tables().size() % 5);
 		t.moveTo(Math.round(c.getX() + step), Math.round(c.getY() + step));

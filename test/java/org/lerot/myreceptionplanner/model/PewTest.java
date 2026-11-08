@@ -174,4 +174,35 @@ class PewTest
 		p.setPlaces(6);
 		assertEquals(6, p.getOpenSeats().size());
 	}
+
+	@Test
+	void anAltarShowsTheWayButHasNoSeats() throws IOException
+	{
+		Occasion o = new Occasion("Wedding", new GuestList());
+		Event church = new Event("Ceremony", "ceremony.xml", new Plan(), new Seating());
+		o.addEvent(church);
+		Plan plan = church.getPlan();
+		Altar altar = new Altar(1, "", 5);
+		altar.moveTo(500, 100);
+		plan.add(altar);
+		Pew pew = new Pew(2, "", 6);
+		pew.moveTo(500, 400);
+		plan.add(pew);
+		plan.renumber();
+		assertEquals("Altar", plan.label(altar));
+		assertEquals(0, altar.getNumber());
+		assertEquals("Pew 1", plan.label(pew), "the altar takes no number");
+		assertEquals(0, altar.places());
+		assertEquals(300, altar.width(), 0.001);
+		assertEquals(6, plan.places(), "only the pew's seats count");
+		assertTrue(Checks.spareSeats(plan, church.getSeating()).stream().noneMatch(s -> s.table() == altar));
+		altar.setName("Speakers' table");
+		assertEquals("Speakers' table", plan.label(altar));
+
+		OccasionXml.save(o, folder);
+		Altar loaded = (Altar) OccasionXml.load(folder).events().get(0).getPlan().find(1).orElseThrow();
+		assertEquals(5, loaded.getLength());
+		assertEquals("Speakers' table", loaded.getName());
+		assertEquals(5, ((Altar) loaded.duplicate(9, 0, 0)).getLength());
+	}
 }
