@@ -33,6 +33,29 @@ On the right of the toolbar:
   *Open occasion…*.
 - **Save…** saves the whole occasion.
 
+### Seated events, halls and unreserved parties
+
+Each event is one of three types, set in *New event…* or *Event details…*:
+
+- **Seated** (the Wedding Breakfast): guests are invited and each is given
+  a seat.
+- **Hall / ceremony** (the church): set out mostly with pews whose seats
+  are open to all; only the seats you reserve (the front rows, places for
+  ushers or for guests who need them) are given to guests in Seating. Its
+  capacity is all its usable seats, and you're warned when more guests are
+  invited than that. *Check…* lists the reserved seats not yet given and
+  the open seats.
+- **Party, unreserved** (the evening do): guests are invited, and tables can
+  be set out in Layout for the staff preparing the room, but no one is given
+  a seat, so Seating is switched off. It can have a **capacity** (0 for no
+  limit): the status bar, *Invitations…* and *Check…* warn when more guests
+  are invited than it allows. Its table plan PDF shows each table with its
+  number of places instead of names. Making a seated event unreserved clears
+  its seats, after asking.
+
+New events invite everyone to start with (or no one, or another event's
+guests).
+
 ### Invitations
 
 Each event has its own list of who is invited, and only those invited can
@@ -99,7 +122,21 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 
 ### Layout
 
-- **Add table ▾** → Round table / Rectangular table puts a new table in view.
+- **Add table ▾** → Round table / Rectangular table / Pew puts a new one in
+  view. A **pew** is a straight row of seats all facing forward (up the plan
+  until turned), with its backrest behind; use pews for a church, or for
+  rows of seats round the walls at a party. It turns, moves and duplicates
+  like a table. Pews are numbered on their own ("Pew 1", "Pew 2" …), across
+  each row and then the next row back; their seats are numbered from seat 1
+  towards the far end, so make the seat by the aisle seat 1.
+- **Reserved and open seats.** Every seat is *reserved* (it can be given to
+  a guest), *open access* (anyone may sit there; no one is given it) or
+  disabled. Table chairs start reserved and pew seats open. Right-click a
+  seat to reserve it or make it open, or right-click a pew or table to
+  *Reserve all seats* or *Make all seats open access*. Open seats are drawn
+  white, reserved seats filled. A seat with a guest in it can't be made
+  open. Only reserved seats can be given to guests, at any type of event; on
+  the table plan PDF each pew or table also gives its number of open seats.
 - **Table ▾** acts on the selected table: Edit…, Duplicate, Turn left / Turn
   right (15°), Enable all seats and Delete. Right-clicking a table gives the
   same menu.
@@ -148,7 +185,8 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
   time. Choose the paper (A4 to A1) and the orientation; the type is made as
   large as fits. It is saved as `table-plan-<event>.pdf` in the occasion's
   folder unless you choose otherwise, and opened.
-- **Check…** lists what is still to settle at the event shown:
+- **Check…** lists what is still to settle at the event shown (for an
+  unreserved party: who is invited, party by party, against its capacity):
 
   - **Spare places**: each table with seats free, how many, and out of how
     many usable seats (disabled seats don't count). The head table comes
@@ -164,10 +202,9 @@ Each occasion is a folder (by default under `~/Documents/MyReceptions`):
 - `occasion.xml`: the occasion's name and date, its list of events, and the
   guest list: the parties, their leads and contact details, and their guests
 - one file for each event, named after it when it was made (such as
-  `wedding-breakfast.xml`): its name, place, date and time, who is invited,
-  its tables
-  (shapes, positions, turns, numbers, seat 1 and disabled chairs) and who
-  sits where
+  `wedding-breakfast.xml`): its name, type, place, date and time, who is
+  invited, its tables and pews (shapes, positions, turns, numbers, seat 1,
+  disabled and open seats) and who sits where
 
 **Save…** shows the folder it will save in and asks before writing. Choose
 another folder there to save a copy somewhere else; from then on the occasion

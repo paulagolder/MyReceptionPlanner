@@ -19,6 +19,16 @@ public class ChecksDialog
 {
 	public static void show(Component parent, Occasion occasion, Event event)
 	{
+		if (!event.isSeated())
+		{
+			showUnreserved(parent, occasion, event);
+			return;
+		}
+		if (event.getKind() == Event.Kind.HALL)
+		{
+			showHall(parent, occasion, event);
+			return;
+		}
 		List<Checks.SpareSeats> spare = Checks.spareSeats(event.getPlan(), event.getSeating());
 		List<Checks.Unseated> unseated = Checks.unseated(occasion.getGuests(), event);
 
@@ -41,6 +51,55 @@ public class ChecksDialog
 				+ " in " + unseated.size() + (unseated.size() == 1 ? " party" : " parties")
 				+ " to seat"));
 
+		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
+	}
+
+	// a hall: reserved seats not yet given, and the seats against those invited
+	private static void showHall(Component parent, Occasion occasion, Event event)
+	{
+		var plan = event.getPlan();
+		List<Checks.SpareSeats> spare = Checks.spareSeats(plan, event.getSeating());
+		DefaultTableModel model = model("Pew or table", "Not given", "of");
+		spare.forEach(s -> model.addRow(new Object[] { s.label(), s.spare(), s.usable() }));
+		JPanel p = new JPanel(new MigLayout("insets 0, wrap 1", "[grow,fill]", "[][grow,fill][][]"));
+		p.add(heading("Reserved seats not yet given to a guest"));
+		p.add(list(model, "Every reserved seat has a guest."), "w 340::, h 200::");
+		int reserved = plan.reservedPlaces(), seats = plan.places();
+		int given = event.getSeating().seatedCount(), invited = event.invited().size();
+		p.add(total(reserved + " reserved seats, " + given + " given;  " + (seats - reserved) + " open seats"));
+		JLabel fit = new JLabel(invited + " invited for " + seats + " seats in all"
+				+ (event.overCapacity() > 0 ? ": " + event.overCapacity() + " too many" : ""));
+		fit.setForeground(event.overCapacity() > 0 ? Theme.HEAD.darker() : Theme.FIRST);
+		p.add(fit);
+		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
+	}
+
+	// a party with no seats: who is invited, party by party, against its capacity
+	private static void showUnreserved(Component parent, Occasion occasion, Event event)
+	{
+		var guests = occasion.getGuests();
+		DefaultTableModel model = model("Party", "Invited", "of");
+		for (var p : guests.parties())
+		{
+			int n = event.invitedIn(p, guests);
+			if (n > 0) model.addRow(new Object[] { p.getName(), n, guests.placesOf(p) });
+		}
+		long loners = guests.guests().stream().filter(g -> g.getParty() == null && event.isInvited(g)).count();
+		if (loners > 0) model.addRow(new Object[] { "No party", (int) loners,
+				(int) guests.guests().stream().filter(g -> g.getParty() == null).count() });
+		JPanel p = new JPanel(new MigLayout("insets 0, wrap 1", "[grow,fill]", "[][grow,fill][]"));
+		p.add(heading("Invited to " + event.getName() + " (party, unreserved)"));
+		p.add(list(model, "No one is invited yet."), "w 340::, h 220::");
+		int n = event.invited().size();
+		String summary = n + (n == 1 ? " guest" : " guests") + " invited";
+		if (event.getCapacity() > 0) summary += ", capacity " + event.getCapacity();
+		JLabel total = new JLabel(summary);
+		if (event.overCapacity() > 0)
+		{
+			total.setText(summary + ": " + event.overCapacity() + " over capacity");
+			total.setForeground(Theme.HEAD.darker());
+		} else total.setForeground(event.getCapacity() > 0 ? Theme.FIRST : Theme.EDGE);
+		p.add(total);
 		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}
 

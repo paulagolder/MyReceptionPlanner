@@ -23,6 +23,10 @@ import java.util.TreeSet;
  * Chairs are indexed 0, 1, 2 ... clockwise from the shape's own starting chair.
  * Any chair can be made seat 1 and the seats are numbered clockwise from it;
  * a chair can be disabled (no one is to sit there) without changing the numbers.
+ *
+ * A chair that is not disabled is reserved (it can be given to a guest) or
+ * open access (anyone may sit there; no one is given it). Chairs at tables
+ * start reserved, seats in pews open (see Pew).
  */
 public abstract class Table
 {
@@ -39,6 +43,7 @@ public abstract class Table
 	private boolean head;
 	private int firstSeat;                                     // the chair that is seat 1
 	private final Set<Integer> disabledSeats = new TreeSet<>(); // chair indexes
+	private final Set<Integer> openSeats = new TreeSet<>();     // chair indexes, none disabled
 
 	protected Table(int id, String name)
 	{
@@ -63,6 +68,9 @@ public abstract class Table
 		t.moveTo(Math.max(0, x + dx), Math.max(0, y + dy));
 		t.setRotation(rotation);
 		t.setFirstSeat(firstSeat);
+		t.setAllOpen(false);
+		for (int chair : openSeats)
+			t.setOpen(chair, true);
 		for (int chair : disabledSeats)
 			t.setDisabled(chair, true);
 		return t;
@@ -120,6 +128,45 @@ public abstract class Table
 	// the chairs disabled and the places that remain
 	public int usablePlaces() { return places() - disabledSeats.size(); }
 
+	// the places that can be given to guests: neither disabled nor open
+	public int reservedPlaces() { return usablePlaces() - openSeats.size(); }
+
+	// "Table" or "Pew": what the table is called with its number, and the
+	// tables numbered together
+	public String series() { return "Table"; }
+
+	// how far apart top to bottom tables can stand and still be one row
+	public double rowDepth() { return Plan.ROW_DEPTH; }
+
+	// whether a chair starts open access when the chairs are set out
+	protected boolean openByDefault() { return false; }
+
+	// ---- reserved and open seats ----
+
+	public boolean isOpen(int chair) { return openSeats.contains(chair); }
+
+	public boolean isReserved(int chair) { return !isDisabled(chair) && !isOpen(chair); }
+
+	public Set<Integer> getOpenSeats() { return Collections.unmodifiableSet(openSeats); }
+
+	// a disabled chair stays disabled
+	public void setOpen(int chair, boolean open)
+	{
+		checkChair(chair);
+		if (!open) openSeats.remove(chair);
+		else if (!disabledSeats.contains(chair)) openSeats.add(chair);
+	}
+
+	public void setAllOpen(boolean open)
+	{
+		openSeats.clear();
+		if (!open) return;
+		for (int c = 0; c < places(); c++)
+		{
+			if (!disabledSeats.contains(c)) openSeats.add(c);
+		}
+	}
+
 	// ---- seat 1 and disabled seats ----
 
 	public int getFirstSeat() { return firstSeat; }
@@ -139,6 +186,12 @@ public abstract class Table
 		return Math.floorMod(chair - firstSeat, places()) + 1;
 	}
 
+	// the chair of seat number n (1 for the first seat)
+	public int chairOfSeat(int n)
+	{
+		return Math.floorMod(firstSeat + n - 1, places());
+	}
+
 	public boolean isDisabled(int chair) { return disabledSeats.contains(chair); }
 
 	public Set<Integer> getDisabledSeats() { return Collections.unmodifiableSet(disabledSeats); }
@@ -148,7 +201,11 @@ public abstract class Table
 	{
 		checkChair(chair);
 		if (!disabled) disabledSeats.remove(chair);
-		else if (chair != firstSeat) disabledSeats.add(chair);
+		else if (chair != firstSeat)
+		{
+			disabledSeats.add(chair);
+			openSeats.remove(chair);
+		}
 	}
 
 	public void enableAllSeats() { disabledSeats.clear(); }
@@ -161,6 +218,7 @@ public abstract class Table
 	{
 		firstSeat = 0;
 		disabledSeats.clear();
+		setAllOpen(openByDefault());
 		if (head) seatAsHeadTable();
 	}
 

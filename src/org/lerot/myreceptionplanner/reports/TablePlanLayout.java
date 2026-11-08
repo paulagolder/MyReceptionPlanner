@@ -1,6 +1,7 @@
 package org.lerot.myreceptionplanner.reports;
 
 import org.lerot.myreceptionplanner.model.Guest;
+import org.lerot.myreceptionplanner.model.Pew;
 import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.Seating;
 import org.lerot.myreceptionplanner.model.Table;
@@ -48,6 +49,13 @@ public class TablePlanLayout
 
 	public static Layout layout(Plan plan, Seating seating, double width, double height, Measure measure)
 	{
+		return layout(plan, seating, true, width, height, measure);
+	}
+
+	// unseated: for a party with no seats, each panel gives the table's places instead of names
+	public static Layout layout(Plan plan, Seating seating, boolean seated, double width, double height,
+			Measure measure)
+	{
 		List<List<Table>> rows = plan.rows();
 		if (rows.isEmpty()) return new Layout(List.of(), MAX_FONT, true);
 		int across = rows.stream().mapToInt(List::size).max().orElse(1);
@@ -63,7 +71,8 @@ public class TablePlanLayout
 			int most = 1;
 			for (Table t : row)
 			{
-				List<Line> l = seated(t, seating);
+				List<Line> l = seated ? withOpenSeats(seated(t, seating), t)
+						: List.of(new Line(t.usablePlaces() + (t instanceof Pew ? " seats" : " places"), true));
 				rowLines.add(l);
 				most = Math.max(most, l.size());
 				widest = Math.max(widest, measure.width(plan.label(t), (float) TITLE, true));
@@ -116,13 +125,23 @@ public class TablePlanLayout
 		return 2 * PAD + font * (TITLE * LINE + 0.4 + lines * LINE);
 	}
 
+	// and a line for any open-access seats, which no one is given
+	private static List<Line> withOpenSeats(List<Line> lines, Table t)
+	{
+		int open = t.getOpenSeats().size();
+		if (open == 0) return lines;
+		List<Line> out = new ArrayList<>(lines);
+		out.add(new Line(open + (open == 1 ? " open seat" : " open seats"), true));
+		return out;
+	}
+
 	// the guests at the table in seat order, seat 1 first
 	static List<Line> seated(Table t, Seating seating)
 	{
 		List<Line> out = new ArrayList<>();
 		for (int k = 0; k < t.places(); k++)
 		{
-			int chair = (t.getFirstSeat() + k) % t.places();
+			int chair = t.chairOfSeat(k + 1);
 			Optional<Guest> g = seating.guestAt(t.getId(), chair);
 			g.ifPresent(guest -> out.add(new Line(guest.displayName(), guest.isPlaceholder())));
 		}

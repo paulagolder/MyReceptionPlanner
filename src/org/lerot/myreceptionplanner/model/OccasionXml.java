@@ -29,7 +29,7 @@ import java.time.format.DateTimeParseException;
  * invites, its tables (see PlanXml) and who sits where, by guest id, table id and chair (counted from 1 as in the
  * tables):
  *
- *   <event name="Wedding Breakfast" place="The Old Barn, Lichfield" time="2pm">
+ *   <event name="Wedding Breakfast" type="seated" place="The Old Barn, Lichfield" time="2pm">
  *     <invited guests="1 2 3 12"/>
  *     <tables> ... </tables>
  *     <seating>
@@ -37,7 +37,9 @@ import java.time.format.DateTimeParseException;
  *     </seating>
  *   </event>
  *
- * An event's date is only there if it differs from the occasion's.
+ * An event's date is only there if it differs from the occasion's. type is
+ * seated, or unreserved for a party where no one has a seat, which may have
+ * a capacity="150".
  */
 public class OccasionXml
 {
@@ -65,7 +67,9 @@ public class OccasionXml
 	private static Document event(Event event)
 	{
 		Document doc = DocumentHelper.createDocument();
-		Element root = doc.addElement("event").addAttribute("name", event.getName());
+		Element root = doc.addElement("event").addAttribute("name", event.getName())
+				.addAttribute("type", event.getKind().code());
+		if (event.getCapacity() > 0) root.addAttribute("capacity", Integer.toString(event.getCapacity()));
 		if (!event.getPlace().isEmpty()) root.addAttribute("place", event.getPlace());
 		if (event.getDate() != null) root.addAttribute("date", event.getDate().toString());
 		if (!event.getTime().isEmpty()) root.addAttribute("time", event.getTime());
@@ -115,6 +119,8 @@ public class OccasionXml
 			}
 		}
 		Event event = new Event(root.attributeValue("name", "Event"), file, plan, seating);
+		event.setKind(Event.Kind.fromCode(root.attributeValue("type", "seated")));
+		event.setCapacity(PlanXml.number(root, "capacity", 0));
 		Element inv = root.element("invited");
 		if (inv != null)
 		{

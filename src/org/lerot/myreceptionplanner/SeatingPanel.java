@@ -21,7 +21,6 @@ import java.awt.event.MouseEvent;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
 
 /*
  * Seating mode's side panel, with two tabs.
@@ -167,7 +166,7 @@ public class SeatingPanel extends JPanel
 		JPanel p = new JPanel(new BorderLayout(0, 6));
 		p.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 		p.add(tableTitle, BorderLayout.NORTH);
-		setUp(seatTable, seatModel::guestAt, row -> table != null && table.isDisabled(seatModel.chairAt(row)), 1);
+		setUp(seatTable, seatModel::guestAt, this::notForGuests, 1);
 		seatTable.getColumnModel().getColumn(0).setMaxWidth(60);
 		seatTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
 		seatTable.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(seatPartyCombo));
@@ -198,7 +197,7 @@ public class SeatingPanel extends JPanel
 		if (table == null || row < 0) return;
 		seatTable.setRowSelectionInterval(row, row);
 		int chair = seatModel.chairAt(row);
-		if (table.isDisabled(chair)) return;
+		if (!table.isReserved(chair)) return;
 		Seat seat = new Seat(table.getId(), chair);
 		Guest there = seatModel.guestAt(row);
 		JPopupMenu menu = new JPopupMenu();
@@ -269,7 +268,7 @@ public class SeatingPanel extends JPanel
 
 		public String getColumnName(int col) { return columns[col]; }
 
-		int chairAt(int row) { return (table.getFirstSeat() + row) % table.places(); }
+		int chairAt(int row) { return table.chairOfSeat(row + 1); }
 
 		Guest guestAt(int row)
 		{
@@ -290,7 +289,7 @@ public class SeatingPanel extends JPanel
 
 		public boolean isCellEditable(int row, int col)
 		{
-			return col > 0 && !table.isDisabled(chairAt(row));
+			return col > 0 && table.isReserved(chairAt(row));
 		}
 
 		public void setValueAt(Object value, int row, int col)
@@ -362,7 +361,7 @@ public class SeatingPanel extends JPanel
 		partyTable.getColumnModel().getColumn(2).setMaxWidth(60);
 		partyTable.getColumnModel().getColumn(3).setMaxWidth(60);
 		partyTable.getColumnModel().getColumn(4).setMaxWidth(60);
-		partyTable.setDefaultRenderer(Object.class, new CellRenderer(row -> null, row -> false, -1));
+		partyTable.setDefaultRenderer(Object.class, new CellRenderer(row -> null, row -> null, -1));
 		partyTable.addMouseListener(new MouseAdapter()
 		{
 			public void mouseClicked(MouseEvent e)
@@ -384,7 +383,7 @@ public class SeatingPanel extends JPanel
 		people.add(new JLabel("<html><b>Guests</b></html>"), "split 2");
 		unseatedOnly.addActionListener(e -> guestModel.reload());
 		people.add(unseatedOnly, "gapleft push");
-		setUp(guestTable, row -> guestModel.rows.get(guestTable.convertRowIndexToModel(row)), row -> false, 0);
+		setUp(guestTable, row -> guestModel.rows.get(guestTable.convertRowIndexToModel(row)), row -> null, 0);
 		guestTable.setAutoCreateRowSorter(true);
 		guestTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
 		guestTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(guestPartyCombo));
@@ -629,9 +628,17 @@ public class SeatingPanel extends JPanel
 
 	// ---- drawing the cells ----
 
-	private void setUp(JTable t, IntFunction<Guest> guestOfRow, IntPredicate disabledRow, int nameColumn)
+	// "disabled" or "open access" for a seat no guest can be given; null for one that can
+	private String notForGuests(int row)
 	{
-		t.setDefaultRenderer(Object.class, new CellRenderer(guestOfRow, disabledRow, nameColumn));
+		if (table == null) return null;
+		int chair = seatModel.chairAt(row);
+		return table.isDisabled(chair) ? "disabled" : table.isOpen(chair) ? "open access" : null;
+	}
+
+	private void setUp(JTable t, IntFunction<Guest> guestOfRow, IntFunction<String> offRow, int nameColumn)
+	{
+		t.setDefaultRenderer(Object.class, new CellRenderer(guestOfRow, offRow, nameColumn));
 		t.setDefaultRenderer(Integer.class, t.getDefaultRenderer(Object.class));
 		t.setRowHeight(Math.max(t.getRowHeight(), 22));
 		t.setFillsViewportHeight(true);
@@ -642,18 +649,18 @@ public class SeatingPanel extends JPanel
 	/*
 	 * Genders with their shape, parties with their colour, a seat number with
 	 * the mark of whoever sits there; a guest with no name yet shows who they
-	 * are with, in grey; a disabled seat is greyed out.
+	 * are with, in grey; a disabled or open-access seat is greyed out.
 	 */
 	private static class CellRenderer extends DefaultTableCellRenderer
 	{
 		private final IntFunction<Guest> guestOfRow;
-		private final IntPredicate disabledRow;
+		private final IntFunction<String> offRow;
 		private final int nameColumn;
 
-		CellRenderer(IntFunction<Guest> guestOfRow, IntPredicate disabledRow, int nameColumn)
+		CellRenderer(IntFunction<Guest> guestOfRow, IntFunction<String> offRow, int nameColumn)
 		{
 			this.guestOfRow = guestOfRow;
-			this.disabledRow = disabledRow;
+			this.offRow = offRow;
 			this.nameColumn = nameColumn;
 		}
 
@@ -666,7 +673,8 @@ public class SeatingPanel extends JPanel
 			setFont(t.getFont());
 			Color fg = Theme.TEXT;
 			Guest g = guestOfRow.apply(row);
-			boolean off = disabledRow.test(row);
+			String offWhat = offRow.apply(row);
+			boolean off = offWhat != null;
 			if (value instanceof Gender gender)
 				setIcon(Marks.icon(gender, Theme.EDGE, ICON));
 			else if (value instanceof Party p)
@@ -684,7 +692,7 @@ public class SeatingPanel extends JPanel
 				fg = Theme.EDGE;
 			if (col == nameColumn)
 			{
-				if (off) setText("disabled");
+				if (off) setText(offWhat);
 				else if (g != null && !g.isNamed())
 				{
 					setText(g.displayName());

@@ -67,23 +67,33 @@ public class Plan
 	 */
 	public void renumber()
 	{
-		int next = 1;
 		for (Table t : tables)
 		{
 			if (!t.isNumbered()) t.setNumber(0);
 		}
-		for (List<Table> row : rows(tables.stream().filter(Table::isNumbered).toList()))
+		// tables and pews are numbered each on their own
+		for (String series : series())
 		{
-			for (Table t : row)
-				t.setNumber(next++);
+			int next = 1;
+			for (List<Table> row : rows(tables.stream()
+					.filter(t -> t.isNumbered() && t.series().equals(series)).toList()))
+			{
+				for (Table t : row)
+					t.setNumber(next++);
+			}
 		}
+	}
+
+	private List<String> series()
+	{
+		return tables.stream().map(Table::series).distinct().toList();
 	}
 
 	// all the tables in rows, as renumber sees them
 	public List<List<Table>> rows() { return rows(tables); }
 
 	// in rows from the top down, each left to right: a row is the tables not
-	// much lower than its topmost
+	// much lower than its topmost (see Table.rowDepth)
 	private static List<List<Table>> rows(List<Table> these)
 	{
 		List<Table> byDepth = new ArrayList<>(these);
@@ -93,8 +103,9 @@ public class Plan
 		while (start < byDepth.size())
 		{
 			double top = byDepth.get(start).getY();
+			double depth = byDepth.get(start).rowDepth();
 			int end = start;
-			while (end < byDepth.size() && byDepth.get(end).getY() - top <= ROW_DEPTH) end++;
+			while (end < byDepth.size() && byDepth.get(end).getY() - top <= depth) end++;
 			List<Table> row = new ArrayList<>(byDepth.subList(start, end));
 			row.sort(Comparator.comparingDouble(Table::getX));
 			rows.add(row);
@@ -108,25 +119,35 @@ public class Plan
 	// has lost its name or stopped being the head table)
 	public void numberUnnumbered()
 	{
-		Set<Integer> used = new HashSet<>();
-		List<Table> needing = new ArrayList<>();
-		for (Table t : tables)
+		for (String series : series())
 		{
-			if (!t.isNumbered()) continue;
-			if (t.getNumber() > 0 && used.add(t.getNumber())) continue;
-			needing.add(t);
+			List<Table> these = tables.stream().filter(t -> t.series().equals(series)).toList();
+			Set<Integer> used = new HashSet<>();
+			List<Table> needing = new ArrayList<>();
+			for (Table t : these)
+			{
+				if (!t.isNumbered()) continue;
+				if (t.getNumber() > 0 && used.add(t.getNumber())) continue;
+				needing.add(t);
+			}
+			int next = these.stream().mapToInt(Table::getNumber).max().orElse(0) + 1;
+			for (Table t : needing)
+				t.setNumber(next++);
 		}
-		int next = tables.stream().mapToInt(Table::getNumber).max().orElse(0) + 1;
-		for (Table t : needing)
-			t.setNumber(next++);
 	}
 
-	// what the table is called: its own name, else "Head table" or "Table 3"
+	// what the table is called: its own name, else "Head table", "Table 3" or "Pew 2"
 	public String label(Table table)
 	{
 		if (table.hasName()) return table.getName();
 		if (table.isHead()) return "Head table";
-		return "Table " + table.getNumber();
+		return table.series() + " " + table.getNumber();
+	}
+
+	// the places that can be given to guests
+	public int reservedPlaces()
+	{
+		return tables.stream().mapToInt(Table::reservedPlaces).sum();
 	}
 
 	// the places that can be used: every chair less the disabled ones

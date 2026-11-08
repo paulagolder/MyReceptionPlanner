@@ -56,7 +56,7 @@ public class Seating
 	}
 
 	// unseats anyone no longer on the guest list, whose table or chair is gone
-	// or whose chair is disabled, and all but the first of any sharing a
+	// or whose chair is disabled or open access, and all but the first of any sharing a
 	// chair; returns how many (not counting those who have left the list)
 	public int tidy(Plan plan, GuestList guests)
 	{
@@ -68,7 +68,7 @@ public class Seating
 			Seat s = it.next().getValue();
 			Optional<Table> t = plan.find(s.tableId());
 			boolean ok = t.isPresent() && s.chair() >= 0 && s.chair() < t.get().places()
-					&& !t.get().isDisabled(s.chair()) && taken.add(s);
+					&& t.get().isReserved(s.chair()) && taken.add(s);
 			if (!ok)
 			{
 				it.remove();

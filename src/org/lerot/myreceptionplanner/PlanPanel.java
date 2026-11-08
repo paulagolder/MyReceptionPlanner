@@ -2,6 +2,7 @@ package org.lerot.myreceptionplanner;
 
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
+import org.lerot.myreceptionplanner.model.Pew;
 import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.Seating;
 import org.lerot.myreceptionplanner.model.Table;
@@ -17,8 +18,10 @@ import java.util.Optional;
  * selected table to turn it (in steps of 15 degrees; hold Shift for any angle),
  * double-click a table to edit it. With a table selected: arrow keys nudge it,
  * R and Shift+R turn it, Delete removes it. Ctrl + mouse wheel zooms.
- * Right-click a chair to make it seat 1 or to disable it; right-click a table
- * for its other actions. Seat 1 is drawn green and disabled chairs greyed out.
+ * Right-click a chair to make it seat 1, to disable it, or to reserve it or
+ * make it open access; right-click a table for its other actions. Seat 1 is
+ * drawn green, disabled chairs greyed out, open seats white and reserved
+ * seats filled.
  *
  * That is layout mode. In seating mode the tables stay put: clicking a table
  * or one of its chairs chooses it, for the seating panel to show. Each seat
@@ -200,14 +203,15 @@ public class PlanPanel extends JPanel
 				g.draw(chair);
 			} else if (i == t.getFirstSeat())
 			{
-				g.setColor(Theme.FIRST_FILL);
+				g.setColor(t.isOpen(i) ? Theme.TABLE : Theme.FIRST_FILL);
 				g.fill(chair);
 				g.setColor(Theme.FIRST);
 				g.setStroke(new BasicStroke((float) (2.5 / scale)));
 				g.draw(chair);
 			} else
 			{
-				g.setColor(Theme.SEAT);
+				// open seats white, reserved seats filled
+				g.setColor(t.isOpen(i) ? Theme.TABLE : Theme.SEAT);
 				g.fill(chair);
 				g.setColor(Theme.EDGE);
 				g.setStroke(new BasicStroke((float) (1.2 / scale)));
@@ -215,7 +219,7 @@ public class PlanPanel extends JPanel
 			}
 		}
 		Shape top = t.top();
-		g.setColor(Theme.TABLE);
+		g.setColor(t instanceof Pew ? Theme.SEAT : Theme.TABLE);
 		g.fill(top);
 		Color edge = t == selected ? Theme.ACCENT : t.isHead() ? Theme.HEAD : Theme.EDGE;
 		float width = t == selected || t.isHead() ? 3f : 1.5f;
@@ -242,7 +246,7 @@ public class PlanPanel extends JPanel
 			Optional<Guest> guest = seating.guestAt(t.getId(), i);
 			if (guest.isPresent())
 				Marks.paint(g, guest.get().getGender(), GuestList.colourOf(guest.get()), x, y, r * 0.55);
-			else if (mode == Mode.SEATING && !t.isDisabled(i))
+			else if (mode == Mode.SEATING && t.isReserved(i))
 			{
 				String n = Integer.toString(t.seatNumber(i));
 				g.setColor(Theme.EDGE);
@@ -259,9 +263,21 @@ public class PlanPanel extends JPanel
 		g.dispose();
 	}
 
-	// the name upright in the middle of the table, whichever way it is turned
+	// the name upright in the middle of the table, whichever way it is turned;
+	// a pew's on one line just behind it
 	private void paintName(Graphics2D g, Table t)
 	{
+		if (t instanceof Pew)
+		{
+			g.setFont(getFont().deriveFont(Font.PLAIN, Math.max(9f, getFont().getSize2D() - 1)));
+			FontMetrics fm = g.getFontMetrics();
+			String text = plan.label(t) + "  ·  " + placesText(t);
+			double behind = t.top().getBounds2D().getMaxY();
+			Point2D at = t.toFloor().transform(new Point2D.Double(0, behind + 3 + fm.getAscent() / scale), null);
+			g.setColor(Theme.EDGE);
+			g.drawString(text, (float) (at.getX() * scale - fm.stringWidth(text) / 2.0), (float) (at.getY() * scale));
+			return;
+		}
 		Font font = getFont().deriveFont(Font.BOLD);
 		g.setFont(font);
 		FontMetrics fm = g.getFontMetrics();
@@ -277,10 +293,15 @@ public class PlanPanel extends JPanel
 		}
 	}
 
+	// "8 places", "8 places (2 off)", "10 seats: 2 reserved, 8 open"
 	private static String placesText(Table t)
 	{
 		int off = t.places() - t.usablePlaces();
-		return t.usablePlaces() + " places" + (off > 0 ? " (" + off + " off)" : "");
+		int open = t.getOpenSeats().size();
+		String what = t instanceof Pew ? " seats" : " places";
+		if (open == 0) return t.usablePlaces() + (t instanceof Pew ? " reserved" : what) + (off > 0 ? " (" + off + " off)" : "");
+		if (open == t.usablePlaces()) return open + " open" + (off > 0 ? " (" + off + " off)" : "");
+		return t.reservedPlaces() + " reserved, " + open + " open" + (off > 0 ? ", " + off + " off" : "");
 	}
 
 	private void paintHandle(Graphics2D g, Table t)
@@ -457,6 +478,14 @@ public class PlanPanel extends JPanel
 			if (first) disable.setToolTipText("Seat 1 cannot be disabled");
 			else if (taken) disable.setToolTipText("Someone is seated here");
 			disable.addActionListener(a -> seatChanged(() -> t.setDisabled(chair, !off)));
+			if (!off)
+			{
+				boolean open = t.isOpen(chair);
+				JMenuItem status = menu.add(open ? "Reserve this seat" : "Make this seat open access");
+				status.setEnabled(open || !taken);
+				if (taken) status.setToolTipText("Someone is seated here");
+				status.addActionListener(a -> seatChanged(() -> t.setOpen(chair, !open)));
+			}
 			menu.addSeparator();
 		}
 		menu.add("Edit…").addActionListener(a -> listener.editRequested(t));
@@ -466,6 +495,14 @@ public class PlanPanel extends JPanel
 		JMenuItem enableAll = menu.add("Enable all seats");
 		enableAll.setEnabled(!t.getDisabledSeats().isEmpty());
 		enableAll.addActionListener(a -> enableAllSeats());
+		JMenuItem reserveAll = menu.add("Reserve all seats");
+		reserveAll.setEnabled(!t.getOpenSeats().isEmpty());
+		reserveAll.addActionListener(a -> seatChanged(() -> t.setAllOpen(false)));
+		boolean anyone = !seating.seatedAt(t.getId()).isEmpty();
+		JMenuItem openAll = menu.add("Make all seats open access");
+		openAll.setEnabled(t.reservedPlaces() > 0 && !anyone);
+		if (anyone) openAll.setToolTipText("Guests are seated here");
+		openAll.addActionListener(a -> seatChanged(() -> t.setAllOpen(true)));
 		menu.add("Delete").addActionListener(a -> listener.deleteRequested(t));
 		menu.show(this, e.getX(), e.getY());
 	}

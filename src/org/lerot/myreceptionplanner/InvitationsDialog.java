@@ -164,12 +164,18 @@ public class InvitationsDialog
 		return guests.guests().stream().filter(g -> g.getParty() == null).toList();
 	}
 
-	// who would lose a seat, event by event
+	// who would lose a seat, and which parties would be over capacity, event by event
 	private String losses()
 	{
 		StringBuilder out = new StringBuilder();
 		for (Event e : events)
 		{
+			int limit = e.capacityLimit();
+			int over = limit == 0 ? 0 : invited.get(e).size() - limit;
+			if (over > 0)
+				out.append(e.getName()).append(" would have ").append(over)
+						.append(over == 1 ? " guest" : " guests").append(" more than its capacity of ")
+						.append(limit).append(".\n");
 			long n = e.getSeating().all().keySet().stream().filter(g -> !invited.get(e).contains(g)).count();
 			if (n > 0)
 				out.append(n).append(n == 1 ? " guest loses a seat at " : " guests lose their seats at ")
@@ -181,8 +187,24 @@ public class InvitationsDialog
 	private void showTotals()
 	{
 		List<String> parts = new ArrayList<>();
+		boolean over = false;
 		for (Event e : events)
-			parts.add(e.getName() + ": " + invited.get(e).size() + " invited");
+		{
+			int n = invited.get(e).size();
+			String part = e.getName() + ": " + n + " invited";
+			int limit = e.capacityLimit();
+			if (limit > 0)
+			{
+				part += " of " + limit;
+				if (n > limit)
+				{
+					part += " (" + (n - limit) + " over!)";
+					over = true;
+				}
+			}
+			parts.add(part);
+		}
+		totals.setForeground(over ? Theme.HEAD.darker() : Theme.EDGE);
 		totals.setText(String.join("     ", parts) + "     (of " + guests.guests().size() + " guests)");
 	}
 

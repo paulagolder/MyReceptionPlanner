@@ -95,6 +95,17 @@ class TablePlanLayoutTest
 	}
 
 	@Test
+	void aPartyWithNoSeatsShowsEachTablesPlaces()
+	{
+		Plan plan = new Plan();
+		RoundTable t = table(plan, 1, 300, 300, 10);
+		t.setDisabled(3, true);
+		plan.renumber();
+		TablePlanLayout.Layout layout = TablePlanLayout.layout(plan, new Seating(), false, 800, 600, MEASURE);
+		assertEquals(List.of("9 places"), layout.panels().get(0).lines().stream().map(TablePlanLayout.Line::text).toList());
+	}
+
+	@Test
 	void aPdfIsWritten() throws Exception
 	{
 		Occasion o = new Occasion("Lydia and Isaac's Wedding", new GuestList());

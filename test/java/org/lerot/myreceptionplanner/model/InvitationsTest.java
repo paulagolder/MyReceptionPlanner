@@ -129,4 +129,46 @@ class InvitationsTest
 		Event e = OccasionXml.load(folder).events().get(0);
 		assertEquals(1, e.getSeating().seatedCount());
 	}
+
+	@Test
+	void anUnreservedPartyHasNoSeatsAndWarnsWhenOverCapacity() throws IOException
+	{
+		Plan plan = new Plan();
+		plan.add(new RoundTable(1, "", 8));
+		Occasion o = new Occasion("Wedding", new GuestList());
+		Event party = new Event("Evening Party", "evening.xml", plan, new Seating());
+		o.addEvent(party);
+		GuestList g = o.getGuests();
+		g.createParty("Ann", 3, "");
+		g.createParty("Cath", 2, "");
+		o.tidy();
+		party.getSeating().seat(g.guests().get(0), new Seat(1, 0));
+
+		party.setKind(Event.Kind.UNRESERVED);
+		assertEquals(0, party.getSeating().seatedCount(), "no seats at an unreserved party");
+		assertEquals(0, party.overCapacity(), "no limit set");
+		party.setCapacity(4);
+		assertEquals(1, party.overCapacity());
+		party.getSeating().seat(g.guests().get(0), new Seat(1, 0));
+		party.tidy(g);
+		assertEquals(0, party.getSeating().seatedCount());
+
+		OccasionXml.save(o, folder);
+		Event loaded = OccasionXml.load(folder).events().get(0);
+		assertEquals(Event.Kind.UNRESERVED, loaded.getKind());
+		assertEquals(4, loaded.getCapacity());
+		assertEquals(5, loaded.invited().size());
+		assertEquals(1, loaded.overCapacity());
+	}
+
+	@Test
+	void aSeatedEventHasNoCapacityWarning()
+	{
+		Event e = new Event("Breakfast", "b.xml", new Plan(), new Seating());
+		GuestList g = new GuestList();
+		e.invite(g.addGuest("Ann", null, null));
+		e.invite(g.addGuest("Bob", null, null));
+		e.setCapacity(1);
+		assertEquals(0, e.overCapacity(), "a seated event is limited by its tables");
+	}
 }

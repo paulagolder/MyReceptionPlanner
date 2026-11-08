@@ -18,7 +18,7 @@ import java.time.LocalDate;
 /*
  * The dialogs for an occasion and its events: making a new occasion with its
  * first event, changing an occasion's name and date, and making or changing
- * an event (its name, place, date and time). Dates are typed, "12 May 2026";
+ * an event (its name, place, date, time, type and capacity). Dates are typed, "12 May 2026";
  * an event left without a date is on the occasion's.
  */
 public class OccasionDialogs
@@ -93,6 +93,10 @@ public class OccasionDialogs
 		JTextField place = new JTextField(current == null ? "" : current.getPlace());
 		JTextField date = dateField(null);
 		JTextField time = new JTextField();
+		JComboBox<Event.Kind> kind = new JComboBox<>(Event.Kind.values());
+		JSpinner capacity = capacityField(0);
+		kind.addActionListener(a -> capacity.setEnabled(kind.getSelectedItem() == Event.Kind.UNRESERVED));
+		capacity.setEnabled(false);
 		JComboBox<Object> start = new JComboBox<>();
 		start.addItem("An empty room");
 		for (Event e : occasion.events())
@@ -126,9 +130,14 @@ public class OccasionDialogs
 		row(form, "Place", place);
 		row(form, "Date", date);
 		row(form, "Time", time);
+		row(form, "Type", kind);
+		row(form, "Capacity", capacity);
 		row(form, "Start with", start);
 		row(form, "Invite", invite);
-		note(form, "Leave the date empty if it is on the occasion's day. Copied tables start with no one seated. "
+		note(form, "Leave the date empty if it is on the occasion's day. A hall or ceremony is set out with "
+				+ "pews whose seats are open to all, and only seats you reserve are given to guests. A party, "
+				+ "unreserved, has invitations and may have tables set out, but no seats are given; its capacity "
+				+ "(0 for no limit) warns when too many are invited. Copied tables start with no one seated. "
 				+ "Change who is invited later with Occasion ▾ → Invitations….");
 		while (true)
 		{
@@ -142,6 +151,8 @@ public class OccasionDialogs
 				e.setPlace(place.getText());
 				e.setDate(d);
 				e.setTime(time.getText());
+				e.setKind((Event.Kind) kind.getSelectedItem());
+				e.setCapacity((Integer) capacity.getValue());
 				GuestList guests = occasion.getGuests();
 				if (invite.getSelectedItem() instanceof Event from) e.setInvited(from.invited(), guests);
 				else if ("Everyone".equals(invite.getSelectedItem())) e.setInvited(guests.guests(), guests);
@@ -160,11 +171,18 @@ public class OccasionDialogs
 		JTextField place = new JTextField(event.getPlace());
 		JTextField date = dateField(event.getDate());
 		JTextField time = new JTextField(event.getTime());
+		JComboBox<Event.Kind> kind = new JComboBox<>(Event.Kind.values());
+		kind.setSelectedItem(event.getKind());
+		JSpinner capacity = capacityField(event.getCapacity());
+		capacity.setEnabled(!event.isSeated());
+		kind.addActionListener(a -> capacity.setEnabled(kind.getSelectedItem() == Event.Kind.UNRESERVED));
 		JPanel form = form();
 		row(form, "Event", name);
 		row(form, "Place", place);
 		row(form, "Date", date);
 		row(form, "Time", time);
+		row(form, "Type", kind);
+		row(form, "Capacity", capacity);
 		note(form, "Leave the date empty if it is on the occasion's day"
 				+ (occasion.getDate() == null ? "." : " (" + Occasion.DATE.format(occasion.getDate()) + ")."));
 		while (true)
@@ -174,10 +192,18 @@ public class OccasionDialogs
 			{
 				if (name.getText().isBlank()) throw new IllegalArgumentException("The event needs a name.");
 				LocalDate d = Occasion.parseDate(date.getText());
+				Event.Kind k = (Event.Kind) kind.getSelectedItem();
+				int seated = event.getSeating().seatedCount();
+				if (k == Event.Kind.UNRESERVED && event.isSeated() && seated > 0
+						&& JOptionPane.showConfirmDialog(parent, "As an unreserved party, " + event.getName()
+								+ " gives no seats, so its " + seated + " seated guests lose their seats.",
+						"Event", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) continue;
 				event.setName(name.getText());
 				event.setPlace(place.getText());
 				event.setDate(d);
 				event.setTime(time.getText());
+				event.setKind(k);
+				event.setCapacity((Integer) capacity.getValue());
 				return true;
 			} catch (IllegalArgumentException ex)
 			{
@@ -192,6 +218,12 @@ public class OccasionDialogs
 		Element holder = DocumentHelper.createElement("copy");
 		PlanXml.write(plan, holder);
 		return PlanXml.read(holder.element("tables"));
+	}
+
+	// guests; 0 for no limit
+	private static JSpinner capacityField(int value)
+	{
+		return new JSpinner(new SpinnerNumberModel(value, 0, 10000, 10));
 	}
 
 	private static JTextField dateField(LocalDate date)

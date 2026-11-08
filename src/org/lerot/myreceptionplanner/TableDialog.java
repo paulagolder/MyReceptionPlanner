@@ -1,6 +1,7 @@
 package org.lerot.myreceptionplanner;
 
 import net.miginfocom.swing.MigLayout;
+import org.lerot.myreceptionplanner.model.Pew;
 import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.RectTable;
 import org.lerot.myreceptionplanner.model.RoundTable;
@@ -32,7 +33,12 @@ public class TableDialog
 		form.add(nameHint, "skip, gapbottom 6");
 
 		JSpinner places = null, side = null, end = null;
-		if (table instanceof RoundTable round)
+		if (table instanceof Pew pew)
+		{
+			places = new JSpinner(new SpinnerNumberModel(pew.places(), 1, 40, 1));
+			form.add(new JLabel("Seats"));
+			form.add(places, "growx");
+		} else if (table instanceof RoundTable round)
 		{
 			places = new JSpinner(new SpinnerNumberModel(round.places(), 1, 30, 1));
 			form.add(new JLabel("Places"));
@@ -51,13 +57,15 @@ public class TableDialog
 		form.add(new JLabel("Turned (degrees clockwise)"));
 		form.add(turn, "growx");
 		JCheckBox head = new JCheckBox("Head table", table.isHead());
-		form.add(head, "skip");
-		if (table.getFirstSeat() != 0 || !table.getDisabledSeats().isEmpty())
+		if (!(table instanceof Pew)) form.add(head, "skip");
+		boolean seatsAsStarted = table instanceof Pew ? table.reservedPlaces() == 0 : table.getOpenSeats().isEmpty();
+		if (table.getFirstSeat() != 0 || !table.getDisabledSeats().isEmpty() || !seatsAsStarted)
 		{
 			JLabel note = new JLabel("<html>Changing the places puts seat 1 back at the start<br>"
 					+ (table.isHead() && table instanceof RectTable
-							? "and disables the far side again.</html>"
-							: "and enables every seat again.</html>"));
+							? "and disables the far side again"
+							: "and enables every seat again")
+					+ (table instanceof Pew ? ", with every seat open.</html>" : ", every seat reserved.</html>"));
 			note.setForeground(Theme.EDGE);
 			form.add(note, "span 2, gaptop 6");
 		}
@@ -67,7 +75,9 @@ public class TableDialog
 		if (answer != JOptionPane.OK_OPTION) return false;
 
 		table.setName(name.getText());
-		if (table instanceof RoundTable round)
+		if (table instanceof Pew pew)
+			pew.setPlaces((Integer) places.getValue());
+		else if (table instanceof RoundTable round)
 			round.setPlaces((Integer) places.getValue());
 		else if (table instanceof RectTable rect)
 			rect.setPlaces((Integer) side.getValue(), (Integer) end.getValue());

@@ -57,7 +57,7 @@ public class TablePlanPdf
 				float areaWidth = page.getWidth() - 2 * MARGIN;
 				float areaHeight = areaTop - MARGIN;
 
-				TablePlanLayout.Layout layout = TablePlanLayout.layout(event.getPlan(), event.getSeating(), areaWidth, areaHeight,
+				TablePlanLayout.Layout layout = TablePlanLayout.layout(event.getPlan(), event.getSeating(), event.isSeated(), areaWidth, areaHeight,
 						(s, size, isBold) -> (isBold ? bold : regular).getWidthPoint(s, size));
 				float f = layout.fontSize();
 				for (TablePlanLayout.Panel p : layout.panels())

@@ -10,13 +10,51 @@ import java.util.Set;
 /*
  * One event of an occasion, such as the Wedding Breakfast: where and when it
  * is, who is invited, its tables and who sits where. Only those invited can
- * be seated. Whenever anyone of a party is invited, so is its lead. It is kept in its own file in the
+ * be seated. Whenever anyone of a party is invited, so is its lead.
+ *
+ * An unreserved party (the evening do) has invitations and may have tables
+ * set out for the staff, but no one is given a seat; it may have a capacity,
+ * the most guests the place can take. A hall or ceremony (the church) is set
+ * out mostly with pews of open seats, and only its reserved seats are given
+ * to guests; its capacity is all its seats. It is kept in its own file in the
  * occasion's folder; the file's name is given when the event is made and
  * stays the same if the event is renamed.
  */
 public class Event
 {
+	public enum Kind
+	{
+		SEATED("seated", "Seated"),
+		HALL("hall", "Hall / ceremony"),
+		UNRESERVED("unreserved", "Party, unreserved");
+
+		private final String code;   // in the event's file
+		private final String label;
+
+		Kind(String code, String label)
+		{
+			this.code = code;
+			this.label = label;
+		}
+
+		public String code() { return code; }
+
+		@Override
+		public String toString() { return label; }
+
+		public static Kind fromCode(String code)
+		{
+			for (Kind k : values())
+			{
+				if (k.code.equalsIgnoreCase(code)) return k;
+			}
+			return SEATED;
+		}
+	}
+
 	private String name;
+	private Kind kind = Kind.SEATED;
+	private int capacity;      // 0 for no limit; for an unreserved party
 	private String place = "";
 	private LocalDate date;    // null: the occasion's date
 	private String time = "";  // as typed, e.g. "2pm" or "14:00"
@@ -36,6 +74,41 @@ public class Event
 	public String getName() { return name; }
 
 	public void setName(String name) { this.name = name == null || name.isBlank() ? "Event" : name.trim(); }
+
+	public Kind getKind() { return kind; }
+
+	// whether guests are given seats (all at a seated event, the reserved ones in a hall)
+	public boolean isSeated() { return kind != Kind.UNRESERVED; }
+
+	// an unreserved party has no seats, so any there are cleared
+	public void setKind(Kind kind)
+	{
+		this.kind = kind == null ? Kind.SEATED : kind;
+		if (!isSeated()) for (Guest g : List.copyOf(seating.all().keySet())) seating.unseat(g);
+	}
+
+	public int getCapacity() { return capacity; }
+
+	public void setCapacity(int capacity) { this.capacity = Math.max(0, capacity); }
+
+	// the most guests: an unreserved party's capacity, all a hall's usable
+	// seats; 0 for no limit (a seated event is limited by its seats instead)
+	public int capacityLimit()
+	{
+		return switch (kind)
+		{
+			case UNRESERVED -> capacity;
+			case HALL -> plan.places();
+			case SEATED -> 0;
+		};
+	}
+
+	// how many more are invited than the capacity allows; 0 if none or no limit
+	public int overCapacity()
+	{
+		int limit = capacityLimit();
+		return limit == 0 ? 0 : Math.max(0, invited.size() - limit);
+	}
 
 	public String getPlace() { return place; }
 
@@ -102,7 +175,7 @@ public class Event
 		int lost = 0;
 		for (Guest g : List.copyOf(seating.all().keySet()))
 		{
-			if (!invited.contains(g))
+			if (!invited.contains(g) || !isSeated())
 			{
 				seating.unseat(g);
 				lost++;

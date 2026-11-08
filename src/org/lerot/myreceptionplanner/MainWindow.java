@@ -114,6 +114,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JPopupMenu add = new JPopupMenu();
 		add.add("Round table").addActionListener(e -> addTable(true));
 		add.add("Rectangular table").addActionListener(e -> addTable(false));
+		add.add("Pew (a row of seats)").addActionListener(e -> addPew());
 		addTableButton = dropDown("Add table", add);
 		bar.add(addTableButton);
 
@@ -257,6 +258,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	{
 		if (!OccasionDialogs.editEvent(this, occasion, event)) return;
 		fillEventChooser();
+		showEvent(event);
 		changed();
 	}
 
@@ -304,8 +306,13 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 	// ---- the tables ----
 
+	// an unreserved party has no seating, so only its layout
 	private void setMode(PlanPanel.Mode newMode)
 	{
+		seatingButton.setEnabled(event.isSeated());
+		seatingButton.setToolTipText(event.isSeated() ? "Seat the guests"
+				: event.getName() + " is a party, unreserved: no one is given a seat");
+		if (!event.isSeated()) newMode = PlanPanel.Mode.LAYOUT;
 		mode = newMode;
 		boolean seating = mode == PlanPanel.Mode.SEATING;
 		(seating ? seatingButton : layoutButton).setSelected(true);
@@ -343,13 +350,28 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		planPanel.requestFocusInWindow();
 	}
 
+	private void addPew()
+	{
+		Plan plan = plan();
+		Table t = new org.lerot.myreceptionplanner.model.Pew(plan.nextId(), "", 8);
+		Point2D c = planPanel.visibleCentre();
+		double step = 40 * (plan.tables().size() % 5);
+		t.moveTo(Math.round(c.getX() + step), Math.round(c.getY() + step));
+		plan.add(t);
+		plan.numberUnnumbered();
+		planPanel.select(t);
+		planChanged();
+		planPanel.planUpdated();
+		planPanel.requestFocusInWindow();
+	}
+
 	// numbers the tables afresh by where they stand, after asking
 	private void renumber()
 	{
 		int answer = JOptionPane.showConfirmDialog(this,
 				"Number the tables afresh by where they stand: in rows from the top of the plan,\n"
-						+ "left to right along each row. The head table and tables with their own name\n"
-						+ "keep their names. Guests keep their seats.",
+						+ "left to right along each row; pews are numbered on their own the same way.\n"
+						+ "The head table and tables with their own name keep their names. Guests keep their seats.",
 				"Renumber tables", JOptionPane.OK_CANCEL_OPTION);
 		if (answer != JOptionPane.OK_OPTION) return;
 		plan().renumber();
@@ -679,9 +701,19 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		setTitle((unsaved ? "• " : "") + occasion.getName() + " — " + event.getName() + " — MyReceptionPlanner");
 		Plan plan = plan();
 		String head = plan.head().map(t -> "head table: " + plan.label(t)).orElse("no head table");
+		String people = switch (event.getKind())
+		{
+			case SEATED -> event.invited().size() + " invited, " + event.getSeating().seatedCount() + " seated";
+			case HALL -> "hall: " + event.invited().size() + " invited, " + plan.reservedPlaces() + " reserved seats ("
+					+ event.getSeating().seatedCount() + " given), " + (plan.places() - plan.reservedPlaces()) + " open";
+			case UNRESERVED -> "party, unreserved: " + event.invited().size() + " invited"
+					+ (event.getCapacity() > 0 ? " of a capacity of " + event.getCapacity() : "");
+		};
+		if (event.overCapacity() > 0) people += "  ⚠ " + event.overCapacity() + " more than the "
+				+ (event.getKind() == Event.Kind.HALL ? "seats" : "capacity");
+		status.setForeground(event.overCapacity() > 0 ? Theme.HEAD.darker() : UIManager.getColor("Label.foreground"));
 		status.setText(occasion.heading() + "   ·   " + occasion.headingOf(event) + "   ·   "
-				+ plan.tables().size() + " tables, " + plan.places() + " places, " + head + ",   "
-				+ occasion.getGuests().guests().size() + " guests, " + event.getSeating().seatedCount() + " seated");
+				+ plan.tables().size() + " tables, " + plan.places() + " places, " + head + ",   " + people);
 	}
 
 	private static String escape(String s)

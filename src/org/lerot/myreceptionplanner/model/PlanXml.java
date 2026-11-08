@@ -12,15 +12,18 @@ import java.io.IOException;
  *     <table id="2" shape="rectangle" sideplaces="6" endplaces="0"
  *            x="600" y="100" rotation="0" head="true" firstseat="3" disabled="7 12"/>
  *     <table id="3" name="Smith family" shape="round" places="8" x="300" y="500" rotation="0"/>
+ *     <table id="4" number="1" shape="pew" places="10" x="300" y="900" rotation="0" open="3 4 5 6 7 8 9 10"/>
  *   </tables>
  *
  * The id never changes. name is only there for a table with a name of its
  * own; the rest are called "Head table" or by their number.
  *
  * Sizes and positions are whole centimetres, rotation whole degrees.
- * firstseat and disabled name chairs by counting clockwise from 1 at the
- * shape's starting chair (the top of a round table, the left end of the far
- * side of a rectangular one); they are left out when there is nothing to say.
+ * firstseat, disabled and open (open-access seats; the rest are reserved)
+ * name chairs by counting clockwise from 1 at the shape's starting chair (the
+ * top of a round table, the left end of the far side of a rectangular one,
+ * the left end of a pew); they are left out when there is nothing to say.
+ * Pews and tables are numbered each on their own.
  */
 public class PlanXml
 {
@@ -34,9 +37,9 @@ public class PlanXml
 			if (t.getNumber() > 0) e.addAttribute("number", Integer.toString(t.getNumber()));
 			if (t.hasName()) e.addAttribute("name", t.getName());
 			e.addAttribute("shape", t.shape());
-			if (t instanceof RoundTable round)
+			if (t instanceof RoundTable || t instanceof Pew)
 			{
-				e.addAttribute("places", Integer.toString(round.places()));
+				e.addAttribute("places", Integer.toString(t.places()));
 			} else if (t instanceof RectTable rect)
 			{
 				e.addAttribute("sideplaces", Integer.toString(rect.getSidePlaces()));
@@ -51,6 +54,9 @@ public class PlanXml
 			if (!t.getDisabledSeats().isEmpty())
 				e.addAttribute("disabled", String.join(" ",
 						t.getDisabledSeats().stream().map(c -> Integer.toString(c + 1)).toList()));
+			if (!t.getOpenSeats().isEmpty())
+				e.addAttribute("open", String.join(" ",
+						t.getOpenSeats().stream().map(c -> Integer.toString(c + 1)).toList()));
 		}
 	}
 
@@ -67,6 +73,7 @@ public class PlanXml
 				case RoundTable.SHAPE -> new RoundTable(id, name, number(e, "places", 8));
 				case RectTable.SHAPE -> new RectTable(id, name,
 						number(e, "sideplaces", 4), number(e, "endplaces", 0));
+				case Pew.SHAPE -> new Pew(id, name, number(e, "places", 8));
 				default -> throw new IOException("Table " + id + " has an unknown shape: " + shape);
 			};
 			t.setNumber(number(e, "number", 0));
@@ -80,6 +87,12 @@ public class PlanXml
 				if (chair.isEmpty()) continue;
 				int c = chairNumber(chair, t);
 				t.setDisabled(c - 1, true);
+			}
+			t.setAllOpen(false);  // as the file says, not as the shape starts
+			for (String chair : e.attributeValue("open", "").trim().split("\\s+"))
+			{
+				if (chair.isEmpty()) continue;
+				t.setOpen(chairNumber(chair, t) - 1, true);
 			}
 			plan.add(t);
 		}
