@@ -27,10 +27,30 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
   one of its guests whose name isn't known yet; fill in the name later.
 - Right-click a seat to seat someone from the guest list there, to clear the
   seat (the guest goes back to the list) or to remove the guest altogether.
-- The **Guests** tab lists the parties and every guest. Add parties and guests,
-  rename them, change a guest's gender or party, and change a party's colour
-  (Colour…, or double-click its swatch). Tick *Unseated only* to see who still
-  needs a seat; double-click a guest's seat to find it on the plan.
+- The **Guests** tab lists the parties and every guest. Rename guests, change
+  a guest's gender or party, and change a party's colour (Colour…, or
+  double-click its swatch). Tick *Unseated only* to see who still needs a
+  seat; double-click a guest's seat to find it on the plan.
+
+### Parties
+
+- **New…** makes a party: its **lead guest** (the one to contact), the number
+  of **places**, and optionally a party name (otherwise it goes by the lead's
+  name). The other places start as *Ann Smith+1*, *Ann Smith+2* … — the plus
+  one is built in. Type a real name over a place to name that guest. Places
+  not named yet can still be seated.
+- **Edit…** (or double-click the party) changes the same things and the
+  party's guests. Places can be added, or taken away (those not seated go
+  first, the highest numbered first), but never below the number of named
+  guests. The Places and Named columns show how many of each.
+- The lead's **address, phone, mobile, WhatsApp and email** can be typed in,
+  or copied from MyContacts with **Find in MyContacts…**. The details are
+  copied once and not kept in step: MyContacts is only read, never changed.
+  (MyContacts has no WhatsApp field; *Same as mobile* fills it in.)
+- The lead can't be removed or moved to another party. Removing a party
+  removes its places not named yet; its named guests stay, in no party.
+- On an empty seat in the Table tab, choosing a party seats one of its places
+  not seated yet (a new place if they are all seated).
 - A seat with a guest in it can't be disabled. If a table's places are changed,
   or a table is deleted, its guests go back to the guest list.
 
@@ -78,6 +98,7 @@ holding its files:
 
 - `tables.xml`: the tables, their shapes, positions and turns, seat 1 and
   any disabled chairs
-- `guests.xml`: the parties, their guests and each guest's seat
+- `guests.xml`: the parties, their leads and contact details, their guests
+  and each guest's seat
 
 A rectangular table has *N* places along each long side and *M* at each end.

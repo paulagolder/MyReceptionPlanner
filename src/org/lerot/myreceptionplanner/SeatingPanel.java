@@ -24,12 +24,14 @@ import java.util.function.IntPredicate;
  * Seating mode's side panel, with two tabs.
  *
  * Table lists the seats of the table chosen on the plan, seat 1 first, and
- * who sits in each. On an empty seat, typing a name or choosing a gender or a
- * party puts a new guest there; choosing only a party keeps the seat for one
- * of its guests not yet named. Right-click a seat to seat someone from the
- * guest list, or to clear it.
+ * who sits in each. On an empty seat, choosing a party seats one of its
+ * places not yet seated (a new place if none is left); typing a name puts a
+ * new guest there. Right-click a seat to seat someone from the guest list, or
+ * to clear it.
  *
- * Guests lists the parties and every guest, to add, rename and remove them.
+ * Guests lists the parties (each made and edited in PartyDialog) and every
+ * guest. A place not named yet shows as the lead's name +1, +2 ...; type a
+ * name over it to name that guest.
  */
 public class SeatingPanel extends JPanel
 {
@@ -228,6 +230,13 @@ public class SeatingPanel extends JPanel
 
 	private void removeGuest(Guest g)
 	{
+		if (g.isLead())
+		{
+			JOptionPane.showMessageDialog(this, g.getName() + " leads the party " + g.getParty().getName()
+					+ ". Remove the party, or make someone else its lead, first.", "Remove guest",
+					JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
 		if (g.isNamed())
 		{
 			int answer = JOptionPane.showConfirmDialog(this, "Remove " + g.getName() + " from the guest list?",
@@ -284,8 +293,11 @@ public class SeatingPanel extends JPanel
 				{
 					String name = value.toString().trim();
 					if (g == null && name.isEmpty()) return;
-					if (g == null) g = newGuestAt(seat);
-					g.setName(name);
+					if (g == null)
+					{
+						g = guests.addGuest(name, Gender.UNKNOWN, lastParty);
+						guests.seat(g, seat);
+					} else guests.rename(g, name);
 				}
 				case 2 ->
 				{
@@ -295,9 +307,9 @@ public class SeatingPanel extends JPanel
 				case 3 ->
 				{
 					Party p = value instanceof Party party ? party : null;
-					if (g == null) g = newGuestAt(seat);
-					g.setParty(p);
 					lastParty = p;
+					if (g == null) seatOneOf(p, seat);
+					else if (!guests.setParty(g, p)) leadStays(g);
 				}
 				default -> { return; }
 			}
@@ -306,7 +318,17 @@ public class SeatingPanel extends JPanel
 
 		private Guest newGuestAt(Seat seat)
 		{
-			Guest g = guests.addGuest("", Gender.UNKNOWN, lastParty);
+			return seatOneOf(lastParty, seat);
+		}
+
+		// one of the party not seated yet, a place not named first, the lowest
+		// numbered; if all are seated, a new place in the party
+		private Guest seatOneOf(Party p, Seat seat)
+		{
+			Guest g = guests.unseated().stream()
+					.filter(u -> u.getParty() == p && p != null)
+					.min(Comparator.comparing(Guest::isNamed).thenComparingInt(Guest::getPlus))
+					.orElseGet(() -> guests.addGuest("", Gender.UNKNOWN, p));
 			guests.seat(g, seat);
 			return g;
 		}
@@ -320,17 +342,21 @@ public class SeatingPanel extends JPanel
 		parties.add(new JLabel("<html><b>Parties</b></html>"));
 		partyTable.getColumnModel().getColumn(0).setMaxWidth(30);
 		partyTable.getColumnModel().getColumn(2).setMaxWidth(60);
+		partyTable.getColumnModel().getColumn(3).setMaxWidth(60);
 		partyTable.setDefaultRenderer(Object.class, new CellRenderer(row -> null, row -> false, -1));
 		partyTable.addMouseListener(new MouseAdapter()
 		{
 			public void mouseClicked(MouseEvent e)
 			{
-				if (e.getClickCount() == 2 && partyTable.columnAtPoint(e.getPoint()) == 0) chooseColour();
+				if (e.getClickCount() != 2) return;
+				if (partyTable.columnAtPoint(e.getPoint()) == 0) chooseColour();
+				else editParty();
 			}
 		});
 		parties.add(new JScrollPane(partyTable), "grow");
 		JPanel partyButtons = new JPanel(new MigLayout("insets 0"));
-		partyButtons.add(button("Add party", this::addParty));
+		partyButtons.add(button("New…", this::newParty));
+		partyButtons.add(button("Edit…", this::editParty));
 		partyButtons.add(button("Colour…", this::chooseColour));
 		partyButtons.add(button("Remove", this::removeParty));
 		parties.add(partyButtons);
@@ -384,16 +410,33 @@ public class SeatingPanel extends JPanel
 		return row < 0 ? null : guests.parties().get(row);
 	}
 
-	private void addParty()
+	private void leadStays(Guest g)
+	{
+		JOptionPane.showMessageDialog(this, g.getName() + " leads " + g.getParty().getName()
+				+ " and stays in it.", "Party", JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	private void newParty()
 	{
 		stopEditing();
-		Party p = guests.addParty("Party " + (guests.parties().size() + 1));
+		Party p = PartyDialog.show(this, guests, null);
+		if (p == null) return;
 		refresh();
 		listener.guestsChanged();
 		int row = guests.parties().indexOf(p);
 		partyTable.setRowSelectionInterval(row, row);
-		partyTable.editCellAt(row, 1);
-		partyTable.getEditorComponent().requestFocusInWindow();
+	}
+
+	private void editParty()
+	{
+		Party p = selectedParty();
+		if (p == null) return;
+		stopEditing();
+		if (PartyDialog.show(this, guests, p) == null) return;
+		refresh();
+		listener.guestsChanged();
+		int row = guests.parties().indexOf(p);
+		partyTable.setRowSelectionInterval(row, row);
 	}
 
 	private void chooseColour()
@@ -410,11 +453,12 @@ public class SeatingPanel extends JPanel
 	{
 		Party p = selectedParty();
 		if (p == null) return;
-		int members = guests.membersOf(p);
-		if (members > 0)
+		int named = guests.namedIn(p);
+		if (guests.placesOf(p) > 0)
 		{
 			int answer = JOptionPane.showConfirmDialog(this, "Remove the party " + p.getName() + "?\n"
-							+ "Its " + members + " guests stay on the guest list, in no party.",
+							+ "Its places not named yet go. Its " + named
+							+ (named == 1 ? " named guest stays" : " named guests stay") + " on the guest list, in no party.",
 					"Remove party", JOptionPane.OK_CANCEL_OPTION);
 			if (answer != JOptionPane.OK_OPTION) return;
 		}
@@ -463,7 +507,7 @@ public class SeatingPanel extends JPanel
 
 	private class PartyModel extends AbstractTableModel
 	{
-		private final String[] columns = { "", "Party", "Guests" };
+		private final String[] columns = { "", "Party", "Places", "Named" };
 
 		public int getRowCount() { return guests.parties().size(); }
 
@@ -478,18 +522,9 @@ public class SeatingPanel extends JPanel
 			{
 				case 0 -> p.getColour();
 				case 1 -> p.getName();
-				default -> guests.membersOf(p);
+				case 2 -> guests.placesOf(p);
+				default -> guests.namedIn(p);
 			};
-		}
-
-		public boolean isCellEditable(int row, int col) { return col == 1; }
-
-		public void setValueAt(Object value, int row, int col)
-		{
-			String name = value.toString().trim();
-			if (name.isEmpty()) return;
-			guests.parties().get(row).setName(name);
-			changed();
 		}
 	}
 
@@ -530,9 +565,12 @@ public class SeatingPanel extends JPanel
 			Guest g = rows.get(row);
 			switch (col)
 			{
-				case 0 -> g.setName(value.toString());
+				case 0 -> guests.rename(g, value.toString());
 				case 1 -> g.setGender((Gender) value);
-				case 2 -> g.setParty(value instanceof Party p ? p : null);
+				case 2 ->
+				{
+					if (!guests.setParty(g, value instanceof Party p ? p : null)) leadStays(g);
+				}
 				default -> { return; }
 			}
 			changed();
