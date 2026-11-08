@@ -64,10 +64,21 @@ public class OccasionDialogs
 	{
 		JTextField name = new JTextField(occasion.getName(), 28);
 		JTextField date = dateField(occasion.getDate());
+		JTextField from = new JTextField(occasion.getSender());
+		from.putClientProperty("JTextField.placeholderText", "Lydia and Isaac");
+		JTextField reply = new JTextField(occasion.getReplyTo());
+		reply.putClientProperty("JTextField.placeholderText", "lydia@example.com or 07700 900123");
+		JTextField code = new JTextField(occasion.getCountryCode());
 		JPanel form = form();
 		row(form, "Occasion", name);
 		row(form, "Date", date);
 		note(form, "These go at the top of the reports and in anything sent to the guests.");
+		form.add(heading("Messages to the guests"), "span 2, gaptop 10, growx");
+		row(form, "From", from);
+		row(form, "Reply to", reply);
+		row(form, "Phone country code", code);
+		note(form, "From signs the messages; Reply to says how to answer. The country code (44 for the UK) "
+				+ "turns numbers such as 07700 900123 into international ones for WhatsApp.");
 		while (true)
 		{
 			if (!ok(parent, form, "Occasion")) return false;
@@ -77,6 +88,9 @@ public class OccasionDialogs
 				LocalDate d = Occasion.parseDate(date.getText());
 				occasion.setName(name.getText());
 				occasion.setDate(d);
+				occasion.setSender(from.getText());
+				occasion.setReplyTo(reply.getText());
+				occasion.setCountryCode(code.getText());
 				return true;
 			} catch (IllegalArgumentException ex)
 			{

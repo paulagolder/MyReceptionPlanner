@@ -24,6 +24,11 @@ public class Occasion
 	private LocalDate date;  // null if not set
 	private final GuestList guests;
 	private final List<Event> events = new ArrayList<>();
+	private String sender = "";        // who messages are from, "Lydia and Isaac"
+	private String replyTo = "";       // how to reply, "lydia@example.com or 07700 900123"
+	private String countryCode = "44"; // for making phone numbers international (WhatsApp)
+	private final List<MessageTemplate> templates = Messages.standard();
+	private final List<Messages.Sent> sent = new ArrayList<>();
 	// guests whose invitations have been settled; anyone else is new
 	private final Set<Guest> settled = Collections.newSetFromMap(new IdentityHashMap<>());
 
@@ -42,6 +47,43 @@ public class Occasion
 	public void setDate(LocalDate date) { this.date = date; }
 
 	public GuestList getGuests() { return guests; }
+
+	public String getSender() { return sender; }
+
+	public void setSender(String sender) { this.sender = sender == null ? "" : sender.strip(); }
+
+	public String getReplyTo() { return replyTo; }
+
+	public void setReplyTo(String replyTo) { this.replyTo = replyTo == null ? "" : replyTo.strip(); }
+
+	public String getCountryCode() { return countryCode; }
+
+	public void setCountryCode(String code)
+	{
+		String digits = code == null ? "" : code.replaceAll("\\D", "");
+		countryCode = digits.isEmpty() ? "44" : digits;
+	}
+
+	// the message templates; change the list directly
+	public List<MessageTemplate> templates() { return templates; }
+
+	// the messages prepared so far, oldest first
+	public List<Messages.Sent> sent() { return sent; }
+
+	public void logSent(Party party, String what, String how, Event event)
+	{
+		sent.add(new Messages.Sent(party, java.time.LocalDateTime.now().withNano(0), what, how,
+				event == null ? "" : event.getName()));
+	}
+
+	// the last time this message went to the party, or null
+	public Messages.Sent lastSent(Party party, String what)
+	{
+		Messages.Sent last = null;
+		for (Messages.Sent s : sent)
+			if (s.party() == party && (what == null || s.what().equals(what))) last = s;
+		return last;
+	}
 
 	public List<Event> events() { return Collections.unmodifiableList(events); }
 
@@ -112,6 +154,7 @@ public class Occasion
 		}
 		settled.addAll(fresh);
 		settled.retainAll(guests.guests());
+		sent.removeIf(s -> !guests.parties().contains(s.party()));
 		for (Event e : events)
 			e.tidy(guests);
 	}

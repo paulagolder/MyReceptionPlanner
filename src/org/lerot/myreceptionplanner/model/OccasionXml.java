@@ -19,11 +19,21 @@ import java.time.format.DateTimeParseException;
  * An occasion is a folder. occasion.xml holds its name and date, the guest
  * list (see GuestXml) and the files of its events in order:
  *
- *   <occasion name="Lydia and Isaac's Wedding" date="2026-05-12">
+ *   <occasion name="Lydia and Isaac's Wedding" date="2026-05-12"
+ *             from="Lydia and Isaac" reply="lydia@example.com" countrycode="44">
  *     <event file="wedding-breakfast.xml"/>
  *     <event file="evening-reception.xml"/>
  *     <guests> ... </guests>
+ *     <templates>
+ *       <template name="Invitation" subject="{occasion}: an invitation">
+ *         <line t="Dear {leadfirst},"/><line t=""/> ...
+ *       </template>
+ *     </templates>
+ *     <sent party="3" when="2026-11-08T16:05" what="Invitation" how="email" event=""/>
  *   </occasion>
+ *
+ * from, reply and countrycode are for messages to the guests; a template's
+ * text is kept a line at a time; sent records each message prepared.
  *
  * Each event's file holds where and when it is, the ids of the guests it
  * invites, its tables (see PlanXml) and who sits where, by guest id, table id and chair (counted from 1 as in the
@@ -64,9 +74,26 @@ public class OccasionXml
 		Document doc = DocumentHelper.createDocument();
 		Element root = doc.addElement("occasion").addAttribute("name", occasion.getName());
 		if (occasion.getDate() != null) root.addAttribute("date", occasion.getDate().toString());
+		if (!occasion.getSender().isEmpty()) root.addAttribute("from", occasion.getSender());
+		if (!occasion.getReplyTo().isEmpty()) root.addAttribute("reply", occasion.getReplyTo());
+		root.addAttribute("countrycode", occasion.getCountryCode());
 		for (Event e : occasion.events())
 			root.addElement("event").addAttribute("file", e.getFile());
 		GuestXml.write(occasion.getGuests(), root);
+		Element templates = root.addElement("templates");
+		for (MessageTemplate t : occasion.templates())
+		{
+			Element te = templates.addElement("template").addAttribute("name", t.getName())
+					.addAttribute("subject", t.getSubject());
+			for (String line : t.getBody().split("\n", -1))
+				te.addElement("line").addAttribute("t", line);  // an attribute keeps leading spaces
+		}
+		for (Messages.Sent s : occasion.sent())
+		{
+			root.addElement("sent").addAttribute("party", Integer.toString(s.party().getId()))
+					.addAttribute("when", s.when().toString()).addAttribute("what", s.what())
+					.addAttribute("how", s.how()).addAttribute("event", s.event());
+		}
 		Files.createDirectories(folder);
 		write(doc, folder.resolve(FILE));
 		for (Event e : occasion.events())
@@ -127,6 +154,33 @@ public class OccasionXml
 		GuestList guests = GuestXml.read(root.element("guests"));
 		Occasion occasion = new Occasion(root.attributeValue("name", folder.getFileName().toString()), guests);
 		occasion.setDate(date(root, FILE));
+		occasion.setSender(root.attributeValue("from"));
+		occasion.setReplyTo(root.attributeValue("reply"));
+		occasion.setCountryCode(root.attributeValue("countrycode"));
+		Element te = root.element("templates");
+		if (te != null)
+		{
+			occasion.templates().clear();
+			for (Element t : te.elements("template"))
+			{
+				String body = String.join("\n", t.elements("line").stream().map(l -> l.attributeValue("t", "")).toList());
+				occasion.templates().add(new MessageTemplate(t.attributeValue("name"), t.attributeValue("subject"), body));
+			}
+		}
+		for (Element s : root.elements("sent"))
+		{
+			int id = PlanXml.number(s, "party", 0);
+			guests.parties().stream().filter(p -> p.getId() == id).findFirst().ifPresent(p ->
+			{
+				try
+				{
+					occasion.sent().add(new Messages.Sent(p, java.time.LocalDateTime.parse(s.attributeValue("when")),
+							s.attributeValue("what", ""), s.attributeValue("how", ""), s.attributeValue("event", "")));
+				} catch (java.time.format.DateTimeParseException ignored)
+				{
+				}
+			});
+		}
 		for (Element ee : root.elements("event"))
 		{
 			String file = ee.attributeValue("file", "");

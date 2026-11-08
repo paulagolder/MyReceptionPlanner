@@ -238,6 +238,38 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 - With a table selected: arrow keys nudge it, R / Shift+R turn it, Delete removes it.
 - Ctrl + mouse wheel, or Zoom in / Zoom out, zooms.
 
+### Messages to the guests
+
+Messages go to each party's lead, from the details in **Occasion ▾ →
+Occasion details…**: *From* signs them ("Lydia and Isaac"), *Reply to* says
+how to answer, and the *phone country code* (44) turns 07700 900123 into an
+international number for WhatsApp.
+
+- **Messages ▾ → Message templates…**: each message has a name, a subject
+  and its text, with fill-ins in braces completed for each party:
+  `{lead}` `{leadfirst}` `{party}` `{guests}` ("Ann Smith, Bob Smith and a
+  guest") `{places}` `{occasion}` `{date}` `{events}` (a line for each event
+  the party is invited to) `{event}` `{eventplace}` `{eventwhen}` `{seats}`
+  (where each of the party sits at the event chosen) `{menu}` `{missing}`
+  (names of +1s, dietary needs and menu choices still needed, or thanks if
+  nothing is) `{from}` `{reply}`. A new occasion comes with *Invitation*,
+  *Request for details*, *Reminder* and *Table and arrangements*; change
+  them, copy them or add more.
+- **Messages ▾ → Write to guests…**: choose the message, the event its event
+  fill-ins speak of, and which parties to show (all, invited to the event,
+  with details missing, or not yet sent this message). Each party's message
+  is shown completed, with ticks for whether the lead has an email, a
+  WhatsApp or mobile number and an address, and when this message last went
+  to them. For the ticked parties (or the one chosen):
+  - **Email…** opens a ready-written email for each in your mail program;
+  - **WhatsApp…** opens WhatsApp (app or web) with the message for each;
+  - **Letters (PDF)…** makes a letter for each, dated, from you and addressed
+    to the lead;
+  - **Address labels (PDF)…** makes labels, 21 to an A4 sheet (L7160).
+
+  You check and send each email or WhatsApp yourself; each is noted against
+  the party as last sent, with how.
+
 ### Reports
 
 **Reports ▾** on the toolbar (in either mode):
@@ -265,7 +297,9 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 
 Each occasion is a folder (by default under `~/Documents/MyReceptions`):
 
-- `occasion.xml`: the occasion's name and date, its list of events, and the
+- `occasion.xml`: the occasion's name and date, who messages are from and
+  how to reply, the message templates and a log of messages sent, its list
+  of events, and the
   guest list: the parties, their leads and contact details, their guests
   and their dietary needs,
   and pairs of guests with names alike who are different people

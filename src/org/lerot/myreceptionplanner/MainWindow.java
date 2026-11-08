@@ -168,6 +168,16 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		reports.addSeparator();
 		reports.add("Table plan (PDF)…").addActionListener(e -> tablePlanPdf());
 		bar.add(dropDown("Reports", reports));
+		JPopupMenu messages = new JPopupMenu();
+		messages.add("Write to guests…").addActionListener(e ->
+		{
+			if (MessagesDialog.show(this, occasion, event, this::choosePdf, this::open)) changed();
+		});
+		messages.add("Message templates…").addActionListener(e ->
+		{
+			if (TemplatesDialog.edit(this, occasion)) changed();
+		});
+		bar.add(dropDown("Messages", messages));
 		bar.addSeparator();
 		bar.add(button("Zoom in", () -> planPanel.zoom(1.2)));
 		bar.add(button("Zoom out", () -> planPanel.zoom(1 / 1.2)));
