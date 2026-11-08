@@ -67,27 +67,40 @@ public class Plan
 	 */
 	public void renumber()
 	{
-		List<Table> numbered = new ArrayList<>();
+		int next = 1;
 		for (Table t : tables)
 		{
-			if (t.isNumbered()) numbered.add(t);
-			else t.setNumber(0);
+			if (!t.isNumbered()) t.setNumber(0);
 		}
-		numbered.sort(Comparator.comparingDouble(Table::getY));
-		int next = 1;
-		int start = 0;
-		while (start < numbered.size())
+		for (List<Table> row : rows(tables.stream().filter(Table::isNumbered).toList()))
 		{
-			// a row: the tables not much lower than its topmost
-			double top = numbered.get(start).getY();
-			int end = start;
-			while (end < numbered.size() && numbered.get(end).getY() - top <= ROW_DEPTH) end++;
-			List<Table> row = new ArrayList<>(numbered.subList(start, end));
-			row.sort(Comparator.comparingDouble(Table::getX));
 			for (Table t : row)
 				t.setNumber(next++);
+		}
+	}
+
+	// all the tables in rows, as renumber sees them
+	public List<List<Table>> rows() { return rows(tables); }
+
+	// in rows from the top down, each left to right: a row is the tables not
+	// much lower than its topmost
+	private static List<List<Table>> rows(List<Table> these)
+	{
+		List<Table> byDepth = new ArrayList<>(these);
+		byDepth.sort(Comparator.comparingDouble(Table::getY));
+		List<List<Table>> rows = new ArrayList<>();
+		int start = 0;
+		while (start < byDepth.size())
+		{
+			double top = byDepth.get(start).getY();
+			int end = start;
+			while (end < byDepth.size() && byDepth.get(end).getY() - top <= ROW_DEPTH) end++;
+			List<Table> row = new ArrayList<>(byDepth.subList(start, end));
+			row.sort(Comparator.comparingDouble(Table::getX));
+			rows.add(row);
 			start = end;
 		}
+		return rows;
 	}
 
 	// gives the next number up to any table going by its number that has

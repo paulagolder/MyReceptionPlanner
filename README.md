@@ -10,7 +10,28 @@ the table plan, a list for each table and a place card for each guest.
 
 ## Using it
 
-The app works in two modes, chosen at the left of the toolbar:
+### Occasions and events
+
+The **occasion** is the whole celebration, such as *Lydia and Isaac's
+Wedding* on *12 May 2026*. It has one guest list (the parties, their leads
+and contact details) shared by its **events**, such as the *Wedding
+Breakfast* at *The Old Barn, Lichfield* at *2pm* and the *Evening
+Reception*. Each event has its own tables and its own seating, so a guest
+can sit in one place at the breakfast and another in the evening. These
+names, places, dates and times head the reports and anything sent to the
+guests.
+
+On the right of the toolbar:
+
+- **Event** chooses which event's tables and seating are shown.
+- **Occasion ▾** → *Occasion details…* (name and date), *Event details…*
+  (name, place, date and time; leave the date empty if it is on the
+  occasion's day), *New event…* (starting with an empty room or a copy of
+  another event's tables), *Delete this event…*, *New occasion…* and
+  *Open occasion…*.
+- **Save…** saves the whole occasion.
+
+The plan works in two modes, chosen at the left of the toolbar:
 
 - **Layout**: set out the tables (below).
 - **Seating**: seat the guests. The tables stay put; click a table, or one of
@@ -91,28 +112,42 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 - With a table selected: arrow keys nudge it, R / Shift+R turn it, Delete removes it.
 - Ctrl + mouse wheel, or Zoom in / Zoom out, zooms.
 
-### Checking the plan
+### Reports
 
-**Check…** on the toolbar (in either mode) lists what is still to settle:
+**Reports ▾** on the toolbar (in either mode):
 
-- **Spare places**: each table with seats free, how many, and out of how
-  many usable seats (disabled seats don't count). The head table comes
-  first, then the numbered tables, then those with names of their own.
-- **Guests not seated**: each party with guests still to seat, how many, and
-  out of its places; guests in no party are listed together.
+- **Table plan (PDF)…**: one page to print and put up, with a panel for each
+  table where it stands in the room, its number or name at the top and its
+  guests in seat order (empty seats left out; places not named yet, such as
+  *Ann Smith+1*, in grey italics). The panels follow the same rows as
+  Renumber tables, so after renumbering they read in number order. It is
+  headed with the occasion and its date, then the event with its place and
+  time. Choose the paper (A4 to A1) and the orientation; the type is made as
+  large as fits. It is saved as `table-plan-<event>.pdf` in the occasion's
+  folder unless you choose otherwise, and opened.
+- **Check…** lists what is still to settle at the event shown:
 
-**Save…** saves both files. It shows the folder they'll go in and asks before writing. Choose
-another folder there to save somewhere else, for example a copy under a new
-name; from then on the plan saves to that folder. A new plan asks for a folder
-first. When closing or opening another event with unsaved changes, you're asked
-whether to save them to the current folder.
+  - **Spare places**: each table with seats free, how many, and out of how
+    many usable seats (disabled seats don't count). The head table comes
+    first, then the numbered tables, then those with names of their own.
+  - **Guests not seated**: each party with guests still to seat, how many,
+    and out of its places; guests in no party are listed together.
 
-Each reception is a folder (by default under `~/Documents/MyReceptions`)
-holding its files:
+### Files
 
-- `tables.xml`: the tables, their shapes, positions and turns, seat 1 and
-  any disabled chairs
-- `guests.xml`: the parties, their leads and contact details, their guests
-  and each guest's seat
+Each occasion is a folder (by default under `~/Documents/MyReceptions`):
+
+- `occasion.xml`: the occasion's name and date, its list of events, and the
+  guest list: the parties, their leads and contact details, and their guests
+- one file for each event, named after it when it was made (such as
+  `wedding-breakfast.xml`): its name, place, date and time, its tables
+  (shapes, positions, turns, numbers, seat 1 and disabled chairs) and who
+  sits where
+
+**Save…** shows the folder it will save in and asks before writing. Choose
+another folder there to save a copy somewhere else; from then on the occasion
+saves to that folder. A new occasion asks for a folder the first time it is
+saved. When closing or opening another occasion with unsaved changes, you're
+asked whether to save them.
 
 A rectangular table has *N* places along each long side and *M* at each end.

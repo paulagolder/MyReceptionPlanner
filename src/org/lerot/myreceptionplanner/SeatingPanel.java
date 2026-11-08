@@ -1,12 +1,15 @@
 package org.lerot.myreceptionplanner;
 
 import net.miginfocom.swing.MigLayout;
+import org.lerot.myreceptionplanner.model.Event;
 import org.lerot.myreceptionplanner.model.Gender;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
+import org.lerot.myreceptionplanner.model.Occasion;
 import org.lerot.myreceptionplanner.model.Party;
 import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.Seat;
+import org.lerot.myreceptionplanner.model.Seating;
 import org.lerot.myreceptionplanner.model.Table;
 
 import javax.swing.*;
@@ -48,8 +51,10 @@ public class SeatingPanel extends JPanel
 	private static final Icon BLANK = new ImageIcon(new java.awt.image.BufferedImage(ICON, ICON,
 			java.awt.image.BufferedImage.TYPE_INT_ARGB));  // keeps empty seats' numbers in line
 
+	private final Occasion occasion;
 	private final Plan plan;
 	private final GuestList guests;
+	private final Seating seating;
 	private final Listener listener;
 	private Table table;      // the table whose seats are listed
 	private Party lastParty;  // given to a new guest put in an empty seat
@@ -66,11 +71,13 @@ public class SeatingPanel extends JPanel
 	private final JComboBox<Object> seatPartyCombo = new JComboBox<>();
 	private final JComboBox<Object> guestPartyCombo = new JComboBox<>();
 
-	public SeatingPanel(Plan plan, GuestList guests, Listener listener)
+	public SeatingPanel(Occasion occasion, Event event, Listener listener)
 	{
 		super(new BorderLayout());
-		this.plan = plan;
-		this.guests = guests;
+		this.occasion = occasion;
+		this.plan = event.getPlan();
+		this.guests = occasion.getGuests();
+		this.seating = event.getSeating();
 		this.listener = listener;
 		setPreferredSize(new Dimension(380, 0));
 		setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, Theme.GRID));
@@ -147,7 +154,7 @@ public class SeatingPanel extends JPanel
 			return;
 		}
 		tableTitle.setText("<html><b>" + escape(plan.label(table)) + "</b>&nbsp;&nbsp;"
-				+ guests.seatedAt(table.getId()).size() + " of " + table.usablePlaces() + " seats taken</html>");
+				+ seating.seatedAt(table.getId()).size() + " of " + table.usablePlaces() + " seats taken</html>");
 	}
 
 	// ---- the Table tab ----
@@ -194,7 +201,7 @@ public class SeatingPanel extends JPanel
 		JPopupMenu menu = new JPopupMenu();
 
 		JMenu seatSomeone = new JMenu(there == null ? "Seat a guest" : "Seat another guest here");
-		List<Guest> waiting = guests.unseated().stream()
+		List<Guest> waiting = seating.unseated(guests.guests()).stream()
 				.sorted(Comparator.comparing((Guest g) -> g.getParty() == null ? "￿" : g.getParty().getName())
 						.thenComparing(Guest::displayName))
 				.toList();
@@ -203,7 +210,7 @@ public class SeatingPanel extends JPanel
 			JMenuItem item = new JMenuItem(g.displayName(), Marks.icon(g.getGender(), GuestList.colourOf(g), ICON));
 			item.addActionListener(a ->
 			{
-				guests.seat(g, seat);
+				seating.seat(g, seat);
 				changed();
 			});
 			seatSomeone.add(item);
@@ -220,7 +227,7 @@ public class SeatingPanel extends JPanel
 		{
 			menu.add("Clear seat (back to the guest list)").addActionListener(a ->
 			{
-				guests.unseat(there);
+				seating.unseat(there);
 				changed();
 			});
 			menu.add("Remove guest").addActionListener(a -> removeGuest(there));
@@ -244,6 +251,7 @@ public class SeatingPanel extends JPanel
 			if (answer != JOptionPane.OK_OPTION) return;
 		}
 		guests.removeGuest(g);
+		occasion.tidy();
 		changed();
 	}
 
@@ -262,7 +270,7 @@ public class SeatingPanel extends JPanel
 
 		Guest guestAt(int row)
 		{
-			return table == null ? null : guests.guestAt(table.getId(), chairAt(row)).orElse(null);
+			return table == null ? null : seating.guestAt(table.getId(), chairAt(row)).orElse(null);
 		}
 
 		public Object getValueAt(int row, int col)
@@ -296,7 +304,7 @@ public class SeatingPanel extends JPanel
 					if (g == null)
 					{
 						g = guests.addGuest(name, Gender.UNKNOWN, lastParty);
-						guests.seat(g, seat);
+						seating.seat(g, seat);
 					} else guests.rename(g, name);
 				}
 				case 2 ->
@@ -325,11 +333,11 @@ public class SeatingPanel extends JPanel
 		// numbered; if all are seated, a new place in the party
 		private Guest seatOneOf(Party p, Seat seat)
 		{
-			Guest g = guests.unseated().stream()
+			Guest g = seating.unseated(guests.guests()).stream()
 					.filter(u -> u.getParty() == p && p != null)
 					.min(Comparator.comparing(Guest::isNamed).thenComparingInt(Guest::getPlus))
 					.orElseGet(() -> guests.addGuest("", Gender.UNKNOWN, p));
-			guests.seat(g, seat);
+			seating.seat(g, seat);
 			return g;
 		}
 	}
@@ -419,7 +427,7 @@ public class SeatingPanel extends JPanel
 	private void newParty()
 	{
 		stopEditing();
-		Party p = PartyDialog.show(this, guests, null);
+		Party p = PartyDialog.show(this, occasion, null);
 		if (p == null) return;
 		refresh();
 		listener.guestsChanged();
@@ -432,7 +440,7 @@ public class SeatingPanel extends JPanel
 		Party p = selectedParty();
 		if (p == null) return;
 		stopEditing();
-		if (PartyDialog.show(this, guests, p) == null) return;
+		if (PartyDialog.show(this, occasion, p) == null) return;
 		refresh();
 		listener.guestsChanged();
 		int row = guests.parties().indexOf(p);
@@ -463,6 +471,7 @@ public class SeatingPanel extends JPanel
 			if (answer != JOptionPane.OK_OPTION) return;
 		}
 		guests.removeParty(p);
+		occasion.tidy();
 		changed();
 	}
 
@@ -485,11 +494,12 @@ public class SeatingPanel extends JPanel
 
 	private void findSeat(Guest g)
 	{
-		if (!g.isSeated()) return;
-		plan.find(g.getSeat().tableId()).ifPresent(t ->
+		Seat s = seating.seatOf(g);
+		if (s == null) return;
+		plan.find(s.tableId()).ifPresent(t ->
 		{
-			showTable(t, g.getSeat().chair());
-			listener.seatSelected(t, g.getSeat().chair());
+			showTable(t, s.chair());
+			listener.seatSelected(t, s.chair());
 		});
 	}
 
@@ -500,8 +510,8 @@ public class SeatingPanel extends JPanel
 
 	private String seatOf(Guest g)
 	{
-		if (!g.isSeated()) return "";
-		Seat s = g.getSeat();
+		Seat s = seating.seatOf(g);
+		if (s == null) return "";
 		return plan.find(s.tableId()).map(t -> plan.label(t) + ", seat " + t.seatNumber(s.chair())).orElse("");
 	}
 
@@ -535,7 +545,7 @@ public class SeatingPanel extends JPanel
 
 		void reload()
 		{
-			rows = unseatedOnly.isSelected() ? guests.unseated() : guests.guests();
+			rows = unseatedOnly.isSelected() ? seating.unseated(guests.guests()) : guests.guests();
 			fireTableDataChanged();
 		}
 

@@ -181,12 +181,10 @@ class TableTest
 	@Test
 	void loadingAHeadTableKeepsTheSeatsAsSaved() throws Exception
 	{
-		java.nio.file.Path file = java.nio.file.Files.createTempFile("tables", ".xml");
-		java.nio.file.Files.writeString(file, "<tables><table id=\"1\" shape=\"rectangle\" "
-				+ "sideplaces=\"3\" endplaces=\"0\" head=\"true\" disabled=\"4\"/></tables>");
-		Table t = PlanXml.load(file).find(1).orElseThrow();
+		org.dom4j.Element tables = org.dom4j.DocumentHelper.parseText("<tables><table id=\"1\" shape=\"rectangle\" "
+				+ "sideplaces=\"3\" endplaces=\"0\" head=\"true\" disabled=\"4\"/></tables>").getRootElement();
+		Table t = PlanXml.read(tables).find(1).orElseThrow();
 		assertEquals(java.util.Set.of(3), t.getDisabledSeats());
-		java.nio.file.Files.delete(file);
 	}
 
 	@Test

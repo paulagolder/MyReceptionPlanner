@@ -3,6 +3,7 @@ package org.lerot.myreceptionplanner;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
 import org.lerot.myreceptionplanner.model.Plan;
+import org.lerot.myreceptionplanner.model.Seating;
 import org.lerot.myreceptionplanner.model.Table;
 
 import javax.swing.*;
@@ -52,7 +53,7 @@ public class PlanPanel extends JPanel
 	private static final double NUDGE = 10;
 
 	private final Plan plan;
-	private final GuestList guests;
+	private final Seating seating;
 	private final Listener listener;
 	private Mode mode = Mode.LAYOUT;
 	private int chosenChair = -1;  // in seating mode, at the selected table
@@ -65,10 +66,10 @@ public class PlanPanel extends JPanel
 	private Point2D grabOffset;
 	private boolean dragged;
 
-	public PlanPanel(Plan plan, GuestList guests, Listener listener)
+	public PlanPanel(Plan plan, Seating seating, Listener listener)
 	{
 		this.plan = plan;
-		this.guests = guests;
+		this.seating = seating;
 		this.listener = listener;
 		setBackground(Theme.PAGE);
 		setFocusable(true);
@@ -236,7 +237,7 @@ public class PlanPanel extends JPanel
 		{
 			Point2D f = t.seatOnFloor(i);
 			double x = f.getX() * scale, y = f.getY() * scale;
-			Optional<Guest> guest = guests.guestAt(t.getId(), i);
+			Optional<Guest> guest = seating.guestAt(t.getId(), i);
 			if (guest.isPresent())
 				Marks.paint(g, guest.get().getGender(), GuestList.colourOf(guest.get()), x, y, r * 0.55);
 			else if (mode == Mode.SEATING && !t.isDisabled(i))
@@ -448,7 +449,7 @@ public class PlanPanel extends JPanel
 			makeFirst.setEnabled(!first);
 			makeFirst.addActionListener(a -> seatChanged(() -> t.setFirstSeat(chair)));
 			boolean off = t.isDisabled(chair);
-			boolean taken = guests.guestAt(t.getId(), chair).isPresent();
+			boolean taken = seating.guestAt(t.getId(), chair).isPresent();
 			JMenuItem disable = menu.add(off ? "Enable this seat" : "Disable this seat");
 			disable.setEnabled(!first && !taken);
 			if (first) disable.setToolTipText("Seat 1 cannot be disabled");

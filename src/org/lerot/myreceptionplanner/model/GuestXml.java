@@ -1,25 +1,17 @@
 package org.lerot.myreceptionplanner.model;
 
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.dom4j.io.OutputFormat;
-import org.dom4j.io.SAXReader;
-import org.dom4j.io.XMLWriter;
 
 import java.awt.Color;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 /*
- * Reads and writes guests.xml:
+ * Reads and writes the occasion's guest list, within occasion.xml (see
+ * OccasionXml):
  *
  *   <guests>
  *     <party id="1" name="Smith family" colour="#1F77B4" lead="1">
- *       <guest id="1" name="Ann Smith" gender="f" table="2" chair="4">
+ *       <guest id="1" name="Ann Smith" gender="f">
  *         <contact source="MyContacts" phone="01234 567890" mobile="07700 900123"
  *                  whatsapp="07700 900123" email="ann@example.com">
  *           <address><line>1 High Street</line><line>Lichfield</line></address>
@@ -31,20 +23,15 @@ import java.nio.file.Path;
  *   </guests>
  *
  * gender is f, m or u (not known). lead is the id of the party's lead guest;
- * a party without a name of its own goes by the lead's.
- * A guest with no name is a place kept for one of the party, shown as the
- * lead's name +plus. table and chair give their seat, the chair counted as in
- * tables.xml (clockwise from 1 at the table's starting chair); a guest
- * outside any party sits directly under guests.
+ * a party without a name of its own goes by the lead's. A guest with no name
+ * is a place kept for one of the party, shown as the lead's name +plus. A
+ * guest outside any party sits directly under guests.
  */
 public class GuestXml
 {
-	public static final String FILE = "guests.xml";
-
-	public static void save(GuestList list, Path file) throws IOException
+	public static void write(GuestList list, Element parent)
 	{
-		Document doc = DocumentHelper.createDocument();
-		Element root = doc.addElement("guests");
+		Element root = parent.addElement("guests");
 		for (Party p : list.parties())
 		{
 			Element pe = root.addElement("party").addAttribute("id", Integer.toString(p.getId()));
@@ -60,13 +47,6 @@ public class GuestXml
 		{
 			if (g.getParty() == null) addGuest(root, g);
 		}
-		Files.createDirectories(file.toAbsolutePath().getParent());
-		try (OutputStream out = Files.newOutputStream(file))
-		{
-			XMLWriter writer = new XMLWriter(out, OutputFormat.createPrettyPrint());
-			writer.write(doc);
-			writer.flush();
-		}
 	}
 
 	private static void addGuest(Element parent, Guest g)
@@ -75,11 +55,6 @@ public class GuestXml
 		if (g.isNamed()) e.addAttribute("name", g.getName());
 		e.addAttribute("gender", g.getGender().code());
 		if (g.isPlaceholder()) e.addAttribute("plus", Integer.toString(g.getPlus()));
-		if (g.isSeated())
-		{
-			e.addAttribute("table", Integer.toString(g.getSeat().tableId()));
-			e.addAttribute("chair", Integer.toString(g.getSeat().chair() + 1));
-		}
 		Contact c = g.getContact();
 		if (!c.isEmpty())
 		{
@@ -98,18 +73,10 @@ public class GuestXml
 		}
 	}
 
-	public static GuestList load(Path file) throws IOException
+	public static GuestList read(Element root) throws IOException
 	{
-		Document doc;
-		try
-		{
-			doc = new SAXReader().read(file.toFile());
-		} catch (DocumentException e)
-		{
-			throw new IOException(file + " is not a readable guest list: " + e.getMessage(), e);
-		}
 		GuestList list = new GuestList();
-		Element root = doc.getRootElement();
+		if (root == null) return list;
 		for (Element pe : root.elements("party"))
 		{
 			int id = PlanXml.number(pe, "id", 0);
@@ -133,7 +100,6 @@ public class GuestXml
 		}
 		for (Element ge : root.elements("guest"))
 			list.addGuest(guest(ge, null));
-		list.fillInParties();
 		return list;
 	}
 
@@ -141,9 +107,6 @@ public class GuestXml
 	{
 		Guest g = new Guest(PlanXml.number(e, "id", 0), e.attributeValue("name", ""),
 				Gender.fromCode(e.attributeValue("gender", "u")), party);
-		int table = PlanXml.number(e, "table", 0);
-		int chair = PlanXml.number(e, "chair", 0);
-		if (table > 0 && chair > 0) g.setSeat(new Seat(table, chair - 1));
 		if (g.isPlaceholder()) g.setPlus(PlanXml.number(e, "plus", 0));
 		Element ce = e.element("contact");
 		if (ce != null)

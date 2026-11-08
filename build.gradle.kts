@@ -41,6 +41,7 @@ dependencies {
     implementation("com.miglayout:miglayout-swing:11.5.1")  // form layouts
     implementation("org.dom4j:dom4j:2.2.0")                 // tables.xml, guests.xml
     implementation("org.xerial:sqlite-jdbc:3.53.4.0")       // reading MyContacts' database
+    implementation("com.itextpdf:itextpdf:5.5.13.6")        // PDF reports, as in MyContacts
 
     // JUnit, for the tests only
     testImplementation(platform("org.junit:junit-bom:6.1.3"))

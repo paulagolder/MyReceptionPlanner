@@ -23,12 +23,13 @@ class ChecksTest
 		named.setName("Smith family");
 		plan.renumber();
 		GuestList guests = new GuestList();
-		guests.seat(guests.addGuest("A", null, null), new Seat(1, 0));
-		guests.seat(guests.addGuest("B", null, null), new Seat(3, 0));
-		guests.seat(guests.addGuest("C", null, null), new Seat(3, 1));  // table 3 full
-		guests.seat(guests.addGuest("D", null, null), new Seat(2, 0));
+		Seating seating = new Seating();
+		seating.seat(guests.addGuest("A", null, null), new Seat(1, 0));
+		seating.seat(guests.addGuest("B", null, null), new Seat(3, 0));
+		seating.seat(guests.addGuest("C", null, null), new Seat(3, 1));  // table 3 full
+		seating.seat(guests.addGuest("D", null, null), new Seat(2, 0));
 
-		List<Checks.SpareSeats> spare = Checks.spareSeats(plan, guests);
+		List<Checks.SpareSeats> spare = Checks.spareSeats(plan, seating);
 		assertEquals(List.of("Head table", "Table 2", "Smith family"), spare.stream().map(Checks.SpareSeats::label).toList());
 		assertEquals(List.of(1, 3, 3), spare.stream().map(Checks.SpareSeats::spare).toList());
 		assertEquals(1, one.getNumber());
@@ -41,11 +42,12 @@ class ChecksTest
 		GuestList guests = new GuestList();
 		Party smiths = guests.createParty("Ann Smith", 3, "");
 		Party joneses = guests.createParty("Cath Jones", 2, "");
-		guests.seat(smiths.getLead(), new Seat(1, 0));
-		guests.membersOf(joneses).forEach(g -> guests.seat(g, new Seat(2, g.getPlus())));
+		Seating seating = new Seating();
+		seating.seat(smiths.getLead(), new Seat(1, 0));
+		guests.membersOf(joneses).forEach(g -> seating.seat(g, new Seat(2, g.getPlus())));
 		guests.addGuest("Father Brown", Gender.MALE, null);
 
-		List<Checks.Unseated> u = Checks.unseated(guests);
+		List<Checks.Unseated> u = Checks.unseated(guests, seating);
 		assertEquals(2, u.size());
 		assertEquals("Ann Smith", u.get(0).name());
 		assertEquals(2, u.get(0).unseated());

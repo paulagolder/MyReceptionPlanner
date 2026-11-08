@@ -2,8 +2,8 @@ package org.lerot.myreceptionplanner;
 
 import net.miginfocom.swing.MigLayout;
 import org.lerot.myreceptionplanner.model.Checks;
-import org.lerot.myreceptionplanner.model.GuestList;
-import org.lerot.myreceptionplanner.model.Plan;
+import org.lerot.myreceptionplanner.model.Event;
+import org.lerot.myreceptionplanner.model.Occasion;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -12,15 +12,15 @@ import java.awt.*;
 import java.util.List;
 
 /*
- * The checks on the plan, side by side: tables with seats free, and parties
+ * The checks on an event, side by side: tables with seats free, and parties
  * with guests not yet seated, each with its total.
  */
 public class ChecksDialog
 {
-	public static void show(Component parent, Plan plan, GuestList guests)
+	public static void show(Component parent, Occasion occasion, Event event)
 	{
-		List<Checks.SpareSeats> spare = Checks.spareSeats(plan, guests);
-		List<Checks.Unseated> unseated = Checks.unseated(guests);
+		List<Checks.SpareSeats> spare = Checks.spareSeats(event.getPlan(), event.getSeating());
+		List<Checks.Unseated> unseated = Checks.unseated(occasion.getGuests(), event.getSeating());
 
 		JPanel p = new JPanel(new MigLayout("insets 0, wrap 2, gapx 20", "[grow,fill][grow,fill]", "[][grow,fill][]"));
 		int spareTotal = spare.stream().mapToInt(Checks.SpareSeats::spare).sum();
@@ -41,7 +41,7 @@ public class ChecksDialog
 				+ " in " + unseated.size() + (unseated.size() == 1 ? " party" : " parties")
 				+ " to seat"));
 
-		JOptionPane.showMessageDialog(parent, p, "Check the plan", JOptionPane.PLAIN_MESSAGE);
+		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}
 
 	private static JComponent heading(String text)

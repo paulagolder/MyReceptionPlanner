@@ -1,20 +1,11 @@
 package org.lerot.myreceptionplanner.model;
 
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.dom4j.io.OutputFormat;
-import org.dom4j.io.SAXReader;
-import org.dom4j.io.XMLWriter;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 /*
- * Reads and writes tables.xml:
+ * Reads and writes an event's tables, within its file (see OccasionXml):
  *
  *   <tables>
  *     <table id="1" number="1" shape="round" places="10" x="300" y="200" rotation="0"/>
@@ -24,9 +15,7 @@ import java.nio.file.Path;
  *   </tables>
  *
  * The id never changes. name is only there for a table with a name of its
- * own; the rest are called "Head table" or by their number. Files from
- * before then named every table "Table <id>"; such a name is read as none,
- * and as they have no numbers, the tables are numbered by where they stand.
+ * own; the rest are called "Head table" or by their number.
  *
  * Sizes and positions are whole centimetres, rotation whole degrees.
  * firstseat and disabled name chairs by counting clockwise from 1 at the
@@ -35,12 +24,9 @@ import java.nio.file.Path;
  */
 public class PlanXml
 {
-	public static final String FILE = "tables.xml";
-
-	public static void save(Plan plan, Path file) throws IOException
+	public static void write(Plan plan, Element parent)
 	{
-		Document doc = DocumentHelper.createDocument();
-		Element root = doc.addElement("tables");
+		Element root = parent.addElement("tables");
 		for (Table t : plan.tables())
 		{
 			Element e = root.addElement("table")
@@ -66,31 +52,15 @@ public class PlanXml
 				e.addAttribute("disabled", String.join(" ",
 						t.getDisabledSeats().stream().map(c -> Integer.toString(c + 1)).toList()));
 		}
-		Files.createDirectories(file.toAbsolutePath().getParent());
-		try (OutputStream out = Files.newOutputStream(file))
-		{
-			XMLWriter writer = new XMLWriter(out, OutputFormat.createPrettyPrint());
-			writer.write(doc);
-			writer.flush();
-		}
 	}
 
-	public static Plan load(Path file) throws IOException
+	public static Plan read(Element root) throws IOException
 	{
-		Document doc;
-		try
-		{
-			doc = new SAXReader().read(file.toFile());
-		} catch (DocumentException e)
-		{
-			throw new IOException(file + " is not a readable tables file: " + e.getMessage(), e);
-		}
 		Plan plan = new Plan();
-		for (Element e : doc.getRootElement().elements("table"))
+		for (Element e : root == null ? java.util.List.<Element>of() : root.elements("table"))
 		{
 			int id = number(e, "id", 0);
 			String name = e.attributeValue("name", "");
-			if (name.trim().matches("Table \\d+")) name = "";  // the old default
 			String shape = e.attributeValue("shape", RoundTable.SHAPE);
 			Table t = switch (shape)
 			{
@@ -113,8 +83,7 @@ public class PlanXml
 			}
 			plan.add(t);
 		}
-		if (plan.tables().stream().allMatch(t -> t.getNumber() == 0)) plan.renumber();
-		else plan.numberUnnumbered();
+		plan.numberUnnumbered();
 		return plan;
 	}
 

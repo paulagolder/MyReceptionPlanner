@@ -4,12 +4,10 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.function.Predicate;
 
-// The parties and guests of one reception, and where each guest sits
+// The parties and guests of an occasion; where they sit is kept by each event
 public class GuestList
 {
 	public static final Color NO_PARTY = new Color(0x8A8A8E);
@@ -41,7 +39,7 @@ public class GuestList
 		parties.add(p);
 		Guest lead = addGuest(leadName, Gender.UNKNOWN, p);
 		p.setLead(lead);
-		setPlaces(p, places);
+		setPlaces(p, places, g -> false);
 		return p;
 	}
 
@@ -73,10 +71,11 @@ public class GuestList
 
 	/*
 	 * Makes the party this many places, adding places not named yet or taking
-	 * them away: those not seated first, the highest numbered first. It cannot
-	 * go below the party's named guests. Returns the guests taken away.
+	 * them away: those not seated (at any event) first, the highest numbered
+	 * first. It cannot go below the party's named guests. Returns the guests
+	 * taken away; Occasion.tidy then takes away their seats.
 	 */
-	public List<Guest> setPlaces(Party party, int places)
+	public List<Guest> setPlaces(Party party, int places, Predicate<Guest> seated)
 	{
 		int named = namedIn(party);
 		if (places < named)
@@ -87,7 +86,7 @@ public class GuestList
 		if (members.size() <= places) return List.of();
 		List<Guest> going = members.stream()
 				.filter(g -> !g.isNamed())
-				.sorted(Comparator.comparing(Guest::isSeated).thenComparing(Comparator.comparingInt(Guest::getPlus).reversed()))
+				.sorted(Comparator.comparing((Guest g) -> seated.test(g)).thenComparing(Comparator.comparingInt(Guest::getPlus).reversed()))
 				.limit(members.size() - places)
 				.toList();
 		guests.removeAll(going);
@@ -142,84 +141,9 @@ public class GuestList
 		party.setLead(lead);
 	}
 
-	// for files from before leads and numbered places: the first named guest
-	// leads, and places not named get numbers
-	void fillInParties()
-	{
-		for (Party p : parties)
-		{
-			if (p.getLead() == null)
-				membersOf(p).stream().filter(Guest::isNamed).findFirst().ifPresent(p::setLead);
-			for (Guest g : membersOf(p))
-			{
-				if (g.isPlaceholder() && g.getPlus() == 0) g.setPlus(nextPlus(p));
-			}
-		}
-	}
-
 	private int nextPlus(Party party)
 	{
 		return guests.stream().filter(g -> g.getParty() == party).mapToInt(Guest::getPlus).max().orElse(0) + 1;
-	}
-
-	public Optional<Guest> guestAt(int tableId, int chair)
-	{
-		Seat seat = new Seat(tableId, chair);
-		return guests.stream().filter(g -> seat.equals(g.getSeat())).findFirst();
-	}
-
-	public List<Guest> seatedAt(int tableId)
-	{
-		return guests.stream().filter(g -> g.isSeated() && g.getSeat().tableId() == tableId).toList();
-	}
-
-	public List<Guest> unseated()
-	{
-		return guests.stream().filter(g -> !g.isSeated()).toList();
-	}
-
-	public int seatedCount()
-	{
-		return (int) guests.stream().filter(Guest::isSeated).count();
-	}
-
-	// whoever sat there goes back among the unseated
-	public void seat(Guest guest, Seat seat)
-	{
-		guestAt(seat.tableId(), seat.chair()).ifPresent(g -> g.setSeat(null));
-		guest.setSeat(seat);
-	}
-
-	public void unseat(Guest guest) { guest.setSeat(null); }
-
-	// returns how many were unseated
-	public int unseatTable(int tableId)
-	{
-		List<Guest> there = seatedAt(tableId);
-		there.forEach(g -> g.setSeat(null));
-		return there.size();
-	}
-
-	// unseats anyone whose table or chair is gone or whose chair is disabled,
-	// and all but the first of any sharing a chair; returns how many
-	public int tidy(Plan plan)
-	{
-		int count = 0;
-		Set<Seat> taken = new HashSet<>();
-		for (Guest g : guests)
-		{
-			Seat s = g.getSeat();
-			if (s == null) continue;
-			Optional<Table> t = plan.find(s.tableId());
-			boolean ok = t.isPresent() && s.chair() >= 0 && s.chair() < t.get().places()
-					&& !t.get().isDisabled(s.chair()) && taken.add(s);
-			if (!ok)
-			{
-				g.setSeat(null);
-				count++;
-			}
-		}
-		return count;
 	}
 
 	public static Color colourOf(Guest guest)

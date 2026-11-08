@@ -6,6 +6,7 @@ import org.lerot.myreceptionplanner.model.Contact;
 import org.lerot.myreceptionplanner.model.Gender;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
+import org.lerot.myreceptionplanner.model.Occasion;
 import org.lerot.myreceptionplanner.model.Party;
 
 import javax.swing.*;
@@ -39,9 +40,10 @@ public class PartyDialog
 		int plus;
 		boolean lead;
 
-		Row(Guest g)
+		Row(Guest g, boolean seated)
 		{
 			guest = g;
+			this.seated = seated;
 			name = g.getName();
 			gender = g.getGender();
 			plus = g.getPlus();
@@ -57,9 +59,10 @@ public class PartyDialog
 
 		boolean named() { return !name.isBlank(); }
 
-		boolean seated() { return guest != null && guest.isSeated(); }
+		boolean seated;  // at any event
 	}
 
+	private final Occasion occasion;
 	private final GuestList guests;
 	private final Party party;  // null for a new one
 	private final List<Row> rows = new ArrayList<>();
@@ -79,14 +82,15 @@ public class PartyDialog
 	private final JTable memberTable = new JTable(memberModel);
 
 	// the party made or edited, or null if cancelled
-	public static Party show(Component parent, GuestList guests, Party party)
+	public static Party show(Component parent, Occasion occasion, Party party)
 	{
-		return new PartyDialog(guests, party).run(parent);
+		return new PartyDialog(occasion, party).run(parent);
 	}
 
-	private PartyDialog(GuestList guests, Party party)
+	private PartyDialog(Occasion occasion, Party party)
 	{
-		this.guests = guests;
+		this.occasion = occasion;
+		this.guests = occasion.getGuests();
 		this.party = party;
 		if (party == null)
 		{
@@ -102,7 +106,7 @@ public class PartyDialog
 					.sorted(Comparator.comparing((Guest g) -> !g.isLead())
 							.thenComparing(g -> !g.isNamed())
 							.thenComparingInt(Guest::getPlus))
-					.forEach(g -> rows.add(new Row(g)));
+					.forEach(g -> rows.add(new Row(g, occasion.seatedAnywhere(g))));
 			Guest lead = party.getLead();
 			if (lead == null)
 			{
@@ -232,7 +236,7 @@ public class PartyDialog
 		{
 			List<Row> going = rows.stream()
 					.filter(r -> !r.named() && !r.lead)
-					.sorted(Comparator.comparing(Row::seated).thenComparing(Comparator.comparingInt((Row r) -> r.plus).reversed()))
+					.sorted(Comparator.comparing((Row r) -> r.seated).thenComparing(Comparator.comparingInt((Row r) -> r.plus).reversed()))
 					.limit(rows.size() - n)
 					.toList();
 			rows.removeAll(going);
@@ -279,6 +283,7 @@ public class PartyDialog
 		c.setWhatsApp(whatsApp.getText());
 		c.setEmail(email.getText());
 		c.setSource(c.isEmpty() ? "" : contactSource);
+		occasion.tidy();  // no seats for places taken away
 		return p;
 	}
 
@@ -406,7 +411,7 @@ public class PartyDialog
 			{
 				case 0 -> r.name;
 				case 1 -> r.gender;
-				default -> r.seated() ? "seated" : "";
+				default -> r.seated ? "seated" : "";
 			};
 		}
 
