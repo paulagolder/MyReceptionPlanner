@@ -35,9 +35,18 @@ import java.time.format.DateTimeParseException;
  *     <seating>
  *       <seat guest="12" table="3" chair="5"/>
  *     </seating>
+ *     <menu>
+ *       <course name="Main">
+ *         <dish id="3" name="Risotto" suits="v vg"/>
+ *       </course>
+ *     </menu>
+ *     <choices>
+ *       <choice guest="12" dishes="1 3 6" note="leaving before dessert"/>
+ *     </choices>
  *   </event>
  *
- * An event's date is only there if it differs from the occasion's. type is
+ * An event's date is only there if it differs from the occasion's. A
+ * guest's choice names one dish of each course they have chosen for. type is
  * seated, or unreserved for a party where no one has a seat, which may have
  * a capacity="150".
  */
@@ -84,6 +93,31 @@ public class OccasionXml
 					.addAttribute("table", Integer.toString(s.getValue().tableId()))
 					.addAttribute("chair", Integer.toString(s.getValue().chair() + 1));
 		}
+		if (event.hasMenu())
+		{
+			Element menu = root.addElement("menu");
+			for (Menu.Course c : event.getMenu().courses())
+			{
+				Element ce = menu.addElement("course").addAttribute("name", c.getName());
+				for (Menu.Dish d : c.dishes())
+				{
+					Element de = ce.addElement("dish").addAttribute("id", Integer.toString(d.getId()))
+							.addAttribute("name", d.getName());
+					if (!d.suits().isEmpty()) de.addAttribute("suits", Diet.codes(d.suits()));
+				}
+			}
+		}
+		Element choices = root.addElement("choices");
+		java.util.Set<Guest> who = new java.util.LinkedHashSet<>(event.choices().keySet());
+		who.addAll(event.notes().keySet());
+		for (Guest g : who)
+		{
+			Element ce = choices.addElement("choice").addAttribute("guest", Integer.toString(g.getId()));
+			String dishes = String.join(" ", event.getMenu().courses().stream().map(c -> event.choice(g, c))
+					.filter(d -> d != null).map(d -> Integer.toString(d.getId())).toList());
+			if (!dishes.isEmpty()) ce.addAttribute("dishes", dishes);
+			if (!event.noteFor(g).isEmpty()) ce.addAttribute("note", event.noteFor(g));
+		}
 		return doc;
 	}
 
@@ -129,6 +163,38 @@ public class OccasionXml
 				if (!id.matches("\\d+")) continue;
 				int n = Integer.parseInt(id);
 				guests.guests().stream().filter(g -> g.getId() == n).findFirst().ifPresent(event::invite);
+			}
+		}
+		Element me = root.element("menu");
+		if (me != null)
+		{
+			for (Element ce : me.elements("course"))
+			{
+				Menu.Course c = new Menu.Course(ce.attributeValue("name"));
+				for (Element de : ce.elements("dish"))
+				{
+					Menu.Dish d = new Menu.Dish(PlanXml.number(de, "id", 0), de.attributeValue("name"));
+					d.suits().addAll(Diet.fromCodes(de.attributeValue("suits")));
+					c.dishes().add(d);
+				}
+				event.getMenu().courses().add(c);
+			}
+		}
+		Element ch = root.element("choices");
+		if (ch != null)
+		{
+			for (Element ce : ch.elements("choice"))
+			{
+				int id = PlanXml.number(ce, "guest", 0);
+				Guest g = guests.guests().stream().filter(x -> x.getId() == id).findFirst().orElse(null);
+				if (g == null) continue;
+				for (String d : ce.attributeValue("dishes", "").trim().split("\\s+"))
+				{
+					if (!d.matches("\\d+")) continue;
+					event.getMenu().dish(Integer.parseInt(d)).ifPresent(dish ->
+							event.getMenu().courseOf(dish).ifPresent(c -> event.choose(g, c, dish)));
+				}
+				event.setNote(g, ce.attributeValue("note"));
 			}
 		}
 		event.tidy(guests);

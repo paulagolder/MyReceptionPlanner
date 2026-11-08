@@ -3,8 +3,10 @@ package org.lerot.myreceptionplanner.model;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /*
@@ -62,6 +64,10 @@ public class Event
 	private final Plan plan;
 	private final Seating seating;
 	private final Set<Guest> invited = new LinkedHashSet<>();
+	private final Menu menu = new Menu();
+	// each guest's dish for each course, and any note for this event
+	private final Map<Guest, Map<Menu.Course, Menu.Dish>> choices = new LinkedHashMap<>();
+	private final Map<Guest, String> notes = new LinkedHashMap<>();
 
 	public Event(String name, String file, Plan plan, Seating seating)
 	{
@@ -128,6 +134,71 @@ public class Event
 
 	public Seating getSeating() { return seating; }
 
+	// ---- the menu and what guests choose ----
+
+	public Menu getMenu() { return menu; }
+
+	public boolean hasMenu() { return !menu.isEmpty(); }
+
+	public Menu.Dish choice(Guest guest, Menu.Course course)
+	{
+		Map<Menu.Course, Menu.Dish> mine = choices.get(guest);
+		return mine == null ? null : mine.get(course);
+	}
+
+	// null to clear; only a named guest chooses, so the choice follows them wherever they sit
+	public void choose(Guest guest, Menu.Course course, Menu.Dish dish)
+	{
+		if (guest.isPlaceholder() && dish != null) return;
+		if (dish == null)
+		{
+			Map<Menu.Course, Menu.Dish> mine = choices.get(guest);
+			if (mine != null) mine.remove(course);
+			return;
+		}
+		choices.computeIfAbsent(guest, g -> new LinkedHashMap<>()).put(course, dish);
+	}
+
+	public Map<Guest, Map<Menu.Course, Menu.Dish>> choices() { return Collections.unmodifiableMap(choices); }
+
+	// a note for this event only, such as "leaving before dessert"
+	public String noteFor(Guest guest) { return notes.getOrDefault(guest, ""); }
+
+	// for a named guest only
+	public void setNote(Guest guest, String note)
+	{
+		if (note == null || note.isBlank() || guest.isPlaceholder()) notes.remove(guest);
+		else notes.put(guest, note.strip());
+	}
+
+	public Map<Guest, String> notes() { return Collections.unmodifiableMap(notes); }
+
+	// the guest has chosen a dish for every course
+	public boolean hasChosenAll(Guest guest)
+	{
+		return menu.courses().stream().allMatch(c -> choice(guest, c) != null);
+	}
+
+	// the dishes chosen that do not suit the guest's diet
+	public List<Menu.Dish> unsuitable(Guest guest)
+	{
+		return menu.courses().stream().map(c -> choice(guest, c))
+				.filter(d -> d != null && !Diet.unmet(d.suits(), guest.diets()).isEmpty()).toList();
+	}
+
+	// no choices or notes for those not invited or not named, nor choices of
+	// dishes no longer on the menu
+	private void tidyChoices()
+	{
+		choices.keySet().retainAll(invited);
+		notes.keySet().retainAll(invited);
+		choices.keySet().removeIf(Guest::isPlaceholder);
+		notes.keySet().removeIf(Guest::isPlaceholder);
+		for (Map<Menu.Course, Menu.Dish> mine : choices.values())
+			mine.entrySet().removeIf(e -> !menu.courses().contains(e.getKey()) || !e.getKey().dishes().contains(e.getValue()));
+		choices.values().removeIf(Map::isEmpty);
+	}
+
 	// ---- who is invited ----
 
 	public boolean isInvited(Guest guest) { return invited.contains(guest); }
@@ -149,6 +220,8 @@ public class Event
 		{
 			invited.remove(g);
 			seating.unseat(g);
+			choices.remove(g);
+			notes.remove(g);
 		}
 	}
 
@@ -172,6 +245,7 @@ public class Event
 		invited.retainAll(guests.guests());
 		for (Guest g : List.copyOf(invited))
 			invite(g);
+		tidyChoices();
 		int lost = 0;
 		for (Guest g : List.copyOf(seating.all().keySet()))
 		{

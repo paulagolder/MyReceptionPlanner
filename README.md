@@ -56,6 +56,32 @@ Names alike…** lists every pair alike across the occasion; mark a pair *Not
 the same person* to leave it out from now on, or rename or remove a real
 duplicate in the Guests tab.
 
+### Dietary needs and menus
+
+- **Dietary needs belong to each guest** and hold at every event: Vegetarian
+  (v), Vegan (vg), Gluten-free (gf), Dairy-free (df), Nut allergy (nf), Halal
+  (h), Kosher (k), and a note in words ("no sesame"). Set them by
+  double-clicking the *Diet* column in the Guests tab, or in *Menu choices*.
+  They can be gathered long before any menu is written: the catering list
+  counts them from the start. Only named guests have needs and menu choices,
+  so they follow the person wherever they are seated; a place not yet named
+  (Ann Smith+1) chooses once it is named, and a guest whose name is cleared
+  loses theirs. The catering list and Check… count places not yet named
+  apart.
+- **Occasion ▾ → Menu…** sets out the shown event's menu: a line for each
+  dish, with its course (Starter, Main, Dessert …) and ticks for the diets it
+  suits (a vegan dish suits vegetarians too).
+- **Occasion ▾ → Menu choices and dietary needs…** lists those invited to
+  the event, where they sit, their needs, a choice for each course and a
+  note for this event only. A dish that does not suit a guest's needs shows
+  in red with ⚠.
+- **Reports ▾ → Catering list…** shows, for the event: how many invited
+  guests have each need; how many of each dish, and at each table; everyone
+  with a need or a note, where they sit and what they chose; choices that do
+  not suit; and who has yet to choose. *Save as PDF…* makes a copy for the
+  caterers. *Check…* also says who has yet to choose and any unsuitable
+  choices, and the table plan PDF gives each guest's needs after their name.
+
 ### Seated events, halls and unreserved parties
 
 Each event is one of three types, set in *New event…* or *Event details…*:
@@ -229,11 +255,12 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 Each occasion is a folder (by default under `~/Documents/MyReceptions`):
 
 - `occasion.xml`: the occasion's name and date, its list of events, and the
-  guest list: the parties, their leads and contact details, their guests,
+  guest list: the parties, their leads and contact details, their guests
+  and their dietary needs,
   and pairs of guests with names alike who are different people
 - one file for each event, named after it when it was made (such as
-  `wedding-breakfast.xml`): its name, type, place, date and time, who is
-  invited, its tables and pews (shapes, positions, turns, numbers, seat 1,
+  `wedding-breakfast.xml`): its name, type, place, date and time, its menu
+  and each guest's choices and note, who is invited, its tables and pews (shapes, positions, turns, numbers, seat 1,
   disabled and open seats) and who sits where
 
 **Save…** shows the folder it will save in and asks before writing. Choose

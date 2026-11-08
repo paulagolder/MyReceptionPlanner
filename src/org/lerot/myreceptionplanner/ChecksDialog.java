@@ -51,7 +51,24 @@ public class ChecksDialog
 				+ " in " + unseated.size() + (unseated.size() == 1 ? " party" : " parties")
 				+ " to seat"));
 
+		addMenuChecks(p, event, 2);
 		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
+	}
+
+	// for an event with a menu: who has yet to choose, and choices that do not suit
+	private static void addMenuChecks(JPanel p, Event event, int span)
+	{
+		if (!event.hasMenu()) return;
+		int notChosen = org.lerot.myreceptionplanner.model.Catering.notChosen(event).size();
+		int bad = org.lerot.myreceptionplanner.model.Catering.unsuitable(event).size();
+		int unnamed = org.lerot.myreceptionplanner.model.Catering.notNamed(event);
+		JLabel menu = new JLabel(notChosen == 0 && bad == 0 ? "Menu: everyone invited has chosen, all suitably."
+				: "Menu: " + (notChosen > 0 ? notChosen + " not yet chosen" : "")
+				+ (notChosen > 0 && bad > 0 ? "; " : "") + (bad > 0 ? "⚠ " + bad + " with a dish unsuited to their needs" : "")
+				+ (unnamed > 0 ? "; " + unnamed + " places not yet named" : "")
+				+ "  (Reports ▾ → Catering list)");
+		menu.setForeground(notChosen == 0 && bad == 0 ? Theme.FIRST : Theme.HEAD.darker());
+		p.add(menu, "span " + span + ", gaptop 8");
 	}
 
 	// a hall: reserved seats not yet given, and the seats against those invited
@@ -71,6 +88,7 @@ public class ChecksDialog
 				+ (event.overCapacity() > 0 ? ": " + event.overCapacity() + " too many" : ""));
 		fit.setForeground(event.overCapacity() > 0 ? Theme.HEAD.darker() : Theme.FIRST);
 		p.add(fit);
+		addMenuChecks(p, event, 1);
 		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}
 
@@ -100,6 +118,7 @@ public class ChecksDialog
 			total.setForeground(Theme.HEAD.darker());
 		} else total.setForeground(event.getCapacity() > 0 ? Theme.FIRST : Theme.EDGE);
 		p.add(total);
+		addMenuChecks(p, event, 1);
 		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}
 

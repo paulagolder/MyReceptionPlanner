@@ -17,7 +17,7 @@ import java.io.IOException;
  *           <address><line>1 High Street</line><line>Lichfield</line></address>
  *         </contact>
  *       </guest>
- *       <guest id="2" gender="u" plus="1"/>
+ *       <guest id="2" gender="u" plus="1" diet="vg nf" dietnote="no sesame"/>
  *     </party>
  *     <guest id="3" name="Father Brown" gender="m"/>
  *     <distinct a="3" b="9"/>
@@ -26,7 +26,9 @@ import java.io.IOException;
  * gender is f, m or u (not known). lead is the id of the party's lead guest;
  * a party without a name of its own goes by the lead's. A guest with no name
  * is a place kept for one of the party, shown as the lead's name +plus. A
- * guest outside any party sits directly under guests. distinct records two
+ * guest outside any party sits directly under guests. diet gives a guest's
+ * dietary needs (see Diet: v vg gf df nf h k) and dietnote any more in
+ * words; they hold at every event. distinct records two
  * guests whose names are alike but who are said to be different people.
  */
 public class GuestXml
@@ -62,6 +64,8 @@ public class GuestXml
 		if (g.isNamed()) e.addAttribute("name", g.getName());
 		e.addAttribute("gender", g.getGender().code());
 		if (g.isPlaceholder()) e.addAttribute("plus", Integer.toString(g.getPlus()));
+		if (!g.diets().isEmpty()) e.addAttribute("diet", Diet.codes(g.diets()));
+		if (!g.getDietNote().isEmpty()) e.addAttribute("dietnote", g.getDietNote());
 		Contact c = g.getContact();
 		if (!c.isEmpty())
 		{
@@ -122,6 +126,8 @@ public class GuestXml
 		Guest g = new Guest(PlanXml.number(e, "id", 0), e.attributeValue("name", ""),
 				Gender.fromCode(e.attributeValue("gender", "u")), party);
 		if (g.isPlaceholder()) g.setPlus(PlanXml.number(e, "plus", 0));
+		g.diets().addAll(Diet.fromCodes(e.attributeValue("diet")));
+		g.setDietNote(e.attributeValue("dietnote"));
 		Element ce = e.element("contact");
 		if (ce != null)
 		{

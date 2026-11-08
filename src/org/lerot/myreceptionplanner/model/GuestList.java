@@ -185,6 +185,12 @@ public class GuestList
 		if (empty && guest.isLead()) return;
 		guest.setName(name);
 		if (guest.isPlaceholder() && guest.getPlus() == 0) guest.setPlus(nextPlus(guest.getParty()));
+		if (guest.isPlaceholder())
+		{
+			// a place not named yet has no needs of its own
+			guest.diets().clear();
+			guest.setDietNote("");
+		}
 	}
 
 	// moves a guest to another party (null for none); the lead stays with

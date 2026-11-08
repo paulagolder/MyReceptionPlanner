@@ -1,5 +1,8 @@
 package org.lerot.myreceptionplanner.model;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 /*
  * A guest. A party keeps places for guests not named yet: such a guest has no
  * name and goes by the lead's name and a number, "Ann Smith+2" (the plus one,
@@ -15,6 +18,8 @@ public class Guest
 	private Party party;  // null if in no party
 	private int plus;     // n for the lead's +n while unnamed; 0 otherwise
 	private Contact contact = new Contact();
+	private final Set<Diet> diets = EnumSet.noneOf(Diet.class);
+	private String dietNote = "";  // allergies and the like, in words
 
 	public Guest(int id, String name, Gender gender, Party party)
 	{
@@ -53,6 +58,23 @@ public class Guest
 	public boolean isLead() { return party != null && party.getLead() == this; }
 
 	public Contact getContact() { return contact; }
+
+	// the guest's dietary needs, the same at every event; change it directly
+	public Set<Diet> diets() { return diets; }
+
+	public String getDietNote() { return dietNote; }
+
+	public void setDietNote(String note) { this.dietNote = note == null ? "" : note.strip(); }
+
+	public boolean hasDietaryNeeds() { return !diets.isEmpty() || !dietNote.isEmpty(); }
+
+	// "vg nf, no sesame", or ""
+	public String dietText()
+	{
+		String codes = Diet.codes(diets);
+		if (dietNote.isEmpty()) return codes;
+		return codes.isEmpty() ? dietNote : codes + ", " + dietNote;
+	}
 
 	// the name, or for a place not named yet the lead's name and its number
 	public String displayName()

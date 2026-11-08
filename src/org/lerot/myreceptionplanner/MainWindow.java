@@ -157,6 +157,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		{
 			if (NamesAlikeDialog.show(this, occasion.getGuests())) changed();
 		});
+		reports.add("Catering list…").addActionListener(e -> cateringList());
 		reports.addSeparator();
 		reports.add("Table plan (PDF)…").addActionListener(e -> tablePlanPdf());
 		bar.add(dropDown("Reports", reports));
@@ -177,6 +178,18 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JPopupMenu occasionMenu = new JPopupMenu();
 		occasionMenu.add("Occasion details…").addActionListener(e -> editOccasion());
 		occasionMenu.add("Invitations…").addActionListener(e -> invitations());
+		occasionMenu.add("Menu…").addActionListener(e ->
+		{
+			if (MenuDialog.edit(this, occasion, event)) changed();
+		});
+		occasionMenu.add("Menu choices and dietary needs…").addActionListener(e ->
+		{
+			if (MenuChoicesDialog.show(this, event))
+			{
+				seatingPanel.refresh();
+				changed();
+			}
+		});
 		occasionMenu.addSeparator();
 		occasionMenu.add("Event details…").addActionListener(e -> editEvent());
 		occasionMenu.add("New event…").addActionListener(e -> newEvent());
@@ -537,6 +550,31 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 				JOptionPane.showMessageDialog(this, "The plan is crowded for " + paper.getSelectedItem()
 						+ " even with the smallest type; try a larger paper size.", "Table plan",
 						JOptionPane.WARNING_MESSAGE);
+			open(file);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot make the PDF", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	// dietary needs, dishes and who has what, for the caterers; can be saved as a PDF
+	private void cateringList()
+	{
+		var report = new org.lerot.myreceptionplanner.reports.CateringReport(occasion, event);
+		JEditorPane page = new JEditorPane("text/html", report.html());
+		page.setEditable(false);
+		page.setCaretPosition(0);
+		JScrollPane scroll = new JScrollPane(page);
+		scroll.setPreferredSize(new Dimension(760, 560));
+		Object[] options = { "Save as PDF…", "Close" };
+		int choice = JOptionPane.showOptionDialog(this, scroll, "Catering: " + event.getName(),
+				JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[1]);
+		if (choice != 0) return;
+		Path file = choosePdf("catering-" + event.getFile().replaceFirst("\\.xml$", "") + ".pdf");
+		if (file == null) return;
+		try
+		{
+			org.lerot.myreceptionplanner.reports.CateringPdf.write(report, file);
 			open(file);
 		} catch (IOException e)
 		{

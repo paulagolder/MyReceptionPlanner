@@ -1,5 +1,6 @@
 package org.lerot.myreceptionplanner.reports;
 
+import org.lerot.myreceptionplanner.model.Diet;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.Pew;
 import org.lerot.myreceptionplanner.model.Plan;
@@ -144,7 +145,9 @@ public class TablePlanLayout
 		{
 			int chair = t.chairOfSeat(k + 1);
 			Optional<Guest> g = seating.guestAt(t.getId(), chair);
-			g.ifPresent(guest -> out.add(new Line(guest.displayName(), guest.isPlaceholder())));
+			// dietary needs in short after the name, for those serving: "Ann Smith (vg nf)"
+			g.ifPresent(guest -> out.add(new Line(guest.displayName()
+					+ (guest.diets().isEmpty() ? "" : " (" + Diet.codes(guest.diets()) + ")"), guest.isPlaceholder())));
 		}
 		return out;
 	}

@@ -409,8 +409,11 @@ public class SeatingPanel extends JPanel
 			public void mouseClicked(MouseEvent e)
 			{
 				int row = guestTable.rowAtPoint(e.getPoint());
-				if (e.getClickCount() == 2 && row >= 0 && guestTable.columnAtPoint(e.getPoint()) == 4)
-					findSeat(guestModel.rows.get(guestTable.convertRowIndexToModel(row)));
+				if (e.getClickCount() != 2 || row < 0) return;
+				Guest g = guestModel.rows.get(guestTable.convertRowIndexToModel(row));
+				int col = guestTable.columnAtPoint(e.getPoint());
+				if (col == 5) findSeat(g);
+				else if (col == 4 && DietDialog.editNamed(SeatingPanel.this, g)) changed();
 			}
 		});
 		people.add(new JScrollPane(guestTable), "grow");
@@ -421,7 +424,7 @@ public class SeatingPanel extends JPanel
 			int row = guestTable.getSelectedRow();
 			if (row >= 0) removeGuest(guestModel.rows.get(guestTable.convertRowIndexToModel(row)));
 		}));
-		JLabel hint = new JLabel("Double-click a seat to find it");
+		JLabel hint = new JLabel("Double-click a diet to change it, a seat to find it");
 		hint.setForeground(Theme.EDGE);
 		guestButtons.add(hint, "gapleft 8");
 		people.add(guestButtons);
@@ -568,7 +571,7 @@ public class SeatingPanel extends JPanel
 
 	private class GuestModel extends AbstractTableModel
 	{
-		private final String[] columns = { "Name", "Gender", "Party", "Invited", "Seat" };
+		private final String[] columns = { "Name", "Gender", "Party", "Invited", "Diet", "Seat" };
 		private List<Guest> rows = List.of();
 
 		void reload()
@@ -592,6 +595,7 @@ public class SeatingPanel extends JPanel
 				case 1 -> g.getGender();
 				case 2 -> partyOf(g);
 				case 3 -> event.isInvited(g);
+				case 4 -> g.dietText();
 				default -> seatOf(g);
 			};
 		}
