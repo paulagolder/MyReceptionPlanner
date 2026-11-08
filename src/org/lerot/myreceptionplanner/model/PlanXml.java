@@ -17,10 +17,16 @@ import java.nio.file.Path;
  * Reads and writes tables.xml:
  *
  *   <tables>
- *     <table id="1" name="Table 1" shape="round" places="10" x="300" y="200" rotation="0"/>
- *     <table id="2" name="Top table" shape="rectangle" sideplaces="6" endplaces="0"
+ *     <table id="1" number="1" shape="round" places="10" x="300" y="200" rotation="0"/>
+ *     <table id="2" shape="rectangle" sideplaces="6" endplaces="0"
  *            x="600" y="100" rotation="0" head="true" firstseat="3" disabled="7 12"/>
+ *     <table id="3" name="Smith family" shape="round" places="8" x="300" y="500" rotation="0"/>
  *   </tables>
+ *
+ * The id never changes. name is only there for a table with a name of its
+ * own; the rest are called "Head table" or by their number. Files from
+ * before then named every table "Table <id>"; such a name is read as none,
+ * and as they have no numbers, the tables are numbered by where they stand.
  *
  * Sizes and positions are whole centimetres, rotation whole degrees.
  * firstseat and disabled name chairs by counting clockwise from 1 at the
@@ -38,9 +44,10 @@ public class PlanXml
 		for (Table t : plan.tables())
 		{
 			Element e = root.addElement("table")
-					.addAttribute("id", Integer.toString(t.getId()))
-					.addAttribute("name", t.getName())
-					.addAttribute("shape", t.shape());
+					.addAttribute("id", Integer.toString(t.getId()));
+			if (t.getNumber() > 0) e.addAttribute("number", Integer.toString(t.getNumber()));
+			if (t.hasName()) e.addAttribute("name", t.getName());
+			e.addAttribute("shape", t.shape());
 			if (t instanceof RoundTable round)
 			{
 				e.addAttribute("places", Integer.toString(round.places()));
@@ -82,7 +89,8 @@ public class PlanXml
 		for (Element e : doc.getRootElement().elements("table"))
 		{
 			int id = number(e, "id", 0);
-			String name = e.attributeValue("name", "Table " + id);
+			String name = e.attributeValue("name", "");
+			if (name.trim().matches("Table \\d+")) name = "";  // the old default
 			String shape = e.attributeValue("shape", RoundTable.SHAPE);
 			Table t = switch (shape)
 			{
@@ -91,6 +99,7 @@ public class PlanXml
 						number(e, "sideplaces", 4), number(e, "endplaces", 0));
 				default -> throw new IOException("Table " + id + " has an unknown shape: " + shape);
 			};
+			t.setNumber(number(e, "number", 0));
 			t.moveTo(number(e, "x", 0), number(e, "y", 0));
 			t.setRotation(number(e, "rotation", 0));
 			t.markHead("true".equals(e.attributeValue("head")));
@@ -104,6 +113,8 @@ public class PlanXml
 			}
 			plan.add(t);
 		}
+		if (plan.tables().stream().allMatch(t -> t.getNumber() == 0)) plan.renumber();
+		else plan.numberUnnumbered();
 		return plan;
 	}
 
@@ -121,10 +132,10 @@ public class PlanXml
 		} catch (NumberFormatException ignored)
 		{
 		}
-		throw new IOException(t.getName() + " has no chair " + value + " to disable");
+		throw new IOException("Table " + t.getId() + " has no chair " + value + " to disable");
 	}
 
-	private static int number(Element e, String attribute, int otherwise) throws IOException
+	static int number(Element e, String attribute, int otherwise) throws IOException
 	{
 		String value = e.attributeValue(attribute);
 		if (value == null || value.isBlank()) return otherwise;

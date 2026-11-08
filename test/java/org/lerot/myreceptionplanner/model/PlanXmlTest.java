@@ -74,6 +74,46 @@ class PlanXmlTest
 	}
 
 	@Test
+	void onlyATableWithItsOwnNameSavesOne() throws IOException
+	{
+		Plan plan = new Plan();
+		plan.add(new RoundTable(1, "", 8));
+		plan.add(new RoundTable(2, "Smith family", 8));
+		plan.renumber();
+		Path file = folder.resolve(PlanXml.FILE);
+		PlanXml.save(plan, file);
+		String xml = Files.readString(file);
+		assertEquals(1, xml.split("name=", -1).length - 1);
+		Plan loaded = PlanXml.load(file);
+		assertFalse(loaded.find(1).orElseThrow().hasName());
+		assertEquals("Smith family", loaded.find(2).orElseThrow().getName());
+	}
+
+	@Test
+	void theOldDefaultNameIsReadAsNone() throws IOException
+	{
+		Path file = folder.resolve(PlanXml.FILE);
+		Files.writeString(file, "<tables><table id=\"7\" name=\"Table 7\" shape=\"round\" places=\"8\"/></tables>");
+		Table t = PlanXml.load(file).find(7).orElseThrow();
+		assertFalse(t.hasName());
+		assertEquals(1, t.getNumber(), "an old file is numbered by where its tables stand");
+	}
+
+	@Test
+	void numbersAreKeptAsSaved() throws IOException
+	{
+		Path file = folder.resolve(PlanXml.FILE);
+		Files.writeString(file, "<tables>"
+				+ "<table id=\"1\" number=\"5\" shape=\"round\" places=\"8\" x=\"100\" y=\"100\"/>"
+				+ "<table id=\"2\" number=\"2\" shape=\"round\" places=\"8\" x=\"900\" y=\"100\"/>"
+				+ "<table id=\"3\" shape=\"round\" places=\"8\" x=\"500\" y=\"100\"/></tables>");
+		Plan plan = PlanXml.load(file);
+		assertEquals(5, plan.find(1).orElseThrow().getNumber());
+		assertEquals(2, plan.find(2).orElseThrow().getNumber());
+		assertEquals(6, plan.find(3).orElseThrow().getNumber(), "one without gets the next number");
+	}
+
+	@Test
 	void nextIdFollowsTheHighest() throws IOException
 	{
 		Path file = folder.resolve(PlanXml.FILE);

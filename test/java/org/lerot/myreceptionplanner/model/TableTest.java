@@ -198,4 +198,79 @@ class TableTest
 		plan.setHead(t);
 		assertTrue(t.getDisabledSeats().isEmpty());
 	}
+
+	@Test
+	void renumberingGoesInRowsFromTheTopLeftToRight()
+	{
+		Plan plan = new Plan();
+		RoundTable a = at(plan, 1, 600, 300);
+		RoundTable b = at(plan, 2, 200, 340);  // a little lower, same row
+		RoundTable c = at(plan, 3, 400, 700);
+		RoundTable d = at(plan, 4, 100, 720);
+		plan.renumber();
+		assertEquals(2, a.getNumber());
+		assertEquals(1, b.getNumber());
+		assertEquals(4, c.getNumber());
+		assertEquals(3, d.getNumber());
+		assertEquals("Table 3", plan.label(d));
+	}
+
+	@Test
+	void numbersStayWhenTablesMoveUntilRenumbered()
+	{
+		Plan plan = new Plan();
+		RoundTable a = at(plan, 1, 200, 300);
+		RoundTable b = at(plan, 2, 600, 300);
+		plan.renumber();
+		a.moveTo(900, 300);
+		assertEquals(1, a.getNumber());
+		plan.renumber();
+		assertEquals(2, a.getNumber());
+		assertEquals(1, b.getNumber());
+		assertEquals(1, a.getId(), "the id stays");
+	}
+
+	@Test
+	void aNewTableTakesTheNextNumber()
+	{
+		Plan plan = new Plan();
+		at(plan, 1, 200, 300);
+		RoundTable b = at(plan, 2, 600, 300);
+		plan.renumber();
+		RoundTable c = at(plan, 3, 50, 50);
+		plan.numberUnnumbered();
+		assertEquals(3, c.getNumber());
+		assertEquals(2, b.getNumber());
+	}
+
+	@Test
+	void theHeadTableAndNamedTablesHaveNoNumber()
+	{
+		Plan plan = new Plan();
+		RectTable head = new RectTable(1, "", 5, 0);
+		head.moveTo(500, 100);
+		plan.add(head);
+		plan.setHead(head);
+		RoundTable smiths = at(plan, 2, 200, 400);
+		RoundTable other = at(plan, 3, 600, 400);
+		smiths.setName("  Smith family ");
+		plan.renumber();
+		assertEquals("Head table", plan.label(head));
+		assertEquals("Smith family", plan.label(smiths));
+		assertEquals(0, smiths.getNumber());
+		assertEquals("Table 1", plan.label(other), "the numbers run on unbroken");
+		smiths.setName("");
+		plan.numberUnnumbered();
+		assertEquals("Table 2", plan.label(smiths), "losing its name gives it the next number");
+		head.setName("Top table");
+		assertEquals("Top table", plan.label(head));
+	}
+
+	private static RoundTable at(Plan plan, int id, double x, double y)
+	{
+		RoundTable t = new RoundTable(id, "", 8);
+		t.moveTo(x, y);
+		plan.add(t);
+		return t;
+	}
 }

@@ -26,6 +26,9 @@ public class RoundTable extends Table
 	@Override
 	public int places() { return places; }
 
+	@Override
+	public String arrangement() { return SHAPE + " " + places; }
+
 	public void setPlaces(int places)
 	{
 		if (places < 1) throw new IllegalArgumentException("a table needs at least one place");

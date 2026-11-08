@@ -13,6 +13,11 @@ import java.util.TreeSet;
 /*
  * A table on the floor plan. Sizes and positions are in centimetres; x, y is
  * the table's centre and rotation turns it clockwise about that point.
+ *
+ * The id is given when the table is made and never changes; guests' seats
+ * refer to it. What the table is called comes from the Plan (see
+ * Plan.label): its own name if it has one, else "Head table" or its number.
+ * The number is kept until the tables are renumbered (Plan.renumber).
  * Each kind of table gives its top and its seats as if it sat at 0,0 unturned.
  *
  * Chairs are indexed 0, 1, 2 ... clockwise from the shape's own starting chair.
@@ -27,6 +32,7 @@ public abstract class Table
 
 	private final int id;
 	private String name;
+	private int number;  // 0 for none
 	private double x;
 	private double y;
 	private double rotation;
@@ -37,13 +43,17 @@ public abstract class Table
 	protected Table(int id, String name)
 	{
 		this.id = id;
-		this.name = name;
+		setName(name);
 	}
 
 	// the shape's name in tables.xml
 	public abstract String shape();
 
 	public abstract int places();
+
+	// the shape and how its chairs are set out; when this changes, chair
+	// indexes no longer mean the same chairs
+	public abstract String arrangement();
 
 	// the table top
 	public abstract Shape top();
@@ -56,9 +66,19 @@ public abstract class Table
 
 	public int getId() { return id; }
 
+	// the table's own name, "" if it goes by its number
 	public String getName() { return name; }
 
-	public void setName(String name) { this.name = name; }
+	public boolean hasName() { return !name.isEmpty(); }
+
+	// goes by its number unless it has a name or is the head table
+	public boolean isNumbered() { return !hasName() && !head; }
+
+	public int getNumber() { return number; }
+
+	public void setNumber(int number) { this.number = Math.max(0, number); }
+
+	public void setName(String name) { this.name = name == null ? "" : name.trim(); }
 
 	public double getX() { return x; }
 

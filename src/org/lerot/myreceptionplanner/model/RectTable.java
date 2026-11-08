@@ -31,6 +31,9 @@ public class RectTable extends Table
 	@Override
 	public int places() { return 2 * sidePlaces + 2 * endPlaces; }
 
+	@Override
+	public String arrangement() { return SHAPE + " " + sidePlaces + "x" + endPlaces; }
+
 	public int getSidePlaces() { return sidePlaces; }
 
 	public int getEndPlaces() { return endPlaces; }

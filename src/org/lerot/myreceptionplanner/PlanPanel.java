@@ -1,5 +1,7 @@
 package org.lerot.myreceptionplanner;
 
+import org.lerot.myreceptionplanner.model.Guest;
+import org.lerot.myreceptionplanner.model.GuestList;
 import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.Table;
 
@@ -7,6 +9,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
+import java.util.Optional;
 
 /*
  * The floor plan. Drag a table to move it, drag the round handle above the
@@ -15,12 +18,22 @@ import java.awt.geom.*;
  * R and Shift+R turn it, Delete removes it. Ctrl + mouse wheel zooms.
  * Right-click a chair to make it seat 1 or to disable it; right-click a table
  * for its other actions. Seat 1 is drawn green and disabled chairs greyed out.
+ *
+ * That is layout mode. In seating mode the tables stay put: clicking a table
+ * or one of its chairs chooses it, for the seating panel to show. Each seat
+ * shows its number, and the chosen seat has a ring round it.
+ * In both modes a seated guest's chair carries their mark (see Marks).
  */
 public class PlanPanel extends JPanel
 {
+	public enum Mode { LAYOUT, SEATING }
+
 	public interface Listener
 	{
 		void selectionChanged(Table selected);
+
+		// in seating mode, a click on a table (chair -1) or one of its chairs
+		void chairChosen(Table table, int chair);
 
 		void planChanged();
 
@@ -39,7 +52,10 @@ public class PlanPanel extends JPanel
 	private static final double NUDGE = 10;
 
 	private final Plan plan;
+	private final GuestList guests;
 	private final Listener listener;
+	private Mode mode = Mode.LAYOUT;
+	private int chosenChair = -1;  // in seating mode, at the selected table
 	private double scale = 0.6;   // pixels per cm
 	private Table selected;
 
@@ -49,9 +65,10 @@ public class PlanPanel extends JPanel
 	private Point2D grabOffset;
 	private boolean dragged;
 
-	public PlanPanel(Plan plan, Listener listener)
+	public PlanPanel(Plan plan, GuestList guests, Listener listener)
 	{
 		this.plan = plan;
+		this.guests = guests;
 		this.listener = listener;
 		setBackground(Theme.PAGE);
 		setFocusable(true);
@@ -64,10 +81,36 @@ public class PlanPanel extends JPanel
 
 	public Table getSelected() { return selected; }
 
+	public Mode getMode() { return mode; }
+
+	public void setMode(Mode mode)
+	{
+		this.mode = mode;
+		drag = Drag.NONE;
+		chosenChair = -1;
+		setCursor(Cursor.getDefaultCursor());
+		repaint();
+	}
+
+	// selects the table, rings the chair (-1 for none) and scrolls them into view
+	public void showChair(Table table, int chair)
+	{
+		select(table);
+		chosenChair = chair;
+		if (table != null)
+		{
+			Rectangle2D b = table.bounds();
+			scrollRectToVisible(new Rectangle((int) (b.getX() * scale), (int) (b.getY() * scale),
+					(int) (b.getWidth() * scale), (int) (b.getHeight() * scale)));
+		}
+		repaint();
+	}
+
 	public void select(Table table)
 	{
 		if (table == selected) return;
 		selected = table;
+		chosenChair = -1;
 		listener.selectionChanged(table);
 		repaint();
 	}
@@ -118,7 +161,7 @@ public class PlanPanel extends JPanel
 		paintGrid(g);
 		for (Table t : plan.tables())
 			paintTable(g, t);
-		if (selected != null) paintHandle(g, selected);
+		if (selected != null && mode == Mode.LAYOUT) paintHandle(g, selected);
 		g.dispose();
 	}
 
@@ -178,6 +221,39 @@ public class PlanPanel extends JPanel
 		g.draw(top);
 		g.dispose();
 		paintName(g0, t);
+		paintSeats(g0, t);
+	}
+
+	// a mark on each chair with a guest in it; in seating mode the number of
+	// each empty seat, and a ring round the chosen one
+	private void paintSeats(Graphics2D g0, Table t)
+	{
+		Graphics2D g = (Graphics2D) g0.create();
+		double r = Table.SEAT_RADIUS * scale;
+		g.setFont(getFont().deriveFont((float) Math.max(9, Math.min(14, r * 0.9))));
+		FontMetrics fm = g.getFontMetrics();
+		for (int i = 0; i < t.places(); i++)
+		{
+			Point2D f = t.seatOnFloor(i);
+			double x = f.getX() * scale, y = f.getY() * scale;
+			Optional<Guest> guest = guests.guestAt(t.getId(), i);
+			if (guest.isPresent())
+				Marks.paint(g, guest.get().getGender(), GuestList.colourOf(guest.get()), x, y, r * 0.55);
+			else if (mode == Mode.SEATING && !t.isDisabled(i))
+			{
+				String n = Integer.toString(t.seatNumber(i));
+				g.setColor(Theme.EDGE);
+				g.drawString(n, (float) (x - fm.stringWidth(n) / 2.0),
+						(float) (y + (fm.getAscent() - fm.getDescent()) / 2.0));
+			}
+			if (mode == Mode.SEATING && t == selected && i == chosenChair)
+			{
+				g.setColor(Theme.ACCENT);
+				g.setStroke(new BasicStroke(2.5f));
+				g.draw(new Ellipse2D.Double(x - r - 3, y - r - 3, 2 * r + 6, 2 * r + 6));
+			}
+		}
+		g.dispose();
 	}
 
 	// the name upright in the middle of the table, whichever way it is turned
@@ -186,9 +262,7 @@ public class PlanPanel extends JPanel
 		Font font = getFont().deriveFont(Font.BOLD);
 		g.setFont(font);
 		FontMetrics fm = g.getFontMetrics();
-		String[] lines = t.isHead()
-				? new String[] { t.getName(), "head table" }
-				: new String[] { t.getName(), placesText(t) };
+		String[] lines = { plan.label(t), t.isHead() && t.hasName() ? "head table" : placesText(t) };
 		double cx = t.getX() * scale, cy = t.getY() * scale;
 		double top = cy - lines.length * fm.getHeight() / 2.0 + fm.getAscent();
 		for (int i = 0; i < lines.length; i++)
@@ -251,6 +325,11 @@ public class PlanPanel extends JPanel
 		{
 			requestFocusInWindow();
 			dragged = false;
+			if (mode == Mode.SEATING)
+			{
+				if (SwingUtilities.isLeftMouseButton(e)) choose(e);
+				return;
+			}
 			if (e.isPopupTrigger())
 			{
 				showMenu(e);
@@ -302,7 +381,7 @@ public class PlanPanel extends JPanel
 		@Override
 		public void mouseReleased(MouseEvent e)
 		{
-			if (e.isPopupTrigger()) showMenu(e);  // where the menu comes on release
+			if (e.isPopupTrigger() && mode == Mode.LAYOUT) showMenu(e);  // where the menu comes on release
 			if (dragged) listener.planChanged();
 			drag = Drag.NONE;
 			dragged = false;
@@ -311,6 +390,12 @@ public class PlanPanel extends JPanel
 		@Override
 		public void mouseMoved(MouseEvent e)
 		{
+			if (mode == Mode.SEATING)
+			{
+				setCursor(tableAt(toFloor(e.getPoint())) != null
+						? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : Cursor.getDefaultCursor());
+				return;
+			}
 			boolean onHandle = selected != null
 					&& handleOnScreen(selected).distance(e.getPoint()) <= HANDLE_RADIUS + 3;
 			if (onHandle) setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -334,6 +419,17 @@ public class PlanPanel extends JPanel
 		}
 	}
 
+	// seating mode: choose the table and chair clicked
+	private void choose(MouseEvent e)
+	{
+		Point2D floor = toFloor(e.getPoint());
+		Table t = tableAt(floor);
+		select(t);
+		chosenChair = t == null ? -1 : t.chairAt(floor);
+		listener.chairChosen(t, chosenChair);
+		repaint();
+	}
+
 	// the right-click menu: for a chair, seat 1 and disabling; for any part
 	// of a table, editing, turning and removing it
 	private void showMenu(MouseEvent e)
@@ -352,9 +448,11 @@ public class PlanPanel extends JPanel
 			makeFirst.setEnabled(!first);
 			makeFirst.addActionListener(a -> seatChanged(() -> t.setFirstSeat(chair)));
 			boolean off = t.isDisabled(chair);
+			boolean taken = guests.guestAt(t.getId(), chair).isPresent();
 			JMenuItem disable = menu.add(off ? "Enable this seat" : "Disable this seat");
-			disable.setEnabled(!first);
+			disable.setEnabled(!first && !taken);
 			if (first) disable.setToolTipText("Seat 1 cannot be disabled");
+			else if (taken) disable.setToolTipText("Someone is seated here");
 			disable.addActionListener(a -> seatChanged(() -> t.setDisabled(chair, !off)));
 			menu.addSeparator();
 		}
@@ -401,7 +499,7 @@ public class PlanPanel extends JPanel
 		@Override
 		public void keyPressed(KeyEvent e)
 		{
-			if (selected == null) return;
+			if (selected == null || mode == Mode.SEATING) return;
 			switch (e.getKeyCode())
 			{
 				case KeyEvent.VK_LEFT -> nudge(-NUDGE, 0);

@@ -2,12 +2,18 @@ package org.lerot.myreceptionplanner.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 // The tables of one reception, in drawing order (the last is on top)
 public class Plan
 {
+	// tables whose centres are this close top to bottom are in the same row
+	static final double ROW_DEPTH = 120;
+
 	private final List<Table> tables = new ArrayList<>();
 
 	public List<Table> tables()
@@ -51,6 +57,63 @@ public class Plan
 	public Optional<Table> head()
 	{
 		return tables.stream().filter(Table::isHead).findFirst();
+	}
+
+	/*
+	 * Numbers the tables afresh by where they stand: in rows from the top of
+	 * the plan down, left to right along each row. The head table, and any
+	 * table with a name of its own, has no number, so the numbers run on
+	 * unbroken. Otherwise numbers stay put when tables move.
+	 */
+	public void renumber()
+	{
+		List<Table> numbered = new ArrayList<>();
+		for (Table t : tables)
+		{
+			if (t.isNumbered()) numbered.add(t);
+			else t.setNumber(0);
+		}
+		numbered.sort(Comparator.comparingDouble(Table::getY));
+		int next = 1;
+		int start = 0;
+		while (start < numbered.size())
+		{
+			// a row: the tables not much lower than its topmost
+			double top = numbered.get(start).getY();
+			int end = start;
+			while (end < numbered.size() && numbered.get(end).getY() - top <= ROW_DEPTH) end++;
+			List<Table> row = new ArrayList<>(numbered.subList(start, end));
+			row.sort(Comparator.comparingDouble(Table::getX));
+			for (Table t : row)
+				t.setNumber(next++);
+			start = end;
+		}
+	}
+
+	// gives the next number up to any table going by its number that has
+	// none, or shares one with a table before it (a new table, or one that
+	// has lost its name or stopped being the head table)
+	public void numberUnnumbered()
+	{
+		Set<Integer> used = new HashSet<>();
+		List<Table> needing = new ArrayList<>();
+		for (Table t : tables)
+		{
+			if (!t.isNumbered()) continue;
+			if (t.getNumber() > 0 && used.add(t.getNumber())) continue;
+			needing.add(t);
+		}
+		int next = tables.stream().mapToInt(Table::getNumber).max().orElse(0) + 1;
+		for (Table t : needing)
+			t.setNumber(next++);
+	}
+
+	// what the table is called: its own name, else "Head table" or "Table 3"
+	public String label(Table table)
+	{
+		if (table.hasName()) return table.getName();
+		if (table.isHead()) return "Head table";
+		return "Table " + table.getNumber();
 	}
 
 	// the places that can be used: every chair less the disabled ones

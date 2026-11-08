@@ -9,16 +9,27 @@ import org.lerot.myreceptionplanner.model.Table;
 import javax.swing.*;
 import java.awt.*;
 
-// Edits a table's name, places, turn and whether it is the head table
+/*
+ * Edits a table's own name, places, turn and whether it is the head table.
+ * The name is optional: left empty, the table is called "Head table" or by
+ * the number that follows where it stands.
+ */
 public class TableDialog
 {
 	// true if OK was pressed and the table changed
 	public static boolean edit(Component parent, Plan plan, Table table)
 	{
-		JPanel form = new JPanel(new MigLayout("insets 0, wrap 2", "[right][150!]"));
+		JPanel form = new JPanel(new MigLayout("insets 0, wrap 2", "[right][180!]"));
 		JTextField name = new JTextField(table.getName());
-		form.add(new JLabel("Name"));
+		String fallback = table.isHead() ? "Head table"
+				: table.getNumber() > 0 ? "Table " + table.getNumber() : "the next table number";
+		name.putClientProperty("JTextField.placeholderText", fallback);
+		form.add(new JLabel("Own name"));
 		form.add(name, "growx");
+		JLabel nameHint = new JLabel("<html>Leave empty to use " + (table.isHead() ? "“Head table”" : "the number")
+				+ ".<br>Table id " + table.getId() + ", which never changes.</html>");
+		nameHint.setForeground(Theme.EDGE);
+		form.add(nameHint, "skip, gapbottom 6");
 
 		JSpinner places = null, side = null, end = null;
 		if (table instanceof RoundTable round)
@@ -51,12 +62,11 @@ public class TableDialog
 			form.add(note, "span 2, gaptop 6");
 		}
 
-		int answer = JOptionPane.showConfirmDialog(parent, form, "Table",
+		int answer = JOptionPane.showConfirmDialog(parent, form, plan.label(table),
 				JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 		if (answer != JOptionPane.OK_OPTION) return false;
 
-		String newName = name.getText().trim();
-		if (!newName.isEmpty()) table.setName(newName);
+		table.setName(name.getText());
 		if (table instanceof RoundTable round)
 			round.setPlaces((Integer) places.getValue());
 		else if (table instanceof RectTable rect)
