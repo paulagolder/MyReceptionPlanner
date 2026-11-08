@@ -20,7 +20,7 @@ public class ChecksDialog
 	public static void show(Component parent, Occasion occasion, Event event)
 	{
 		List<Checks.SpareSeats> spare = Checks.spareSeats(event.getPlan(), event.getSeating());
-		List<Checks.Unseated> unseated = Checks.unseated(occasion.getGuests(), event.getSeating());
+		List<Checks.Unseated> unseated = Checks.unseated(occasion.getGuests(), event);
 
 		JPanel p = new JPanel(new MigLayout("insets 0, wrap 2, gapx 20", "[grow,fill][grow,fill]", "[][grow,fill][]"));
 		int spareTotal = spare.stream().mapToInt(Checks.SpareSeats::spare).sum();

@@ -167,6 +167,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		bar.add(eventChooser);
 		JPopupMenu occasionMenu = new JPopupMenu();
 		occasionMenu.add("Occasion details…").addActionListener(e -> editOccasion());
+		occasionMenu.add("Invitations…").addActionListener(e -> invitations());
 		occasionMenu.addSeparator();
 		occasionMenu.add("Event details…").addActionListener(e -> editEvent());
 		occasionMenu.add("New event…").addActionListener(e -> newEvent());
@@ -242,6 +243,14 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private void editOccasion()
 	{
 		if (OccasionDialogs.editOccasion(this, occasion)) changed();
+	}
+
+	private void invitations()
+	{
+		if (!InvitationsDialog.show(this, occasion)) return;
+		seatingPanel.refresh();
+		planPanel.repaint();
+		changed();
 	}
 
 	private void editEvent()

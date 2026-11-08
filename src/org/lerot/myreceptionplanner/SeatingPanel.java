@@ -54,6 +54,7 @@ public class SeatingPanel extends JPanel
 	private final Occasion occasion;
 	private final Plan plan;
 	private final GuestList guests;
+	private final Event event;
 	private final Seating seating;
 	private final Listener listener;
 	private Table table;      // the table whose seats are listed
@@ -67,7 +68,7 @@ public class SeatingPanel extends JPanel
 	private final JTable partyTable = new JTable(partyModel);
 	private final GuestModel guestModel = new GuestModel();
 	private final JTable guestTable = new JTable(guestModel);
-	private final JCheckBox unseatedOnly = new JCheckBox("Unseated only");
+	private final JCheckBox unseatedOnly = new JCheckBox("Not seated");
 	private final JComboBox<Object> seatPartyCombo = new JComboBox<>();
 	private final JComboBox<Object> guestPartyCombo = new JComboBox<>();
 
@@ -77,6 +78,7 @@ public class SeatingPanel extends JPanel
 		this.occasion = occasion;
 		this.plan = event.getPlan();
 		this.guests = occasion.getGuests();
+		this.event = event;
 		this.seating = event.getSeating();
 		this.listener = listener;
 		setPreferredSize(new Dimension(380, 0));
@@ -133,6 +135,7 @@ public class SeatingPanel extends JPanel
 	{
 		SwingUtilities.invokeLater(() ->
 		{
+			occasion.tidy();  // new guests invited, and seats only for those invited
 			refresh();
 			listener.guestsChanged();
 		});
@@ -201,7 +204,7 @@ public class SeatingPanel extends JPanel
 		JPopupMenu menu = new JPopupMenu();
 
 		JMenu seatSomeone = new JMenu(there == null ? "Seat a guest" : "Seat another guest here");
-		List<Guest> waiting = seating.unseated(guests.guests()).stream()
+		List<Guest> waiting = invitedNotSeated().stream()
 				.sorted(Comparator.comparing((Guest g) -> g.getParty() == null ? "￿" : g.getParty().getName())
 						.thenComparing(Guest::displayName))
 				.toList();
@@ -304,6 +307,7 @@ public class SeatingPanel extends JPanel
 					if (g == null)
 					{
 						g = guests.addGuest(name, Gender.UNKNOWN, lastParty);
+						event.invite(g);
 						seating.seat(g, seat);
 					} else guests.rename(g, name);
 				}
@@ -329,17 +333,23 @@ public class SeatingPanel extends JPanel
 			return seatOneOf(lastParty, seat);
 		}
 
-		// one of the party not seated yet, a place not named first, the lowest
-		// numbered; if all are seated, a new place in the party
+		// one of the party invited here and not seated yet, a place not named
+		// first, the lowest numbered; if there is none, a new place in the party
 		private Guest seatOneOf(Party p, Seat seat)
 		{
-			Guest g = seating.unseated(guests.guests()).stream()
+			Guest g = invitedNotSeated().stream()
 					.filter(u -> u.getParty() == p && p != null)
 					.min(Comparator.comparing(Guest::isNamed).thenComparingInt(Guest::getPlus))
 					.orElseGet(() -> guests.addGuest("", Gender.UNKNOWN, p));
+			event.invite(g);
 			seating.seat(g, seat);
 			return g;
 		}
+	}
+
+	private List<Guest> invitedNotSeated()
+	{
+		return seating.unseated(guests.guests()).stream().filter(event::isInvited).toList();
 	}
 
 	// ---- the Guests tab ----
@@ -351,6 +361,7 @@ public class SeatingPanel extends JPanel
 		partyTable.getColumnModel().getColumn(0).setMaxWidth(30);
 		partyTable.getColumnModel().getColumn(2).setMaxWidth(60);
 		partyTable.getColumnModel().getColumn(3).setMaxWidth(60);
+		partyTable.getColumnModel().getColumn(4).setMaxWidth(60);
 		partyTable.setDefaultRenderer(Object.class, new CellRenderer(row -> null, row -> false, -1));
 		partyTable.addMouseListener(new MouseAdapter()
 		{
@@ -382,7 +393,7 @@ public class SeatingPanel extends JPanel
 			public void mouseClicked(MouseEvent e)
 			{
 				int row = guestTable.rowAtPoint(e.getPoint());
-				if (e.getClickCount() == 2 && row >= 0 && guestTable.columnAtPoint(e.getPoint()) == 3)
+				if (e.getClickCount() == 2 && row >= 0 && guestTable.columnAtPoint(e.getPoint()) == 4)
 					findSeat(guestModel.rows.get(guestTable.convertRowIndexToModel(row)));
 			}
 		});
@@ -517,7 +528,7 @@ public class SeatingPanel extends JPanel
 
 	private class PartyModel extends AbstractTableModel
 	{
-		private final String[] columns = { "", "Party", "Places", "Named" };
+		private final String[] columns = { "", "Party", "Places", "Named", "Invited" };
 
 		public int getRowCount() { return guests.parties().size(); }
 
@@ -533,19 +544,20 @@ public class SeatingPanel extends JPanel
 				case 0 -> p.getColour();
 				case 1 -> p.getName();
 				case 2 -> guests.placesOf(p);
-				default -> guests.namedIn(p);
+				case 3 -> guests.namedIn(p);
+				default -> event.invitedIn(p, guests);
 			};
 		}
 	}
 
 	private class GuestModel extends AbstractTableModel
 	{
-		private final String[] columns = { "Name", "Gender", "Party", "Seat" };
+		private final String[] columns = { "Name", "Gender", "Party", "Invited", "Seat" };
 		private List<Guest> rows = List.of();
 
 		void reload()
 		{
-			rows = unseatedOnly.isSelected() ? seating.unseated(guests.guests()) : guests.guests();
+			rows = unseatedOnly.isSelected() ? invitedNotSeated() : guests.guests();
 			fireTableDataChanged();
 		}
 
@@ -563,11 +575,14 @@ public class SeatingPanel extends JPanel
 				case 0 -> g.getName();
 				case 1 -> g.getGender();
 				case 2 -> partyOf(g);
+				case 3 -> event.isInvited(g);
 				default -> seatOf(g);
 			};
 		}
 
-		public boolean isCellEditable(int row, int col) { return col < 3; }
+		public Class<?> getColumnClass(int col) { return col == 3 ? Boolean.class : Object.class; }
+
+		public boolean isCellEditable(int row, int col) { return col < 4; }
 
 		public void setValueAt(Object value, int row, int col)
 		{
@@ -581,10 +596,35 @@ public class SeatingPanel extends JPanel
 				{
 					if (!guests.setParty(g, value instanceof Party p ? p : null)) leadStays(g);
 				}
+				case 3 ->
+				{
+					if ((Boolean) value) event.invite(g);
+					else if (!uninvite(g)) return;
+				}
 				default -> { return; }
 			}
 			changed();
 		}
+	}
+
+	// asks first if this takes away others too (the lead's party) or a seat
+	private boolean uninvite(Guest g)
+	{
+		int others = g.isLead() ? event.invitedIn(g.getParty(), guests) - 1 : 0;
+		boolean seated = seating.isSeated(g) || (g.isLead()
+				&& guests.membersOf(g.getParty()).stream().anyMatch(seating::isSeated));
+		if (others > 0 || seated)
+		{
+			String what = others > 0
+					? g.getName() + " leads " + g.getParty().getName() + ", so the whole party (" + (others + 1)
+					+ " guests) will no longer be invited to " + event.getName() + "."
+					: g.displayName() + " will no longer be invited to " + event.getName() + ".";
+			int answer = JOptionPane.showConfirmDialog(this, what + (seated ? "\nTheir seats here are cleared." : ""),
+					"Invitation", JOptionPane.OK_CANCEL_OPTION);
+			if (answer != JOptionPane.OK_OPTION) return false;
+		}
+		event.uninvite(g, guests);
+		return true;
 	}
 
 	// ---- drawing the cells ----

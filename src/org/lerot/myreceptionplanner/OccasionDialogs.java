@@ -107,13 +107,29 @@ public class OccasionDialogs
 				return this;
 			}
 		});
+		JComboBox<Object> invite = new JComboBox<>();
+		invite.addItem("Everyone");
+		invite.addItem("No one");
+		for (Event e : occasion.events())
+			invite.addItem(e);
+		invite.setRenderer(new DefaultListCellRenderer()
+		{
+			public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f)
+			{
+				super.getListCellRendererComponent(l, v, i, s, f);
+				if (v instanceof Event e) setText("The guests invited to " + e.getName());
+				return this;
+			}
+		});
 		JPanel form = form();
 		row(form, "Event", name);
 		row(form, "Place", place);
 		row(form, "Date", date);
 		row(form, "Time", time);
 		row(form, "Start with", start);
-		note(form, "Leave the date empty if it is on the occasion's day. Copied tables start with no one seated.");
+		row(form, "Invite", invite);
+		note(form, "Leave the date empty if it is on the occasion's day. Copied tables start with no one seated. "
+				+ "Change who is invited later with Occasion ▾ → Invitations….");
 		while (true)
 		{
 			if (!ok(parent, form, "New event")) return null;
@@ -126,6 +142,9 @@ public class OccasionDialogs
 				e.setPlace(place.getText());
 				e.setDate(d);
 				e.setTime(time.getText());
+				GuestList guests = occasion.getGuests();
+				if (invite.getSelectedItem() instanceof Event from) e.setInvited(from.invited(), guests);
+				else if ("Everyone".equals(invite.getSelectedItem())) e.setInvited(guests.guests(), guests);
 				return e;
 			} catch (IllegalArgumentException | IOException ex)
 			{

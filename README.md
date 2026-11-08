@@ -24,12 +24,30 @@ guests.
 On the right of the toolbar:
 
 - **Event** chooses which event's tables and seating are shown.
-- **Occasion ▾** → *Occasion details…* (name and date), *Event details…*
+- **Occasion ▾** → *Occasion details…* (name and date), *Invitations…*
+  (below), *Event details…*
   (name, place, date and time; leave the date empty if it is on the
   occasion's day), *New event…* (starting with an empty room or a copy of
-  another event's tables), *Delete this event…*, *New occasion…* and
+  another event's tables, and inviting everyone, no one or the guests of
+  another event), *Delete this event…*, *New occasion…* and
   *Open occasion…*.
 - **Save…** saves the whole occasion.
+
+### Invitations
+
+Each event has its own list of who is invited, and only those invited can
+be seated there. **Occasion ▾ → Invitations…** shows every party with its
+guests down the side and a column of ticks for each event: click a guest's
+tick to invite or uninvite them, or a party's to do the whole party (it is
+half ticked when only some are invited). Whenever anyone of a party is
+invited, so is its lead; uninviting the lead uninvites the party. Nothing
+changes until OK, which says first if anyone would lose a seat.
+
+A new party is invited to every event. A new place in a party goes wherever
+the party is already invited. In the Guests tab, the *Invited* column ticks
+who is invited to the event shown (and can change it), the party list shows
+how many of each party are invited there, and *Not seated* lists those
+invited but not yet seated.
 
 The plan works in two modes, chosen at the left of the toolbar:
 
@@ -50,8 +68,8 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
   seat (the guest goes back to the list) or to remove the guest altogether.
 - The **Guests** tab lists the parties and every guest. Rename guests, change
   a guest's gender or party, and change a party's colour (Colour…, or
-  double-click its swatch). Tick *Unseated only* to see who still needs a
-  seat; double-click a guest's seat to find it on the plan.
+  double-click its swatch). Tick *Not seated* to see who is invited but
+  still needs a seat; double-click a guest's seat to find it on the plan.
 
 ### Parties
 
@@ -135,8 +153,9 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
   - **Spare places**: each table with seats free, how many, and out of how
     many usable seats (disabled seats don't count). The head table comes
     first, then the numbered tables, then those with names of their own.
-  - **Guests not seated**: each party with guests still to seat, how many,
-    and out of its places; guests in no party are listed together.
+  - **Guests not seated**: each party with guests invited but still to
+    seat, how many, and out of how many invited; guests in no party are
+    listed together.
 
 ### Files
 
@@ -145,7 +164,8 @@ Each occasion is a folder (by default under `~/Documents/MyReceptions`):
 - `occasion.xml`: the occasion's name and date, its list of events, and the
   guest list: the parties, their leads and contact details, and their guests
 - one file for each event, named after it when it was made (such as
-  `wedding-breakfast.xml`): its name, place, date and time, its tables
+  `wedding-breakfast.xml`): its name, place, date and time, who is invited,
+  its tables
   (shapes, positions, turns, numbers, seat 1 and disabled chairs) and who
   sits where
 

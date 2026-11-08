@@ -58,6 +58,7 @@ class OccasionXmlTest
 		evening.setDate(LocalDate.of(2026, 5, 13));
 		o.addEvent(evening);
 
+		o.tidy();  // everyone new is invited to every event
 		OccasionXml.save(o, folder);
 		assertTrue(Files.isRegularFile(folder.resolve("occasion.xml")));
 		assertTrue(Files.isRegularFile(folder.resolve("wedding-breakfast.xml")));

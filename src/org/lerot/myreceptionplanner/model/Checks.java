@@ -8,7 +8,7 @@ import java.util.Map;
 
 /*
  * What is not yet settled at an event: tables with seats free, and parties
- * with guests not yet seated. The tables come in the order a guide lists
+ * with guests invited but not yet seated. The tables come in the order a guide lists
  * them: the head table, then by number, then those with names of their own.
  */
 public class Checks
@@ -30,15 +30,18 @@ public class Checks
 		return out;
 	}
 
-	public static List<Unseated> unseated(GuestList guests, Seating seating)
+	// of those invited to the event; places counts the party's invited
+	public static List<Unseated> unseated(GuestList guests, Event event)
 	{
 		List<Unseated> out = new ArrayList<>();
+		Seating seating = event.getSeating();
 		for (Party p : guests.parties())
 		{
-			int n = seating.unseated(guests.membersOf(p)).size();
-			if (n > 0) out.add(new Unseated(p, p.getName(), n, guests.placesOf(p)));
+			List<Guest> invited = guests.membersOf(p).stream().filter(event::isInvited).toList();
+			int n = seating.unseated(invited).size();
+			if (n > 0) out.add(new Unseated(p, p.getName(), n, invited.size()));
 		}
-		List<Guest> loners = guests.guests().stream().filter(g -> g.getParty() == null).toList();
+		List<Guest> loners = guests.guests().stream().filter(g -> g.getParty() == null && event.isInvited(g)).toList();
 		int n = seating.unseated(loners).size();
 		if (n > 0) out.add(new Unseated(null, "No party", n, loners.size()));
 		return out;

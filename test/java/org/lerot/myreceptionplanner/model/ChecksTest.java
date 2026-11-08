@@ -42,19 +42,24 @@ class ChecksTest
 		GuestList guests = new GuestList();
 		Party smiths = guests.createParty("Ann Smith", 3, "");
 		Party joneses = guests.createParty("Cath Jones", 2, "");
-		Seating seating = new Seating();
+		Guest brown = guests.addGuest("Father Brown", Gender.MALE, null);
+		guests.addGuest("Not Asked", Gender.MALE, null);
+		Event event = new Event("Breakfast", "b.xml", new Plan(), new Seating());
+		guests.membersOf(smiths).forEach(event::invite);
+		guests.membersOf(joneses).forEach(event::invite);
+		event.invite(brown);
+		Seating seating = event.getSeating();
 		seating.seat(smiths.getLead(), new Seat(1, 0));
 		guests.membersOf(joneses).forEach(g -> seating.seat(g, new Seat(2, g.getPlus())));
-		guests.addGuest("Father Brown", Gender.MALE, null);
 
-		List<Checks.Unseated> u = Checks.unseated(guests, seating);
+		List<Checks.Unseated> u = Checks.unseated(guests, event);
 		assertEquals(2, u.size());
 		assertEquals("Ann Smith", u.get(0).name());
 		assertEquals(2, u.get(0).unseated());
 		assertEquals(3, u.get(0).places());
 		assertEquals("No party", u.get(1).name());
 		assertNull(u.get(1).party());
-		assertEquals(1, u.get(1).unseated());
+		assertEquals(1, u.get(1).unseated(), "only those invited count");
 	}
 
 	private static RoundTable table(Plan plan, int id, double x, double y, int places)

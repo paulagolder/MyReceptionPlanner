@@ -5,8 +5,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /*
  * The occasion, such as "Lydia and Isaac's Wedding" on 12 May 2026: one guest
@@ -22,6 +24,8 @@ public class Occasion
 	private LocalDate date;  // null if not set
 	private final GuestList guests;
 	private final List<Event> events = new ArrayList<>();
+	// guests whose invitations have been settled; anyone else is new
+	private final Set<Guest> settled = Collections.newSetFromMap(new IdentityHashMap<>());
 
 	public Occasion(String name, GuestList guests)
 	{
@@ -87,11 +91,35 @@ public class Occasion
 		return String.join("  ·  ", parts);
 	}
 
-	// the guest list changed: no seat for anyone who has left it, at any event
+	/*
+	 * After the guest list changes. New guests are invited: one of a party
+	 * already on the list goes wherever their party is invited; one of a new
+	 * party, or of none, goes to every event (and to any event that has
+	 * invited them already). Then no one keeps an invitation or a seat they
+	 * should not have.
+	 */
 	public void tidy()
 	{
+		List<Guest> fresh = guests.guests().stream().filter(g -> !settled.contains(g)).toList();
+		for (Guest g : fresh)
+		{
+			List<Guest> others = g.getParty() == null ? List.of()
+					: guests.membersOf(g.getParty()).stream().filter(settled::contains).toList();
+			for (Event e : events)
+			{
+				if (others.isEmpty() || others.stream().anyMatch(e::isInvited)) e.invite(g);
+			}
+		}
+		settled.addAll(fresh);
+		settled.retainAll(guests.guests());
 		for (Event e : events)
-			e.getSeating().tidy(e.getPlan(), guests);
+			e.tidy(guests);
+	}
+
+	// everyone on the list now has their invitations settled (after loading)
+	public void settleAll()
+	{
+		settled.addAll(guests.guests());
 	}
 
 	public boolean seatedAnywhere(Guest guest)
