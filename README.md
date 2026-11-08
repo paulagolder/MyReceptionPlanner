@@ -91,6 +91,16 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 - With a table selected: arrow keys nudge it, R / Shift+R turn it, Delete removes it.
 - Ctrl + mouse wheel, or Zoom in / Zoom out, zooms.
 
+### Checking the plan
+
+**Check…** on the toolbar (in either mode) lists what is still to settle:
+
+- **Spare places**: each table with seats free, how many, and out of how
+  many usable seats (disabled seats don't count). The head table comes
+  first, then the numbered tables, then those with names of their own.
+- **Guests not seated**: each party with guests still to seat, how many, and
+  out of its places; guests in no party are listed together.
+
 **Save…** saves both files. It shows the folder they'll go in and asks before writing. Choose
 another folder there to save somewhere else, for example a copy under a new
 name; from then on the plan saves to that folder. A new plan asks for a folder

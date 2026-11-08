@@ -119,6 +119,10 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		tableButton = dropDown("Table", edit);
 		bar.add(tableButton);
 		bar.addSeparator();
+		JButton check = button("Check…", () -> ChecksDialog.show(this, plan, guests));
+		check.setToolTipText("Spare places at the tables, and guests not yet seated");
+		bar.add(check);
+		bar.addSeparator();
 		bar.add(button("Zoom in", () -> planPanel.zoom(1.2)));
 		bar.add(button("Zoom out", () -> planPanel.zoom(1 / 1.2)));
 		bar.add(Box.createHorizontalGlue());
