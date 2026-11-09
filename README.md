@@ -45,16 +45,47 @@ The toolbar starts with:
 - **Occasion ▾** → *Progress…* (below), *Occasion details…* (name and
   date), *Invitations…* (opens the Guests view), *New occasion…*, *Open occasion…* and
   *Save…* (saves the whole occasion).
-- **Event | Guests** switches between the two views. The **Event** view
-  shows the plan of one event: next to it, the event chooser picks which,
-  then **Events ▾** → *Event details…* (name, place, date and time; leave
-  the date empty if it is on the occasion's day), *Menu…* and *Menu choices
-  and dietary needs…* (below), *New event…* (starting with an empty room or
-  a copy of another event's tables, and inviting everyone, no one or the
-  guests of another event) and *Delete this event…*; then Layout and
-  Seating and the table menus. The **Guests** view is the guest list
-  of the whole occasion (below); the plan's controls are hidden there.
-- **Reports ▾** and **Messages ▾** are there in both views.
+- **Event | Guests** switches between the two views. The **Guests** view is
+  the guest list of the whole occasion (below); the plan's controls are
+  hidden there. The **Event** view shows the plan of one event, with:
+  - the **event chooser**, picking which;
+  - **Event ▾** → *Event details…* (name, place, date and time, leaving the
+    date empty if it is on the occasion's day; type, capacity, and
+    **Catered**, ticked when food is served), *Check…* and *Table plan
+    (PDF)…* (below), *Export layout…* (below), *Save this event…* (only its
+    file; an event or occasion never saved before saves the whole occasion),
+    *New event…* (starting with an empty room, a copy of another event's
+    tables or a layout file, and inviting everyone, no one or the guests of
+    another event) and *Delete this event…*;
+  - **Layout ▾** (add a table, pew or altar, or *Import layout…*) and
+    **Table ▾** (below);
+  - **Seating**, on to seat the guests (it shows blue, and the seat panel
+    opens on the right) and off to set out the tables;
+  - **Catering ▾**, for a catered event only: *Import menu…* (only while
+    the event has no menu), *Menu…*, *Menu choices and dietary needs…*,
+    *Catering list…*, *Kitchen quantities…*, *Service by table…* (below)
+    and *Export menu…*.
+- **Messages ▾** is there in both views.
+
+### Layouts and menus as files
+
+A room's layout or a menu can be kept in a file of its own, to use again in
+another event or occasion: a venue's standard room, say, or a caterer's
+menu. Imported, it can be changed like any other.
+
+- **Event ▾ → Export layout…** writes the event's tables to
+  `Output/<event>_layout.xml` (such as `wedding-breakfast_layout.xml`)
+  unless you choose another name or place.
+- **Layout ▾ → Import layout…** puts a layout file's tables in place of the
+  event's own (asking first; anyone seated loses their seat). *New event…*
+  can also start from a layout file: *Import layout*, under *Start with*.
+- **Catering ▾ → Export menu…** writes the menu, with its note, to
+  `Output/<event>_menu.xml`.
+- **Catering ▾ → Import menu…**, there while the event has no menu, takes a
+  menu file and opens it in *Menu…* to change.
+
+An event's own file (`wedding-breakfast.xml`, from this or another
+occasion) can be imported as a layout or a menu too.
 
 ### The Guests view
 
@@ -133,12 +164,17 @@ case. You're warned, with who and why, if it has:
 A name of one word, or of more than one person ("Tim & Claire Perks"), only
 matches the same name. Answer *A different person* to go ahead (those two are
 then never flagged again), or *Go back*. When typing a new name into an empty
-seat, you can instead seat the guest already on the list. **Reports ▾ →
-Names alike…** lists every pair alike across the occasion; mark a pair *Not
+seat, you can instead seat the guest already on the list. **Names
+alike…** in the Guests view lists every pair alike across the occasion; mark a pair *Not
 the same person* to leave it out from now on, or rename or remove a real
 duplicate in the Guests tab.
 
 ### Dietary needs and menus
+
+Menus, choices and the kitchen's lists are for **catered** events (tick
+*Catered* in the event's details; the Catering ▾ menu shows only then).
+Unticking it keeps the menu and choices but stops them being served,
+counted or asked for. An older event file with a menu opens as catered.
 
 - **Dietary needs belong to each guest** and hold at every event: Vegetarian
   (v), Vegan (vg), Gluten-free (gf), Dairy-free (df), Nut allergy (nf), Halal
@@ -150,23 +186,25 @@ duplicate in the Guests tab.
   (Ann Smith+1) chooses once it is named, and a guest whose name is cleared
   loses theirs. The catering list and Check… count places not yet named
   apart.
-- **Events ▾ → Menu…** sets out the shown event's menu: a line for each
+- **Catering ▾ → Menu…** sets out the shown event's menu: a line for each
   dish, with its course (Starter, Main, Dessert …) and ticks for the diets it
-  suits (a vegan dish suits vegetarians too).
-- **Events ▾ → Menu choices and dietary needs…** lists those invited to
+  suits (a vegan dish suits vegetarians too), and a **note** of a few lines
+  about the menu as a whole ("All our food is sourced locally"), which goes
+  with the menu to the guests (`{menu}`) and on the catering list.
+- **Catering ▾ → Menu choices and dietary needs…** lists those invited to
   the event, where they sit, their needs, a choice for each course and a
   note for this event only. A dish that does not suit a guest's needs shows
   in red with ⚠.
-- **Reports ▾ → Catering list…** shows, for the event: how many invited
+- **Catering ▾ → Catering list…** shows, for the event: how many invited
   guests have each need; how many of each dish, and at each table; everyone
   with a need or a note, where they sit and what they chose; choices that do
   not suit; and who has yet to choose. *Save as PDF…* makes a copy for the
   caterers.
-- **Reports ▾ → Kitchen quantities…**: course by course, how many of each
+- **Catering ▾ → Kitchen quantities…**: course by course, how many of each
   dish to make, and how many of those must meet a dietary need or have a
   note ("Risotto 12, of which 3 vg, 1 nf"), with how many have still to
   choose or are places not yet named, and any choices that do not suit.
-- **Reports ▾ → Service by table…**: which dish goes to which seat. For each
+- **Catering ▾ → Service by table…**: which dish goes to which seat. For each
   table or pew in turn, a line for each seat with someone in it, in seat
   order: the guest, their dish for each course, their needs and note; under
   it the table's dishes counted, to plate up a table at a time. Invited
@@ -213,10 +251,10 @@ invitation to the event shown are listed, with the same marks (click one
 for what it means; they are changed only in the Guests view), the party list shows how many of each party are expected there, and
 *Not seated* lists those expected but not yet seated.
 
-The plan works in two modes, chosen at the left of the toolbar:
+The plan works in two modes, switched by **Seating** on the toolbar:
 
-- **Layout**: set out the tables (below).
-- **Seating**: seat the guests. The tables stay put; click a table, or one of
+- **Seating off**: set out the tables (below).
+- **Seating on**: seat the guests. The tables stay put; click a table, or one of
   its chairs, and the panel on the right lists its seats, seat 1 first, with
   who sits in each. Seat numbers show on the empty chairs.
 
@@ -263,14 +301,14 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 
 ### Layout
 
-- **Add table ▾** → Round table / Rectangular table / Pew puts a new one in
+- **Layout ▾** → Round table / Rectangular table / Pew puts a new one in
   view. A **pew** is a straight row of seats all facing forward (up the plan
   until turned), with its backrest behind; use pews for a church, or for
   rows of seats round the walls at a party. It turns, moves and duplicates
   like a table. Pews are numbered on their own ("Pew 1", "Pew 2" …), across
   each row and then the next row back; their seats are numbered from seat 1
   towards the far end, so make the seat by the aisle seat 1.
-- **Add table ▾ → Altar / speakers' table** puts down a table with no
+- **Layout ▾ → Altar / speakers' table** puts down a table with no
   chairs, there to show which way the room faces. Its length is given in
   seats along its front (in Edit), so it lines up with the pews or tables
   around it. It takes no number, plays no part in seating, places or checks,
@@ -377,7 +415,8 @@ international number for WhatsApp.
 
 ### Reports
 
-**Reports ▾** on the toolbar (in either mode):
+*Check…* and the table plan are on **Event ▾**, and the catering reports
+on **Catering ▾** (above):
 
 - **Table plan (PDF)…**: one page to print and put up, with a panel for each
   table where it stands in the room, its number or name at the top and its
@@ -387,7 +426,7 @@ international number for WhatsApp.
   headed with the occasion and its date, then the event with its place and
   time. Choose the paper (A4 to A1) and the orientation; the type is made as
   large as fits. It is saved as `table-plan-<event>.pdf` in the occasion's
-  folder unless you choose otherwise, and opened.
+  folder's Output unless you choose otherwise, and opened.
 - **Check…** lists what is still to settle at the event shown (for an
   unreserved party: who is invited, party by party, against its capacity):
 

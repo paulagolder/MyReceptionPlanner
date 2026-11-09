@@ -2,6 +2,7 @@ package org.lerot.myreceptionplanner;
 
 import net.miginfocom.swing.MigLayout;
 import org.lerot.myreceptionplanner.model.Event;
+import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
 import org.lerot.myreceptionplanner.model.Messages;
 import org.lerot.myreceptionplanner.model.Occasion;
@@ -64,10 +65,10 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private final List<JComponent> eventOnly = new ArrayList<>();  // toolbar items hidden in the Guests view
 	private PlanPanel planPanel;
 	private SeatingPanel seatingPanel;
-	private final JToggleButton layoutButton = new JToggleButton("Layout");
 	private final JToggleButton seatingButton = new JToggleButton("Seating");
 	private JButton addTableButton;
 	private JButton tableButton;
+	private JButton cateringButton;  // only for a catered event
 	private final JComboBox<Event> eventChooser = new JComboBox<>();
 	private boolean fillingChooser;
 	private final JMenuItem deleteEventItem = new JMenuItem("Delete this event…");
@@ -152,34 +153,18 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 		JPopupMenu eventsMenu = new JPopupMenu();
 		eventsMenu.add("Event details…").addActionListener(e -> editEvent());
-		eventsMenu.add("Menu…").addActionListener(e ->
-		{
-			if (MenuDialog.edit(this, occasion, event)) changed();
-		});
-		eventsMenu.add("Menu choices and dietary needs…").addActionListener(e ->
-		{
-			if (MenuChoicesDialog.show(this, event))
-			{
-				seatingPanel.refresh();
-				changed();
-			}
-		});
+		JMenuItem check = eventsMenu.add("Check…");
+		check.setToolTipText("Spare places at the tables, and guests not yet seated");
+		check.addActionListener(e -> ChecksDialog.show(this, occasion, event));
+		eventsMenu.add("Table plan (PDF)…").addActionListener(e -> tablePlanPdf());
+		eventsMenu.add("Export layout…").addActionListener(e -> exportLayout());
+		eventsMenu.addSeparator();
+		eventsMenu.add("Save this event…").addActionListener(e -> saveEvent());
 		eventsMenu.addSeparator();
 		eventsMenu.add("New event…").addActionListener(e -> newEvent());
 		deleteEventItem.addActionListener(e -> deleteEvent());
 		eventsMenu.add(deleteEventItem);
-		bar.add(eventOnly(dropDown("Events", eventsMenu)));
-		bar.add(eventOnly(separator()));
-		ButtonGroup modes = new ButtonGroup();
-		modes.add(layoutButton);
-		modes.add(seatingButton);
-		layoutButton.setSelected(true);
-		layoutButton.setToolTipText("Set out the tables");
-		seatingButton.setToolTipText("Seat the guests");
-		layoutButton.addActionListener(e -> setMode(PlanPanel.Mode.LAYOUT));
-		seatingButton.addActionListener(e -> setMode(PlanPanel.Mode.SEATING));
-		bar.add(eventOnly(layoutButton));
-		bar.add(eventOnly(seatingButton));
+		bar.add(eventOnly(dropDown("Event", eventsMenu)));
 		bar.add(eventOnly(separator()));
 
 		JPopupMenu add = new JPopupMenu();
@@ -188,7 +173,10 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		add.add("Pew (a row of seats)").addActionListener(e -> addPew());
 		add.addSeparator();
 		add.add("Altar / speakers' table").addActionListener(e -> addAltar());
-		addTableButton = dropDown("Add table", add);
+		add.addSeparator();
+		add.add("Import layout…").addActionListener(e -> importLayout());
+		addTableButton = dropDown("Layout", add);
+		addTableButton.setToolTipText("Add a table, pew or altar to the plan");
 		bar.add(addTableButton);
 
 		editItem.addActionListener(e -> editRequested(planPanel.getSelected()));
@@ -216,29 +204,61 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		edit.add(renumberItem);
 		tableButton = dropDown("Table", edit);
 		bar.add(tableButton);
-		bar.addSeparator();
 
-		JPopupMenu reports = new JPopupMenu();
-		JMenuItem check = reports.add("Check…");
-		check.setToolTipText("Spare places at the tables, and guests not yet seated");
-		check.addActionListener(e -> ChecksDialog.show(this, occasion, event));
-		JMenuItem alike = reports.add("Names alike…");
-		alike.setToolTipText("Guests whose names suggest they are on the list twice");
-		alike.addActionListener(e ->
+		// on: seat the guests, with the seat panel; off: set out the tables
+		seatingButton.putClientProperty("FlatLaf.style", "selectedBackground: #2F6FDB; selectedForeground: #FFFFFF; toolbar.selectedBackground: #2F6FDB");
+		seatingButton.addActionListener(e ->
+				setMode(seatingButton.isSelected() ? PlanPanel.Mode.SEATING : PlanPanel.Mode.LAYOUT));
+		bar.add(eventOnly(seatingButton));
+
+		JPopupMenu catering = new JPopupMenu();
+		JMenuItem importMenu = catering.add("Import menu…");
+		importMenu.setToolTipText("Take a menu exported from another event, or another occasion's event file");
+		importMenu.addActionListener(e -> importMenu());
+		JSeparator afterImport = new JSeparator();
+		catering.add(afterImport);
+		catering.add("Menu…").addActionListener(e ->
 		{
-			if (NamesAlikeDialog.show(this, occasion.getGuests())) changed();
+			if (MenuDialog.edit(this, occasion, event)) changed();
 		});
-		reports.add("Catering list…").addActionListener(e -> showReport(
+		catering.add("Menu choices and dietary needs…").addActionListener(e ->
+		{
+			if (MenuChoicesDialog.show(this, event))
+			{
+				seatingPanel.refresh();
+				changed();
+			}
+		});
+		catering.addSeparator();
+		catering.add("Catering list…").addActionListener(e -> showReport(
 				new org.lerot.myreceptionplanner.reports.CateringReport(occasion, event), "Catering", "catering", null));
-		reports.add("Kitchen quantities…").addActionListener(e -> showReport(
+		catering.add("Kitchen quantities…").addActionListener(e -> showReport(
 				new org.lerot.myreceptionplanner.reports.KitchenQuantities(occasion, event), "Kitchen quantities",
 				"kitchen-quantities", null));
-		reports.add("Service by table…").addActionListener(e -> showReport(
+		catering.add("Service by table…").addActionListener(e -> showReport(
 				new org.lerot.myreceptionplanner.reports.ServiceByTable(occasion, event), "Service by table",
 				"service-by-table", "Save as PDF, a page per table…"));
-		reports.addSeparator();
-		reports.add("Table plan (PDF)…").addActionListener(e -> tablePlanPdf());
-		bar.add(dropDown("Reports", reports));
+		catering.addSeparator();
+		JMenuItem exportMenu = catering.add("Export menu…");
+		exportMenu.addActionListener(e -> exportMenu());
+		// importing only until there is a menu; exporting once there is
+		catering.addPopupMenuListener(new javax.swing.event.PopupMenuListener()
+		{
+			public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e)
+			{
+				importMenu.setVisible(!event.hasMenu());
+				afterImport.setVisible(!event.hasMenu());
+				exportMenu.setEnabled(event.hasMenu());
+			}
+
+			public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {}
+
+			public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {}
+		});
+		cateringButton = dropDown("Catering", catering);
+		cateringButton.setToolTipText("The menu, choices and dietary needs, and the kitchen's lists");
+		bar.add(cateringButton);
+		bar.addSeparator();
 		JPopupMenu messages = new JPopupMenu();
 		messages.add("Write to guests…").addActionListener(e ->
 		{
@@ -343,6 +363,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		{
 			addTableButton.setVisible(false);
 			tableButton.setVisible(false);
+			cateringButton.setVisible(false);
 		} else setMode(mode);
 		updateTitle();
 	}
@@ -483,7 +504,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 	private void newEvent()
 	{
-		Event e = OccasionDialogs.newEvent(this, occasion, event);
+		Event e = OccasionDialogs.newEvent(this, occasion, event, occasionFolder().resolve(Occasion.OUTPUT));
 		if (e == null) return;
 		occasion.addEvent(e);
 		droppedFiles.remove(e.getFile());
@@ -542,14 +563,15 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private void setMode(PlanPanel.Mode newMode)
 	{
 		seatingButton.setEnabled(event.isSeated());
-		seatingButton.setToolTipText(event.isSeated() ? "Seat the guests"
+		seatingButton.setToolTipText(event.isSeated() ? "On: seat the guests; off: set out the tables"
 				: event.getName() + " is a party, unreserved: no one is given a seat");
 		if (!event.isSeated()) newMode = PlanPanel.Mode.LAYOUT;
 		mode = newMode;
 		boolean seating = mode == PlanPanel.Mode.SEATING;
-		(seating ? seatingButton : layoutButton).setSelected(true);
+		seatingButton.setSelected(seating);
 		addTableButton.setVisible(!seating && !guestView);
 		tableButton.setVisible(!seating && !guestView);
+		cateringButton.setVisible(event.isCatered() && !guestView);
 		planPanel.setMode(mode);
 		seatingPanel.setVisible(seating);
 		if (seating)
@@ -742,7 +764,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		form.add(turn);
 		JLabel note = new JLabel("<html>Each table where it stands, with its guests in seat order.<br>"
 				+ "Renumber the tables first if they have moved. The heading comes from<br>"
-				+ "Occasion ▾ → Occasion details and Events ▾ → Event details.</html>");
+				+ "Occasion ▾ → Occasion details and Event ▾ → Event details.</html>");
 		note.setForeground(Theme.EDGE);
 		form.add(note, "skip, gaptop 6");
 		if (JOptionPane.showConfirmDialog(this, form, "Table plan: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
@@ -805,18 +827,125 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	// in the Output folder inside the occasion's folder
 	private Path choosePdf(String name)
 	{
+		return chooseOutput(name, "pdf", "PDF files", "Save the PDF");
+	}
+
+	// a file to write in the Output folder, the name given filled in; null if cancelled
+	private Path chooseOutput(String name, String extension, String kind, String title)
+	{
 		File in = occasionFolder().resolve(Occasion.OUTPUT).toFile();
 		in.mkdirs();
 		JFileChooser fc = new JFileChooser(in);
-		fc.setDialogTitle("Save the PDF");
+		fc.setDialogTitle(title);
 		fc.setSelectedFile(new File(in, name));
-		fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PDF files", "pdf"));
+		fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(kind, extension));
 		if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return null;
 		File f = fc.getSelectedFile();
-		if (!f.getName().toLowerCase().endsWith(".pdf")) f = new File(f.getParentFile(), f.getName() + ".pdf");
+		if (!f.getName().toLowerCase().endsWith("." + extension)) f = new File(f.getParentFile(), f.getName() + "." + extension);
 		if (f.exists() && JOptionPane.showConfirmDialog(this, f.getName() + " is already there. Replace it?",
-				"Save the PDF", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return null;
+				title, JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return null;
 		return f.toPath();
+	}
+
+	// an XML file to read, starting in the Output folder; null if cancelled
+	private Path chooseImport(String title)
+	{
+		File in = occasionFolder().resolve(Occasion.OUTPUT).toFile();
+		JFileChooser fc = new JFileChooser(in.isDirectory() ? in : ROOT.toFile());
+		fc.setDialogTitle(title);
+		fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Layout, menu or event files (XML)", "xml"));
+		if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return null;
+		return fc.getSelectedFile().toPath();
+	}
+
+	// the event's name as in its file name: "wedding-breakfast"
+	private String eventBase()
+	{
+		return event.getFile().replaceFirst("\\.xml$", "");
+	}
+
+	// ---- layouts and menus to and from files ----
+
+	private void exportLayout()
+	{
+		if (plan().tables().isEmpty())
+		{
+			JOptionPane.showMessageDialog(this, event.getName() + " has no tables yet.", "Export layout",
+					JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		Path to = chooseOutput(eventBase() + "_layout.xml", "xml", "Layout files (XML)", "Export layout");
+		if (to == null) return;
+		try
+		{
+			OccasionXml.saveLayout(plan(), to);
+			JOptionPane.showMessageDialog(this, "Saved " + to, "Export layout", JOptionPane.INFORMATION_MESSAGE);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot export", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	// the tables from a file in place of the event's own; everyone seated loses their seat
+	private void importLayout()
+	{
+		Path from = chooseImport("Import a layout");
+		if (from == null) return;
+		Plan imported;
+		try
+		{
+			imported = OccasionXml.loadLayout(from);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot import", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		int n = plan().tables().size(), seated = event.getSeating().seatedCount();
+		if (n > 0 && JOptionPane.showConfirmDialog(this, "Replace the " + n + (n == 1 ? " table" : " tables") + " of "
+						+ event.getName() + " with the " + imported.tables().size() + " from " + from.getFileName() + "?"
+						+ (seated > 0 ? "\nThe " + seated + " seated guests lose their seats." : ""),
+				"Import layout", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+		for (Guest g : List.copyOf(event.getSeating().all().keySet()))
+			event.getSeating().unseat(g);
+		for (Table t : List.copyOf(plan().tables()))
+			plan().remove(t);
+		imported.tables().forEach(plan()::add);
+		showEvent(event);
+		changed();
+	}
+
+	private void exportMenu()
+	{
+		Path to = chooseOutput(eventBase() + "_menu.xml", "xml", "Menu files (XML)", "Export menu");
+		if (to == null) return;
+		try
+		{
+			OccasionXml.saveMenu(event.getMenu(), to);
+			JOptionPane.showMessageDialog(this, "Saved " + to, "Export menu", JOptionPane.INFORMATION_MESSAGE);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot export", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	// a menu from a file, for an event with none yet
+	private void importMenu()
+	{
+		Path from = chooseImport("Import a menu");
+		if (from == null) return;
+		try
+		{
+			org.lerot.myreceptionplanner.model.Menu m = OccasionXml.loadMenu(from);
+			event.getMenu().courses().clear();
+			event.getMenu().courses().addAll(m.courses());
+			event.getMenu().setNote(m.getNote());
+			event.tidy(occasion.getGuests());
+			changed();
+			if (MenuDialog.edit(this, occasion, event)) changed();
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot import", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	// in the desktop's PDF viewer, if there is one
@@ -876,6 +1005,33 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 	// Save on the toolbar: shows where the occasion will go, with a chance to
 	// choose another folder, before writing it
+	/*
+	 * Only the event shown: its file in the occasion's folder. One not saved
+	 * before (or an occasion never saved) needs the whole occasion saved.
+	 */
+	private void saveEvent()
+	{
+		if (folder == null || !Files.isRegularFile(folder.resolve(event.getFile())))
+		{
+			JOptionPane.showMessageDialog(this, event.getName() + " has not been saved before, so the whole occasion "
+					+ "is saved.", "Save this event", JOptionPane.INFORMATION_MESSAGE);
+			save();
+			return;
+		}
+		String others = unsaved ? "\nOther changes (the guest list, other events, the occasion's details) are not "
+				+ "saved by this." : "";
+		if (JOptionPane.showConfirmDialog(this, "Save only " + event.getName() + " (" + event.getFile() + ") in\n"
+				+ folder.toAbsolutePath() + "?" + others, "Save this event", JOptionPane.OK_CANCEL_OPTION)
+				!= JOptionPane.OK_OPTION) return;
+		try
+		{
+			OccasionXml.saveEvent(event, folder);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot save", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
 	// first saved in a folder of its own in MyReceptions, named from the occasion
 	private boolean save()
 	{

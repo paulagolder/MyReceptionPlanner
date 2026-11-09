@@ -75,6 +75,7 @@ class ProgressTest
 		breakfast.getPlan().add(t);
 		breakfast.getPlan().renumber();
 		breakfast.getSeating().seat(smiths.getLead(), new Seat(1, 0));
+		breakfast.setCatered(true);
 		Menu.Course main = new Menu.Course("Main");
 		Menu.Dish beef = new Menu.Dish(1, "Beef");
 		main.dishes().add(beef);

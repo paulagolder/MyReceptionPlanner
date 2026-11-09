@@ -64,8 +64,13 @@ public class Menu
 	}
 
 	private final List<Course> courses = new ArrayList<>();
+	private String note = "";  // a few lines about the menu as a whole, for the guests and the kitchen
 
 	public List<Course> courses() { return courses; }
+
+	public String getNote() { return note; }
+
+	public void setNote(String note) { this.note = note == null ? "" : note.strip(); }
 
 	public boolean isEmpty() { return courses.isEmpty(); }
 

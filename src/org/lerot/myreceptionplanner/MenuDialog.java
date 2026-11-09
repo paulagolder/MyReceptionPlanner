@@ -127,10 +127,21 @@ public class MenuDialog
 		for (Diet d : diets) key.append(d.code()).append(" ").append(d).append("   ");
 		JLabel hint = new JLabel(key.toString().strip());
 		hint.setForeground(Theme.EDGE);
+		JTextArea note = new JTextArea(event.getMenu().getNote(), 4, 50);
+		note.setLineWrap(true);
+		note.setWrapStyleWord(true);
+		note.setToolTipText("About the menu as a whole, e.g. \"All our food is sourced locally\"; "
+				+ "it goes with the menu to the guests and on the catering list");
+		JPanel notePanel = new JPanel(new BorderLayout(0, 2));
+		notePanel.add(new JLabel("Note (a few lines about the menu, for the guests and the kitchen)"), BorderLayout.NORTH);
+		notePanel.add(new JScrollPane(note), BorderLayout.CENTER);
+		JPanel south = new JPanel(new BorderLayout(0, 8));
+		south.add(buttons, BorderLayout.NORTH);
+		south.add(notePanel, BorderLayout.CENTER);
 		JPanel p = new JPanel(new BorderLayout(0, 6));
 		p.add(hint, BorderLayout.NORTH);
 		p.add(scroll, BorderLayout.CENTER);
-		p.add(buttons, BorderLayout.SOUTH);
+		p.add(south, BorderLayout.SOUTH);
 
 		while (true)
 		{
@@ -144,6 +155,7 @@ public class MenuDialog
 					JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) break;
 		}
 		apply(event, rows);
+		event.getMenu().setNote(note.getText());
 		event.tidy(occasion.getGuests());
 		return true;
 	}

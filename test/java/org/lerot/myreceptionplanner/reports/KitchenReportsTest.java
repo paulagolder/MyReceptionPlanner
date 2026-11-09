@@ -27,6 +27,7 @@ class KitchenReportsTest
 	{
 		o = new Occasion("Wedding", new GuestList());
 		e = new Event("Wedding Breakfast", "wb.xml", new Plan(), new Seating());
+		e.setCatered(true);
 		o.addEvent(e);
 		RoundTable t1 = new RoundTable(1, "", 6), t2 = new RoundTable(2, "", 6);
 		t1.moveTo(200, 300);

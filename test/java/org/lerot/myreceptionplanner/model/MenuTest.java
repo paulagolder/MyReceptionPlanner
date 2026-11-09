@@ -28,6 +28,7 @@ class MenuTest
 	{
 		o = new Occasion("Wedding", new GuestList());
 		breakfast = new Event("Wedding Breakfast", "wb.xml", new Plan(), new Seating());
+		breakfast.setCatered(true);
 		o.addEvent(breakfast);
 		GuestList g = o.getGuests();
 		ann = g.createParty("Ann Smith", 1, "").getLead();

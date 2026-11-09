@@ -268,11 +268,17 @@ public class GuestsPanel extends JPanel
 		p.add(new JScrollPane(guestTable), "grow");
 		JPanel buttons = new JPanel(new MigLayout("insets 0"));
 		buttons.add(button("Add guest", this::addGuest));
+		JButton alike = button("Names alike…", () ->
+		{
+			if (NamesAlikeDialog.show(this, guests)) changed();
+		});
+		alike.setToolTipText("Guests whose names suggest they are on the list twice");
 		buttons.add(button("Remove", () ->
 		{
 			int row = guestTable.getSelectedRow();
 			if (row >= 0) removeGuest(guestAt(row));
 		}));
+		buttons.add(alike);
 		JLabel hint = new JLabel("Click an invitation mark to change it; double-click a diet to change it, "
 				+ "the lead's contact to edit the party");
 		hint.setForeground(Theme.EDGE);

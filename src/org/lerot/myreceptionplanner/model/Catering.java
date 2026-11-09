@@ -57,7 +57,7 @@ public class Catering
 	// invited named guests who have not chosen a dish for every course
 	public static List<Guest> notChosen(Event event)
 	{
-		if (!event.hasMenu()) return List.of();
+		if (!event.servesMenu()) return List.of();
 		return event.invited().stream().filter(g -> g.isNamed() && !event.hasChosenAll(g)).sorted(bySeat(event)).toList();
 	}
 

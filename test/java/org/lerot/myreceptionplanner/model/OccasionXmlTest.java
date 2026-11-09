@@ -200,4 +200,70 @@ class OccasionXmlTest
 		assertEquals(List.of("Hello"), o.templates().stream().map(MessageTemplate::getName).toList());
 		assertEquals(1, o.sent().size());
 	}
+
+	@Test
+	void anEventIsCateredOrNotAndCanBeSavedOnItsOwn() throws IOException
+	{
+		Occasion o = new Occasion("Wedding", new GuestList());
+		Event breakfast = new Event("Breakfast", "breakfast.xml", new Plan(), new Seating());
+		Event church = new Event("Church", "church.xml", new Plan(), new Seating());
+		breakfast.setCatered(true);
+		o.addEvent(breakfast);
+		o.addEvent(church);
+		Menu.Course main = new Menu.Course("Main");
+		main.dishes().add(new Menu.Dish(1, "Beef"));
+		church.getMenu().courses().add(main);
+		assertFalse(church.servesMenu(), "a menu kept while not catered is not served");
+		OccasionXml.save(o, folder);
+		Occasion loaded = OccasionXml.load(folder);
+		assertTrue(loaded.events().get(0).isCatered());
+		assertFalse(loaded.events().get(1).isCatered());
+
+		breakfast.setPlace("The Barn");
+		o.setName("Renamed, not saved");
+		OccasionXml.saveEvent(breakfast, folder);
+		loaded = OccasionXml.load(folder);
+		assertEquals("The Barn", loaded.events().get(0).getPlace());
+		assertEquals("Wedding", loaded.getName(), "only the event was saved");
+
+		// an older file says nothing: catered if it has a menu
+		Files.writeString(folder.resolve("church.xml"), Files.readString(folder.resolve("church.xml")).replace(" catered=\"no\"", ""));
+		assertTrue(OccasionXml.load(folder).events().get(1).isCatered());
+	}
+
+	@Test
+	void layoutsAndMenusGoToFilesOfTheirOwnAndComeBack() throws IOException
+	{
+		Occasion o = new Occasion("Wedding", new GuestList());
+		Event breakfast = new Event("Breakfast", "breakfast.xml", new Plan(), new Seating());
+		breakfast.setCatered(true);
+		o.addEvent(breakfast);
+		breakfast.getPlan().add(new RoundTable(1, "", 8));
+		breakfast.getPlan().add(new RectTable(2, "Top table", 4, 1));
+		Menu.Course main = new Menu.Course("Main");
+		Menu.Dish beef = new Menu.Dish(1, "Beef");
+		beef.suits().add(Diet.GLUTEN_FREE);
+		main.dishes().add(beef);
+		breakfast.getMenu().courses().add(main);
+		breakfast.getMenu().setNote("All sourced locally.\n  Ask about allergies.");
+
+		Path layout = folder.resolve("Output/breakfast_layout.xml"), menu = folder.resolve("Output/breakfast_menu.xml");
+		OccasionXml.saveLayout(breakfast.getPlan(), layout);
+		OccasionXml.saveMenu(breakfast.getMenu(), menu);
+		Plan p = OccasionXml.loadLayout(layout);
+		assertEquals(2, p.tables().size());
+		assertEquals(8, p.tables().get(0).places());
+		Menu m = OccasionXml.loadMenu(menu);
+		assertEquals("Beef", m.courses().get(0).dishes().get(0).getName());
+		assertTrue(m.courses().get(0).dishes().get(0).suits().contains(Diet.GLUTEN_FREE));
+		assertEquals("All sourced locally.\n  Ask about allergies.", m.getNote());
+
+		// or straight from another event's file, the note kept there too
+		OccasionXml.save(o, folder);
+		assertEquals(2, OccasionXml.loadLayout(folder.resolve("breakfast.xml")).tables().size());
+		assertEquals("All sourced locally.\n  Ask about allergies.", OccasionXml.loadMenu(folder.resolve("breakfast.xml")).getNote());
+		assertTrue(Messages.fill(new MessageTemplate("t", "", "{menu}"), o, o.getGuests().createParty("Ann", 1, ""), breakfast)
+				.body().contains("All sourced locally."));
+		assertThrows(IOException.class, () -> OccasionXml.loadMenu(layout));
+	}
 }

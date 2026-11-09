@@ -145,9 +145,9 @@ public final class Progress
 	// done for a party once sent the menu message, or with nothing left to choose
 	static Stage menusSent(Occasion o)
 	{
-		if (o.events().stream().noneMatch(Event::hasMenu)) return notNeeded(Step.MENUS_SENT, "no event has a menu yet");
+		if (o.events().stream().noneMatch(Event::servesMenu)) return notNeeded(Step.MENUS_SENT, "no catered event has a menu yet");
 		GuestList guests = o.getGuests();
-		List<Party> catered = guests.parties().stream().filter(p -> o.events().stream().filter(Event::hasMenu)
+		List<Party> catered = guests.parties().stream().filter(p -> o.events().stream().filter(Event::servesMenu)
 				.anyMatch(e -> guests.membersOf(p).stream().anyMatch(g -> g.isNamed() && e.isInvited(g)))).toList();
 		if (catered.isEmpty()) return notStarted(Step.MENUS_SENT, "no named guest is invited to an event with a menu");
 		int outstanding = 0, done = 0;
@@ -189,7 +189,8 @@ public final class Progress
 	// a menu with a dish in every course for every invited guest's needs
 	static Stage menu(Occasion o, Event e)
 	{
-		if (!e.hasMenu()) return notNeeded(Step.MENU, "no menu (add one if it is catered)");
+		if (!e.isCatered()) return notNeeded(Step.MENU, "not catered");
+		if (!e.hasMenu()) return notStarted(Step.MENU, "no menu yet");
 		List<Menu.Course> courses = e.getMenu().courses();
 		int suited = 0;
 		List<String> lacking = new ArrayList<>();
@@ -226,7 +227,8 @@ public final class Progress
 	// of the named guests invited; places not yet named choose once named
 	static Stage choices(Event e)
 	{
-		if (!e.hasMenu()) return notNeeded(Step.CHOICES, "no menu");
+		if (!e.isCatered()) return notNeeded(Step.CHOICES, "not catered");
+		if (!e.hasMenu()) return notStarted(Step.CHOICES, "no menu yet");
 		int named = (int) e.invited().stream().filter(Guest::isNamed).count();
 		if (named == 0) return notStarted(Step.CHOICES, "no named guest is invited");
 		int notChosen = Catering.notChosen(e).size(), bad = Catering.unsuitable(e).size(), unnamed = Catering.notNamed(e);

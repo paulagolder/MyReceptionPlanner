@@ -6,6 +6,7 @@ import org.dom4j.Element;
 import org.lerot.myreceptionplanner.model.Event;
 import org.lerot.myreceptionplanner.model.GuestList;
 import org.lerot.myreceptionplanner.model.Occasion;
+import org.lerot.myreceptionplanner.model.OccasionXml;
 import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.PlanXml;
 import org.lerot.myreceptionplanner.model.Seating;
@@ -36,9 +37,11 @@ public class OccasionDialogs
 		row(form, "Occasion", name);
 		row(form, "Date", date);
 		form.add(heading("Its first event"), "span 2, gaptop 10, growx");
+		JCheckBox catered = new JCheckBox("Catered: food is served (a menu, dietary needs, kitchen lists)", true);
 		row(form, "Event", eventName);
 		row(form, "Place", place);
 		row(form, "Time", time);
+		row(form, "", catered);
 		while (true)
 		{
 			if (!ok(parent, form, "New occasion")) return null;
@@ -50,6 +53,7 @@ public class OccasionDialogs
 				Event e = new Event(eventName.getText(), o.fileFor(eventName.getText()), new Plan(), new Seating());
 				e.setPlace(place.getText());
 				e.setTime(time.getText());
+				e.setCatered(catered.isSelected());
 				o.addEvent(e);
 				return o;
 			} catch (IllegalArgumentException ex)
@@ -136,7 +140,8 @@ public class OccasionDialogs
 	}
 
 	// a new event, its tables empty or copied from another event; null if cancelled
-	public static Event newEvent(Component parent, Occasion occasion, Event current)
+	// layoutsIn: where to look first for a layout file
+	public static Event newEvent(Component parent, Occasion occasion, Event current, java.nio.file.Path layoutsIn)
 	{
 		JTextField name = new JTextField(28);
 		name.putClientProperty("JTextField.placeholderText", "Evening Reception");
@@ -182,7 +187,42 @@ public class OccasionDialogs
 		row(form, "Time", time);
 		row(form, "Type", kind);
 		row(form, "Capacity", capacity);
+		JCheckBox catered = new JCheckBox("Catered: food is served (a menu, dietary needs, kitchen lists)");
+		row(form, "", catered);
 		row(form, "Start with", start);
+		java.nio.file.Path[] layoutFile = { null };
+		JTextField layoutName = new JTextField();
+		layoutName.setEditable(false);
+		layoutName.putClientProperty("JTextField.placeholderText", "or a layout from a file…");
+		JButton chooseLayout = new JButton("Choose…");
+		JButton clearLayout = new JButton("Clear");
+		clearLayout.setEnabled(false);
+		chooseLayout.addActionListener(a ->
+		{
+			java.io.File in = layoutsIn.toFile();
+			JFileChooser fc = new JFileChooser(in.isDirectory() ? in : in.getParentFile());
+			fc.setDialogTitle("A layout to start with");
+			fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Layout or event files (XML)", "xml"));
+			if (fc.showOpenDialog(form) != JFileChooser.APPROVE_OPTION) return;
+			layoutFile[0] = fc.getSelectedFile().toPath();
+			layoutName.setText(fc.getSelectedFile().getName());
+			start.setEnabled(false);
+			clearLayout.setEnabled(true);
+		});
+		clearLayout.addActionListener(a ->
+		{
+			layoutFile[0] = null;
+			layoutName.setText("");
+			start.setEnabled(true);
+			clearLayout.setEnabled(false);
+		});
+		JPanel layoutRow = new JPanel(new BorderLayout(4, 0));
+		layoutRow.add(layoutName, BorderLayout.CENTER);
+		JPanel layoutButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		layoutButtons.add(chooseLayout);
+		layoutButtons.add(clearLayout);
+		layoutRow.add(layoutButtons, BorderLayout.EAST);
+		row(form, "Import layout", layoutRow);
 		row(form, "Invite", invite);
 		note(form, "Leave the date empty if it is on the occasion's day. A hall or ceremony is set out with "
 				+ "pews whose seats are open to all, and only seats you reserve are given to guests. A party, "
@@ -196,13 +236,15 @@ public class OccasionDialogs
 			{
 				if (name.getText().isBlank()) throw new IllegalArgumentException("The event needs a name.");
 				LocalDate d = Occasion.parseDate(date.getText());
-				Plan plan = start.getSelectedItem() instanceof Event from ? copy(from.getPlan()) : new Plan();
+				Plan plan = layoutFile[0] != null ? OccasionXml.loadLayout(layoutFile[0])
+						: start.getSelectedItem() instanceof Event from ? copy(from.getPlan()) : new Plan();
 				Event e = new Event(name.getText(), occasion.fileFor(name.getText()), plan, new Seating());
 				e.setPlace(place.getText());
 				e.setDate(d);
 				e.setTime(time.getText());
 				e.setKind((Event.Kind) kind.getSelectedItem());
 				e.setCapacity((Integer) capacity.getValue());
+				e.setCatered(catered.isSelected());
 				GuestList guests = occasion.getGuests();
 				if (invite.getSelectedItem() instanceof Event from) e.setInvited(from.invited(), guests);
 				else if ("Everyone".equals(invite.getSelectedItem())) e.setInvited(guests.guests(), guests);
@@ -233,6 +275,9 @@ public class OccasionDialogs
 		row(form, "Time", time);
 		row(form, "Type", kind);
 		row(form, "Capacity", capacity);
+		JCheckBox catered = new JCheckBox("Catered: food is served (a menu, dietary needs, kitchen lists)",
+				event.isCatered());
+		row(form, "", catered);
 		note(form, "Leave the date empty if it is on the occasion's day"
 				+ (occasion.getDate() == null ? "." : " (" + Occasion.DATE.format(occasion.getDate()) + ")."));
 		while (true)
@@ -254,6 +299,7 @@ public class OccasionDialogs
 				event.setTime(time.getText());
 				event.setKind(k);
 				event.setCapacity((Integer) capacity.getValue());
+				event.setCatered(catered.isSelected());
 				return true;
 			} catch (IllegalArgumentException ex)
 			{

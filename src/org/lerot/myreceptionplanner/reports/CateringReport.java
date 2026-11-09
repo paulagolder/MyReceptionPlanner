@@ -47,6 +47,8 @@ public class CateringReport extends Report
 			if (notNamed > 0)
 				foot += " " + notNamed + (notNamed == 1 ? " place is" : " places are") + " not yet named; they choose once named.";
 			sections.add(new Section("Dishes", List.of("Course", "Dish", "Number"), dishes, foot));
+			if (!event.getMenu().getNote().isEmpty())
+				sections.add(new Section("Note on the menu", List.of(), List.of(List.of(event.getMenu().getNote())), ""));
 
 			if (event.isSeated() && event.getSeating().seatedCount() > 0)
 			{

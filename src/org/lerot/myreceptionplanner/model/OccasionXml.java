@@ -55,6 +55,7 @@ import java.time.format.DateTimeParseException;
  *       <seat guest="12" table="3" chair="5"/>
  *     </seating>
  *     <menu>
+ *       <note><line t="All our food is sourced locally."/></note>
  *       <course name="Main">
  *         <dish id="3" name="Risotto" suits="v vg"/>
  *       </course>
@@ -67,7 +68,8 @@ import java.time.format.DateTimeParseException;
  * An event's date is only there if it differs from the occasion's. A
  * guest's choice names one dish of each course they have chosen for. type is
  * seated, or unreserved for a party where no one has a seat, which may have
- * a capacity="150".
+ * a capacity="150". catered="yes" if food is served there (its menu, choices
+ * and kitchen lists apply).
  */
 public class OccasionXml
 {
@@ -112,12 +114,19 @@ public class OccasionXml
 			write(event(e), folder.resolve(e.getFile()));
 	}
 
+	// just this event's file, in the occasion's folder
+	public static void saveEvent(Event event, Path folder) throws IOException
+	{
+		write(event(event), folder.resolve(event.getFile()));
+	}
+
 	private static Document event(Event event)
 	{
 		Document doc = DocumentHelper.createDocument();
 		Element root = doc.addElement("event").addAttribute("name", event.getName())
 				.addAttribute("type", event.getKind().code());
 		if (event.getCapacity() > 0) root.addAttribute("capacity", Integer.toString(event.getCapacity()));
+		root.addAttribute("catered", event.isCatered() ? "yes" : "no");
 		if (!event.getPlace().isEmpty()) root.addAttribute("place", event.getPlace());
 		if (event.getDate() != null) root.addAttribute("date", event.getDate().toString());
 		if (!event.getTime().isEmpty()) root.addAttribute("time", event.getTime());
@@ -138,20 +147,7 @@ public class OccasionXml
 					.addAttribute("table", Integer.toString(s.getValue().tableId()))
 					.addAttribute("chair", Integer.toString(s.getValue().chair() + 1));
 		}
-		if (event.hasMenu())
-		{
-			Element menu = root.addElement("menu");
-			for (Menu.Course c : event.getMenu().courses())
-			{
-				Element ce = menu.addElement("course").addAttribute("name", c.getName());
-				for (Menu.Dish d : c.dishes())
-				{
-					Element de = ce.addElement("dish").addAttribute("id", Integer.toString(d.getId()))
-							.addAttribute("name", d.getName());
-					if (!d.suits().isEmpty()) de.addAttribute("suits", Diet.codes(d.suits()));
-				}
-			}
-		}
+		if (event.hasMenu() || !event.getMenu().getNote().isEmpty()) writeMenu(event.getMenu(), root);
 		Element choices = root.addElement("choices");
 		java.util.Set<Guest> who = new java.util.LinkedHashSet<>(event.choices().keySet());
 		who.addAll(event.notes().keySet());
@@ -214,6 +210,94 @@ public class OccasionXml
 		return occasion;
 	}
 
+	// ---- menus ----
+
+	private static void writeMenu(Menu m, org.dom4j.Branch parent)
+	{
+		Element menu = parent.addElement("menu");
+		if (!m.getNote().isEmpty())
+		{
+			Element note = menu.addElement("note");
+			for (String line : m.getNote().split("\n", -1))
+				note.addElement("line").addAttribute("t", line);
+		}
+		for (Menu.Course c : m.courses())
+		{
+			Element ce = menu.addElement("course").addAttribute("name", c.getName());
+			for (Menu.Dish d : c.dishes())
+			{
+				Element de = ce.addElement("dish").addAttribute("id", Integer.toString(d.getId()))
+						.addAttribute("name", d.getName());
+				if (!d.suits().isEmpty()) de.addAttribute("suits", Diet.codes(d.suits()));
+			}
+		}
+	}
+
+	// into the menu given (empty); nothing if me is null
+	private static void readMenu(Element me, Menu into) throws IOException
+	{
+		if (me == null) return;
+		Element note = me.element("note");
+		if (note != null)
+			into.setNote(String.join("\n", note.elements("line").stream().map(l -> l.attributeValue("t", "")).toList()));
+		for (Element ce : me.elements("course"))
+		{
+			Menu.Course c = new Menu.Course(ce.attributeValue("name"));
+			for (Element de : ce.elements("dish"))
+			{
+				Menu.Dish d = new Menu.Dish(PlanXml.number(de, "id", 0), de.attributeValue("name"));
+				d.suits().addAll(Diet.fromCodes(de.attributeValue("suits")));
+				c.dishes().add(d);
+			}
+			into.courses().add(c);
+		}
+	}
+
+	/*
+	 * A menu on its own, to be taken into another event: <menu> with its note
+	 * and courses as in an event's file.
+	 */
+	public static void saveMenu(Menu menu, Path file) throws IOException
+	{
+		Document doc = DocumentHelper.createDocument();
+		writeMenu(menu, doc);
+		Files.createDirectories(file.toAbsolutePath().getParent());
+		write(doc, file);
+	}
+
+	// a menu file, or the menu of an event's file
+	public static Menu loadMenu(Path file) throws IOException
+	{
+		Element root = read(file).getRootElement();
+		Element me = root.getName().equals("menu") ? root : root.element("menu");
+		if (me == null) throw new IOException(file.getFileName() + " has no menu in it.");
+		Menu menu = new Menu();
+		readMenu(me, menu);
+		return menu;
+	}
+
+	// ---- layouts ----
+
+	/*
+	 * The tables of an event on their own, to be taken into another:
+	 * <layout><tables> ... </tables></layout>, as in an event's file.
+	 */
+	public static void saveLayout(Plan plan, Path file) throws IOException
+	{
+		Document doc = DocumentHelper.createDocument();
+		PlanXml.write(plan, doc.addElement("layout"));
+		Files.createDirectories(file.toAbsolutePath().getParent());
+		write(doc, file);
+	}
+
+	// a layout file, or the tables of an event's file
+	public static Plan loadLayout(Path file) throws IOException
+	{
+		Element tables = read(file).getRootElement().element("tables");
+		if (tables == null) throw new IOException(file.getFileName() + " has no tables in it.");
+		return PlanXml.read(tables);
+	}
+
 	// ---- the message templates ----
 
 	public static void saveTemplates(List<MessageTemplate> list, Path file) throws IOException
@@ -273,6 +357,7 @@ public class OccasionXml
 		Event event = new Event(root.attributeValue("name", "Event"), file, plan, seating);
 		event.setKind(Event.Kind.fromCode(root.attributeValue("type", "seated")));
 		event.setCapacity(PlanXml.number(root, "capacity", 0));
+		String catered = root.attributeValue("catered");
 		Element inv = root.element("invitations");
 		Element old = root.element("invited");  // before replies were kept: all to be invited
 		if (inv == null && old != null)
@@ -292,21 +377,7 @@ public class OccasionXml
 				}
 			}
 		}
-		Element me = root.element("menu");
-		if (me != null)
-		{
-			for (Element ce : me.elements("course"))
-			{
-				Menu.Course c = new Menu.Course(ce.attributeValue("name"));
-				for (Element de : ce.elements("dish"))
-				{
-					Menu.Dish d = new Menu.Dish(PlanXml.number(de, "id", 0), de.attributeValue("name"));
-					d.suits().addAll(Diet.fromCodes(de.attributeValue("suits")));
-					c.dishes().add(d);
-				}
-				event.getMenu().courses().add(c);
-			}
-		}
+		readMenu(root.element("menu"), event.getMenu());
 		Element ch = root.element("choices");
 		if (ch != null)
 		{
@@ -328,6 +399,8 @@ public class OccasionXml
 		event.setPlace(root.attributeValue("place"));
 		event.setDate(date(root, file));
 		event.setTime(root.attributeValue("time"));
+		// an older file says nothing: catered if it has a menu
+		event.setCatered(catered != null ? catered.equals("yes") : event.hasMenu());
 		return event;
 	}
 

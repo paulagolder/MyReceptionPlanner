@@ -32,6 +32,8 @@ class MessagesTest
 		breakfast.setTime("2pm");
 		evening = new Event("Evening Party", "ev.xml", new Plan(), new Seating());
 		evening.setTime("7.30pm");
+		breakfast.setCatered(true);
+		evening.setCatered(true);
 		o.addEvent(breakfast);
 		o.addEvent(evening);
 		smiths = o.getGuests().createParty("Ann Smith", 3, "");

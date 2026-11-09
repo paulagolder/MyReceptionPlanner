@@ -58,6 +58,7 @@ public class Event
 	private String name;
 	private Kind kind = Kind.SEATED;
 	private int capacity;      // 0 for no limit; for an unreserved party
+	private boolean catered;   // has a menu, dietary needs and kitchen lists
 	private String place = "";
 	private LocalDate date;    // null: the occasion's date
 	private String time = "";  // as typed, e.g. "2pm" or "14:00"
@@ -140,6 +141,14 @@ public class Event
 	public Menu getMenu() { return menu; }
 
 	public boolean hasMenu() { return !menu.isEmpty(); }
+
+	// food is served: the menu, choices and kitchen lists apply
+	public boolean isCatered() { return catered; }
+
+	public void setCatered(boolean catered) { this.catered = catered; }
+
+	// catered, with a menu set out (one kept while not catered is not served)
+	public boolean servesMenu() { return catered && hasMenu(); }
 
 	public Menu.Dish choice(Guest guest, Menu.Course course)
 	{

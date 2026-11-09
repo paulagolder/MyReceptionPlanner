@@ -58,7 +58,7 @@ public class ChecksDialog
 	// for an event with a menu: who has yet to choose, and choices that do not suit
 	private static void addMenuChecks(JPanel p, Event event, int span)
 	{
-		if (!event.hasMenu()) return;
+		if (!event.servesMenu()) return;
 		int notChosen = org.lerot.myreceptionplanner.model.Catering.notChosen(event).size();
 		int bad = org.lerot.myreceptionplanner.model.Catering.unsuitable(event).size();
 		int unnamed = org.lerot.myreceptionplanner.model.Catering.notNamed(event);
@@ -66,7 +66,7 @@ public class ChecksDialog
 				: "Menu: " + (notChosen > 0 ? notChosen + " not yet chosen" : "")
 				+ (notChosen > 0 && bad > 0 ? "; " : "") + (bad > 0 ? "⚠ " + bad + " with a dish unsuited to their needs" : "")
 				+ (unnamed > 0 ? "; " + unnamed + " places not yet named" : "")
-				+ "  (Reports ▾ → Catering list)");
+				+ "  (Catering ▾ → Catering list)");
 		menu.setForeground(notChosen == 0 && bad == 0 ? Theme.FIRST : Theme.HEAD.darker());
 		p.add(menu, "span " + span + ", gaptop 8");
 	}

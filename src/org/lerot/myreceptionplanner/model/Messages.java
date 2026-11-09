@@ -218,6 +218,8 @@ public final class Messages
 		List<String> lines = new ArrayList<>();
 		for (Menu.Course c : e.getMenu().courses())
 			lines.add("  " + c.getName() + ": " + String.join(" / ", c.dishes().stream().map(Menu.Dish::withDiets).toList()));
+		if (!e.getMenu().getNote().isEmpty())
+			lines.add(e.getMenu().getNote().replaceAll("(?m)^", "  "));
 		return String.join("\n", lines);
 	}
 
@@ -230,14 +232,14 @@ public final class Messages
 	// the events with a menu where the party's named guests still have choices to make
 	public static List<Event> menusToChoose(Occasion o, Party party)
 	{
-		return o.events().stream().filter(Event::hasMenu)
+		return o.events().stream().filter(Event::servesMenu)
 				.filter(e -> namedInvited(o, party, e).stream().anyMatch(g -> !e.hasChosenAll(g))).toList();
 	}
 
 	// "Thank you for your menu choices for the Wedding Breakfast and the Dinner." or nothing
 	static String menusChosenText(Occasion o, Party party)
 	{
-		List<String> done = o.events().stream().filter(Event::hasMenu)
+		List<String> done = o.events().stream().filter(Event::servesMenu)
 				.filter(e -> !namedInvited(o, party, e).isEmpty()
 						&& namedInvited(o, party, e).stream().allMatch(e::hasChosenAll))
 				.map(Event::getName).toList();
@@ -303,7 +305,7 @@ public final class Messages
 			lines.add("  • any dietary needs or allergies (" + String.join(", ", noNeeds) + ")");
 		for (Event e : o.events())
 		{
-			if (!e.hasMenu()) continue;
+			if (!e.servesMenu()) continue;
 			List<String> toChoose = members.stream().filter(g -> g.isNamed() && e.isInvited(g) && !e.hasChosenAll(g))
 					.map(Guest::getName).toList();
 			if (!toChoose.isEmpty())
