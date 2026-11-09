@@ -4,11 +4,15 @@ import net.miginfocom.swing.MigLayout;
 import org.lerot.myreceptionplanner.model.MessageTemplate;
 import org.lerot.myreceptionplanner.model.Messages;
 import org.lerot.myreceptionplanner.model.Occasion;
+import org.lerot.myreceptionplanner.model.OccasionXml;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +21,14 @@ import java.util.Map;
  * The occasion's message templates: each with a name, a subject and its
  * text, with fill-ins in braces ({leadfirst}, {events} ...) chosen from the
  * list and put in where the text cursor is. Templates can be added, copied
- * and removed; nothing changes until OK.
+ * and removed; nothing changes until OK. They can also be shared: saved as
+ * the default set (MyReceptions/email_templates.xml) that new occasions
+ * start with, or taken from it.
  */
 public class TemplatesDialog
 {
 	// true if changed
-	public static boolean edit(Component parent, Occasion occasion)
+	public static boolean edit(Component parent, Occasion occasion, Path shared)
 	{
 		List<MessageTemplate> work = new ArrayList<>();
 		for (MessageTemplate t : occasion.templates())
@@ -136,6 +142,43 @@ public class TemplatesDialog
 		leftButtons.add(copy);
 		leftButtons.add(remove);
 		leftButtons.add(standard, "span 3");
+		JButton share = new JButton("Make these the default");
+		share.setToolTipText("New occasions start with these; saved as " + shared);
+		share.addActionListener(e ->
+		{
+			if (JOptionPane.showConfirmDialog(p0(share), "New occasions will start with these " + work.size()
+					+ " templates (and others can take them).\nSave them as " + shared + "?", "Default templates",
+					JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+			try
+			{
+				OccasionXml.saveTemplates(work, shared);
+			} catch (IOException ex)
+			{
+				JOptionPane.showMessageDialog(p0(share), ex.getMessage(), "Cannot save", JOptionPane.ERROR_MESSAGE);
+			}
+		});
+		JButton useShared = new JButton("Take the default ones");
+		useShared.setToolTipText("Replace these with the default set in " + shared);
+		useShared.setEnabled(Files.isRegularFile(shared));
+		useShared.addActionListener(e ->
+		{
+			if (JOptionPane.showConfirmDialog(p0(useShared), "Replace these templates with the default ones?",
+					"Default templates", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+			try
+			{
+				List<MessageTemplate> loaded = OccasionXml.loadTemplates(shared);
+				work.clear();
+				work.addAll(loaded);
+				listModel.clear();
+				work.forEach(listModel::addElement);
+				if (!listModel.isEmpty()) list.setSelectedIndex(0);
+			} catch (IOException ex)
+			{
+				JOptionPane.showMessageDialog(p0(useShared), ex.getMessage(), "Cannot read", JOptionPane.ERROR_MESSAGE);
+			}
+		});
+		leftButtons.add(share, "span 3");
+		leftButtons.add(useShared, "span 3");
 		left.add(leftButtons, BorderLayout.SOUTH);
 		left.setPreferredSize(new Dimension(230, 0));
 
@@ -163,5 +206,10 @@ public class TemplatesDialog
 		occasion.templates().clear();
 		occasion.templates().addAll(work);
 		return true;
+	}
+
+	private static Component p0(JComponent c)
+	{
+		return SwingUtilities.getWindowAncestor(c);
 	}
 }

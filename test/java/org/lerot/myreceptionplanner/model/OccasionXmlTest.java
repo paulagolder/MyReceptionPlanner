@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -150,5 +151,53 @@ class OccasionXmlTest
 		assertEquals("the-wedding-of-the-century", Occasion.folderName("The wedding of the Century"));
 		assertEquals("noces-dete-2026", Occasion.folderName("  Noces d'Été 2026! "));
 		assertEquals("occasion", Occasion.folderName("???"));
+	}
+
+	@Test
+	void guestsTemplatesAndMessagesSentAreKeptApart() throws IOException
+	{
+		Path folder = Files.createDirectories(this.folder.resolve("MyReceptions").resolve("wedding"));
+		Occasion o = new Occasion("Wedding", new GuestList());
+		o.addEvent(new Event("Breakfast", "breakfast.xml", new Plan(), new Seating()));
+		Party p = o.getGuests().createParty("Ann Smith", 2, "");
+		o.tidy();
+		o.templates().add(new MessageTemplate("Directions", "How to find us", "Turn left"));
+		o.logSent(p, "Invitation", "email", null);
+		OccasionXml.save(o, folder);
+
+		String occasionXml = Files.readString(folder.resolve(OccasionXml.FILE));
+		assertFalse(occasionXml.contains("<guests"));
+		assertFalse(occasionXml.contains("<template"));
+		assertTrue(occasionXml.contains("<communications>"));
+		assertTrue(Files.readString(folder.resolve(OccasionXml.GUESTS)).contains("Ann Smith"));
+		assertTrue(Files.readString(folder.resolve(OccasionXml.TEMPLATES)).contains("Directions"));
+
+		Occasion loaded = OccasionXml.load(folder);
+		assertEquals(2, loaded.getGuests().guests().size());
+		assertEquals("Directions", loaded.templates().get(loaded.templates().size() - 1).getName());
+		assertNotNull(loaded.lastSent(loaded.getGuests().parties().get(0), "Invitation"));
+
+		// without templates of its own, the shared ones in the folder above
+		Files.delete(folder.resolve(OccasionXml.TEMPLATES));
+		OccasionXml.saveTemplates(List.of(new MessageTemplate("Shared", "s", "b")), folder.getParent().resolve(OccasionXml.TEMPLATES));
+		assertEquals(List.of("Shared"), OccasionXml.load(folder).templates().stream().map(MessageTemplate::getName).toList());
+		// and with none anywhere, the standard ones
+		Files.delete(folder.getParent().resolve(OccasionXml.TEMPLATES));
+		assertEquals(Messages.standard().size(), OccasionXml.load(folder).templates().size());
+	}
+
+	@Test
+	void anOccasionKeptAllInOneFileStillOpens() throws IOException
+	{
+		Path folder = Files.createDirectories(this.folder.resolve("old"));
+		Files.writeString(folder.resolve(OccasionXml.FILE), "<occasion name=\"W\"><event file=\"e.xml\"/>"
+				+ "<guests><party id=\"1\" lead=\"1\"><guest id=\"1\" name=\"Ann\" gender=\"f\"/></party></guests>"
+				+ "<templates><template name=\"Hello\" subject=\"Hi\"><line t=\"Dear\"/></template></templates>"
+				+ "<sent party=\"1\" when=\"2026-11-08T16:05\" what=\"Invitation\" how=\"email\" event=\"\"/></occasion>");
+		Files.writeString(folder.resolve("e.xml"), "<event name=\"E\"/>");
+		Occasion o = OccasionXml.load(folder);
+		assertEquals("Ann", o.getGuests().guests().get(0).getName());
+		assertEquals(List.of("Hello"), o.templates().stream().map(MessageTemplate::getName).toList());
+		assertEquals(1, o.sent().size());
 	}
 }

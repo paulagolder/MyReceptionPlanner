@@ -6,8 +6,8 @@ import java.awt.Color;
 import java.io.IOException;
 
 /*
- * Reads and writes the occasion's guest list, within occasion.xml (see
- * OccasionXml):
+ * Reads and writes the occasion's guest list, guests.xml beside occasion.xml
+ * (see OccasionXml):
  *
  *   <guests>
  *     <party id="1" name="Smith family" colour="#1F77B4" lead="1">
@@ -33,7 +33,7 @@ import java.io.IOException;
  */
 public class GuestXml
 {
-	public static void write(GuestList list, Element parent)
+	public static void write(GuestList list, org.dom4j.Branch parent)
 	{
 		Element root = parent.addElement("guests");
 		for (Party p : list.parties())

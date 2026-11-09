@@ -246,7 +246,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		});
 		messages.add("Message templates…").addActionListener(e ->
 		{
-			if (TemplatesDialog.edit(this, occasion)) changed();
+			if (TemplatesDialog.edit(this, occasion, ROOT.resolve(OccasionXml.TEMPLATES))) changed();
 		});
 		bar.add(dropDown("Messages", messages));
 		return bar;
@@ -513,6 +513,18 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		if (!okToDiscard()) return;
 		Occasion o = OccasionDialogs.newOccasion(this);
 		if (o == null) return;
+		try
+		{
+			List<org.lerot.myreceptionplanner.model.MessageTemplate> shared = OccasionXml.sharedTemplates(ROOT.resolve(o.folderName()));
+			if (shared != null)
+			{
+				o.templates().clear();
+				o.templates().addAll(shared);
+			}
+		} catch (IOException e)
+		{
+			// the standard templates, then
+		}
 		showOccasion(o, null);
 		changed();
 	}

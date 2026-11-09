@@ -17,26 +17,32 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
 /*
- * An occasion is a folder. occasion.xml holds its name and date, the guest
- * list (see GuestXml) and the files of its events in order:
+ * An occasion is a folder. occasion.xml holds its name and date, the files of
+ * its events in order, and the messages sent:
  *
  *   <occasion name="Lydia and Isaac's Wedding" date="2026-05-12"
  *             from="Lydia and Isaac" reply="lydia@example.com" countrycode="44">
  *     <event file="wedding-breakfast.xml"/>
  *     <event file="evening-reception.xml"/>
- *     <guests> ... </guests>
- *     <templates>
- *       <template name="Invitation" subject="{occasion}: an invitation">
- *         <line t="Dear {leadfirst},"/><line t=""/> ...
- *       </template>
- *     </templates>
- *     <sent party="3" when="2026-11-08T16:05" what="Invitation" how="email" event=""/>
+ *     <communications>
+ *       <sent party="3" when="2026-11-08T16:05" what="Invitation" how="email" event=""/>
+ *     </communications>
  *   </occasion>
  *
- * from, reply and countrycode are for messages to the guests; a template's
- * text is kept a line at a time; sent records each message prepared. The
- * occasion's emblem, if it has one, is the SVG file named by emblem="emblem.svg"
- * beside occasion.xml.
+ * from, reply and countrycode are for messages to the guests; sent records
+ * each message prepared. Beside it: guests.xml, the guest list (see
+ * GuestXml); email_templates.xml, the message templates; and the emblem, if
+ * there is one, the SVG file named by emblem="emblem.svg".
+ *
+ *   <templates>
+ *     <template name="Invitation" subject="{occasion}: an invitation">
+ *       <line t="Dear {leadfirst},"/><line t=""/> ...
+ *     </template>
+ *   </templates>
+ *
+ * A template's text is kept a line at a time. The templates can be shared:
+ * an occasion without its own email_templates.xml takes the one in the folder
+ * above it (MyReceptions), if there is one, or else the standard ones.
  *
  * Each event's file holds where and when it is, the ids of the guests it
  * invites, its tables (see PlanXml) and who sits where, by guest id, table id and chair (counted from 1 as in the
@@ -67,6 +73,8 @@ public class OccasionXml
 {
 	public static final String FILE = "occasion.xml";
 	public static final String EMBLEM = "emblem.svg";
+	public static final String GUESTS = "guests.xml";
+	public static final String TEMPLATES = "email_templates.xml";
 
 	public static boolean isOccasion(Path folder)
 	{
@@ -84,23 +92,19 @@ public class OccasionXml
 		if (occasion.getEmblem() != null) root.addAttribute("emblem", EMBLEM);
 		for (Event e : occasion.events())
 			root.addElement("event").addAttribute("file", e.getFile());
-		GuestXml.write(occasion.getGuests(), root);
-		Element templates = root.addElement("templates");
-		for (MessageTemplate t : occasion.templates())
-		{
-			Element te = templates.addElement("template").addAttribute("name", t.getName())
-					.addAttribute("subject", t.getSubject());
-			for (String line : t.getBody().split("\n", -1))
-				te.addElement("line").addAttribute("t", line);  // an attribute keeps leading spaces
-		}
+		Element communications = root.addElement("communications");
 		for (Messages.Sent s : occasion.sent())
 		{
-			root.addElement("sent").addAttribute("party", Integer.toString(s.party().getId()))
+			communications.addElement("sent").addAttribute("party", Integer.toString(s.party().getId()))
 					.addAttribute("when", s.when().toString()).addAttribute("what", s.what())
 					.addAttribute("how", s.how()).addAttribute("event", s.event());
 		}
 		Files.createDirectories(folder);
 		write(doc, folder.resolve(FILE));
+		Document guests = DocumentHelper.createDocument();
+		GuestXml.write(occasion.getGuests(), guests);
+		write(guests, folder.resolve(GUESTS));
+		saveTemplates(occasion.templates(), folder.resolve(TEMPLATES));
 		if (occasion.getEmblem() != null)
 			Files.writeString(folder.resolve(EMBLEM), occasion.getEmblem(), java.nio.charset.StandardCharsets.UTF_8);
 		else Files.deleteIfExists(folder.resolve(EMBLEM));
@@ -165,7 +169,9 @@ public class OccasionXml
 	public static Occasion load(Path folder) throws IOException
 	{
 		Element root = read(folder.resolve(FILE)).getRootElement();
-		GuestList guests = GuestXml.read(root.element("guests"));
+		Element guestsRoot = Files.isRegularFile(folder.resolve(GUESTS))
+				? read(folder.resolve(GUESTS)).getRootElement() : root.element("guests");  // or as once kept, inside
+		GuestList guests = GuestXml.read(guestsRoot);
 		Occasion occasion = new Occasion(root.attributeValue("name", folder.getFileName().toString()), guests);
 		occasion.setDate(date(root, FILE));
 		occasion.setSender(root.attributeValue("from"));
@@ -174,17 +180,17 @@ public class OccasionXml
 		String emblem = root.attributeValue("emblem");
 		if (emblem != null && Files.isRegularFile(folder.resolve(emblem)))
 			occasion.setEmblem(Files.readString(folder.resolve(emblem), java.nio.charset.StandardCharsets.UTF_8));
-		Element te = root.element("templates");
-		if (te != null)
+		List<MessageTemplate> templates = Files.isRegularFile(folder.resolve(TEMPLATES))
+				? loadTemplates(folder.resolve(TEMPLATES))
+				: root.element("templates") != null ? templates(root.element("templates"))
+				: sharedTemplates(folder);
+		if (templates != null)
 		{
 			occasion.templates().clear();
-			for (Element t : te.elements("template"))
-			{
-				String body = String.join("\n", t.elements("line").stream().map(l -> l.attributeValue("t", "")).toList());
-				occasion.templates().add(new MessageTemplate(t.attributeValue("name"), t.attributeValue("subject"), body));
-			}
+			occasion.templates().addAll(templates);
 		}
-		for (Element s : root.elements("sent"))
+		Element communications = root.element("communications");
+		for (Element s : (communications != null ? communications : root).elements("sent"))
 		{
 			int id = PlanXml.number(s, "party", 0);
 			guests.parties().stream().filter(p -> p.getId() == id).findFirst().ifPresent(p ->
@@ -206,6 +212,47 @@ public class OccasionXml
 		}
 		occasion.settleAll();
 		return occasion;
+	}
+
+	// ---- the message templates ----
+
+	public static void saveTemplates(List<MessageTemplate> list, Path file) throws IOException
+	{
+		Document doc = DocumentHelper.createDocument();
+		Element templates = doc.addElement("templates");
+		for (MessageTemplate t : list)
+		{
+			Element te = templates.addElement("template").addAttribute("name", t.getName())
+					.addAttribute("subject", t.getSubject());
+			for (String line : t.getBody().split("\n", -1))
+				te.addElement("line").addAttribute("t", line);  // an attribute keeps leading spaces
+		}
+		Files.createDirectories(file.getParent());
+		write(doc, file);
+	}
+
+	public static List<MessageTemplate> loadTemplates(Path file) throws IOException
+	{
+		return templates(read(file).getRootElement());
+	}
+
+	// the shared templates for occasions kept in this folder, or null if there are none
+	public static List<MessageTemplate> sharedTemplates(Path occasionFolder) throws IOException
+	{
+		Path parent = occasionFolder.toAbsolutePath().getParent();
+		if (parent == null || !Files.isRegularFile(parent.resolve(TEMPLATES))) return null;
+		return loadTemplates(parent.resolve(TEMPLATES));
+	}
+
+	private static List<MessageTemplate> templates(Element te)
+	{
+		List<MessageTemplate> out = new java.util.ArrayList<>();
+		for (Element t : te.elements("template"))
+		{
+			String body = String.join("\n", t.elements("line").stream().map(l -> l.attributeValue("t", "")).toList());
+			out.add(new MessageTemplate(t.attributeValue("name"), t.attributeValue("subject"), body));
+		}
+		return out;
 	}
 
 	private static Event loadEvent(Path path, String file, GuestList guests) throws IOException

@@ -406,11 +406,16 @@ named from the occasion ("Lydia and Isaac's Wedding" is
 
 - `emblem.svg`: the occasion's emblem, if it has one
 - `occasion.xml`: the occasion's name and date, who messages are from and
-  how to reply, the message templates and a log of messages sent, its list
-  of events, and the
-  guest list: the parties, their leads and contact details, their guests
-  and their dietary needs,
-  and pairs of guests with names alike who are different people
+  how to reply, its list of events, and the messages sent (under
+  `<communications>`)
+- `guests.xml`: the guest list: the parties, their leads and contact
+  details, their guests and their dietary needs, and pairs of guests with
+  names alike who are different people
+- `email_templates.xml`: the occasion's message templates. These can be
+  shared: in *Message templates…*, **Make these the default** saves them as
+  `MyReceptions/email_templates.xml`, which new occasions start with (and
+  an occasion without templates of its own uses); **Take the default ones**
+  brings that set into the occasion
 - one file for each event, named after it when it was made (such as
   `wedding-breakfast.xml`): its name, type, place, date and time, its menu
   and each guest's choices and note, who is invited, its tables and pews (shapes, positions, turns, numbers, seat 1,
