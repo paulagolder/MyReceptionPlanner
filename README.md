@@ -40,18 +40,33 @@ can sit in one place at the breakfast and another in the evening. These
 names, places, dates and times head the reports and anything sent to the
 guests.
 
-At the left of the toolbar:
+The toolbar starts with:
 
-- **Occasion ▾** → *Progress…* (below), *Occasion details…* (name and date), *Invitations…*
-  (below), *New occasion…*, *Open occasion…* and *Save…* (saves the whole
-  occasion).
-- **Events ▾** → *Event details…* (name, place, date and time; leave the
-  date empty if it is on the occasion's day), *Menu…* and *Menu choices and
-  dietary needs…* (below), *New event…* (starting with an empty room or a
-  copy of another event's tables, and inviting everyone, no one or the
-  guests of another event) and *Delete this event…*.
+- **Occasion ▾** → *Progress…* (below), *Occasion details…* (name and
+  date), *Invitations…* (below), *New occasion…*, *Open occasion…* and
+  *Save…* (saves the whole occasion).
+- **Event | Guests** switches between the two views. The **Event** view
+  shows the plan of one event: next to it, the event chooser picks which,
+  then **Events ▾** → *Event details…* (name, place, date and time; leave
+  the date empty if it is on the occasion's day), *Menu…* and *Menu choices
+  and dietary needs…* (below), *New event…* (starting with an empty room or
+  a copy of another event's tables, and inviting everyone, no one or the
+  guests of another event) and *Delete this event…*; then Layout and
+  Seating and the table menus. The **Guests** view is the guest list
+  of the whole occasion (below); the plan's controls are hidden there.
+- **Reports ▾** and **Messages ▾** are there in both views.
 
-On the right, **Event** chooses which event's tables and seating are shown.
+### The Guests view
+
+The parties on the left (*New…*, *Edit…*, *Colour…*, *Remove*; double-click
+to edit, or the colour to change it) and every guest on the right: name
+(type over it; a place not named yet shows as the lead's name +1),
+gender, party, dietary needs (double-click to change), how the party's lead
+can be reached (✉ email, ☎ phone, ⌂ address; double-click to edit the
+party), and a tick for each event they are invited to. Inviting anyone of a
+party invites its lead; unticking the lead uninvites the party, asking first
+if anyone loses a seat. *Only the party chosen* narrows the list to one
+party. Seats are given in the Event view, in Seating.
 
 ### Progress
 
@@ -276,7 +291,7 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
   numbers and are left out of the place counts. Changing a table's places puts
   seat 1 back at the start and enables every chair again.
 - With a table selected: arrow keys nudge it, R / Shift+R turn it, Delete removes it.
-- Ctrl + mouse wheel, or Zoom in / Zoom out, zooms.
+- Ctrl + mouse wheel, or the + and − buttons in the corner of the plan, zooms.
 
 ### The occasion's emblem
 

@@ -23,7 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.prefs.Preferences;
 
@@ -53,6 +55,13 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private PlanPanel.Mode mode = PlanPanel.Mode.LAYOUT;
 
 	private final JPanel planHolder = new JPanel(new BorderLayout());
+	private final CardLayout views = new CardLayout();
+	private final JPanel viewHolder = new JPanel(views);  // the event's plan, or the guest list
+	private GuestsPanel guestsPanel;
+	private boolean guestView;
+	private final JToggleButton eventViewButton = new JToggleButton("Event");
+	private final JToggleButton guestViewButton = new JToggleButton("Guests");
+	private final List<JComponent> eventOnly = new ArrayList<>();  // toolbar items hidden in the Guests view
 	private PlanPanel planPanel;
 	private SeatingPanel seatingPanel;
 	private final JToggleButton layoutButton = new JToggleButton("Layout");
@@ -83,7 +92,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			}
 		});
 		add(toolbar(), BorderLayout.NORTH);
-		add(planHolder, BorderLayout.CENTER);
+		viewHolder.add(planHolder, "event");
+		add(viewHolder, BorderLayout.CENTER);
 		status.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
 		add(status, BorderLayout.SOUTH);
 		showOccasion(blankOccasion(), null);
@@ -118,6 +128,27 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		occasionMenu.addSeparator();
 		occasionMenu.add("Save…").addActionListener(e -> save());
 		bar.add(dropDown("Occasion", occasionMenu));
+		bar.addSeparator();
+
+		ButtonGroup viewGroup = new ButtonGroup();
+		viewGroup.add(eventViewButton);
+		viewGroup.add(guestViewButton);
+		eventViewButton.setSelected(true);
+		eventViewButton.setToolTipText("An event: its tables, seating and menu");
+		guestViewButton.setToolTipText("The guest list of the whole occasion: parties, guests and invitations");
+		eventViewButton.addActionListener(e -> setGuestView(false));
+		guestViewButton.addActionListener(e -> setGuestView(true));
+		bar.add(eventViewButton);
+		bar.add(guestViewButton);
+		eventChooser.setToolTipText("The event whose tables and seating are shown");
+		eventChooser.setMaximumSize(new Dimension(220, 40));
+		eventChooser.addActionListener(e ->
+		{
+			if (!fillingChooser && eventChooser.getSelectedItem() instanceof Event chosen && chosen != event)
+				showEvent(chosen);
+		});
+		bar.add(Box.createHorizontalStrut(4));
+		bar.add(eventOnly(eventChooser));
 
 		JPopupMenu eventsMenu = new JPopupMenu();
 		eventsMenu.add("Event details…").addActionListener(e -> editEvent());
@@ -137,8 +168,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		eventsMenu.add("New event…").addActionListener(e -> newEvent());
 		deleteEventItem.addActionListener(e -> deleteEvent());
 		eventsMenu.add(deleteEventItem);
-		bar.add(dropDown("Events", eventsMenu));
-		bar.addSeparator();
+		bar.add(eventOnly(dropDown("Events", eventsMenu)));
+		bar.add(eventOnly(separator()));
 		ButtonGroup modes = new ButtonGroup();
 		modes.add(layoutButton);
 		modes.add(seatingButton);
@@ -147,9 +178,9 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		seatingButton.setToolTipText("Seat the guests");
 		layoutButton.addActionListener(e -> setMode(PlanPanel.Mode.LAYOUT));
 		seatingButton.addActionListener(e -> setMode(PlanPanel.Mode.SEATING));
-		bar.add(layoutButton);
-		bar.add(seatingButton);
-		bar.addSeparator();
+		bar.add(eventOnly(layoutButton));
+		bar.add(eventOnly(seatingButton));
+		bar.add(eventOnly(separator()));
 
 		JPopupMenu add = new JPopupMenu();
 		add.add("Round table").addActionListener(e -> addTable(true));
@@ -218,21 +249,107 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			if (TemplatesDialog.edit(this, occasion)) changed();
 		});
 		bar.add(dropDown("Messages", messages));
-		bar.addSeparator();
-		bar.add(button("Zoom in", () -> planPanel.zoom(1.2)));
-		bar.add(button("Zoom out", () -> planPanel.zoom(1 / 1.2)));
-
-		bar.add(Box.createHorizontalGlue());
-		bar.add(new JLabel("Event "));
-		eventChooser.setToolTipText("The event whose tables and seating are shown");
-		eventChooser.setMaximumSize(new Dimension(220, 40));
-		eventChooser.addActionListener(e ->
-		{
-			if (!fillingChooser && eventChooser.getSelectedItem() instanceof Event chosen && chosen != event)
-				showEvent(chosen);
-		});
-		bar.add(eventChooser);
 		return bar;
+	}
+
+	// the plan's scroll pane with zoom buttons floating in its bottom right corner
+	private JComponent withZoom(JScrollPane scroll)
+	{
+		JPanel zoom = new JPanel(new GridLayout(1, 2, 4, 0));
+		zoom.setOpaque(false);
+		for (String[] z : new String[][] { { "−", "Zoom out (or Ctrl + mouse wheel)" }, { "+", "Zoom in (or Ctrl + mouse wheel)" } })
+		{
+			JButton b = new JButton(z[0]);
+			b.setToolTipText(z[1]);
+			b.setFont(b.getFont().deriveFont(Font.BOLD, b.getFont().getSize2D() + 3f));
+			b.setFocusable(false);
+			b.setPreferredSize(new Dimension(36, 32));
+			double factor = z[0].equals("+") ? 1.2 : 1 / 1.2;
+			b.addActionListener(e -> planPanel.zoom(factor));
+			zoom.add(b);
+		}
+		JLayeredPane layers = new JLayeredPane();
+		layers.setLayout(new LayoutManager()
+		{
+			public void addLayoutComponent(String name, Component c) {}
+
+			public void removeLayoutComponent(Component c) {}
+
+			public Dimension preferredLayoutSize(Container parent) { return scroll.getPreferredSize(); }
+
+			public Dimension minimumLayoutSize(Container parent) { return scroll.getMinimumSize(); }
+
+			public void layoutContainer(Container parent)
+			{
+				scroll.setBounds(0, 0, parent.getWidth(), parent.getHeight());
+				Dimension d = zoom.getPreferredSize();
+				int right = scroll.getVerticalScrollBar().isVisible() ? scroll.getVerticalScrollBar().getWidth() : 0;
+				int bottom = scroll.getHorizontalScrollBar().isVisible() ? scroll.getHorizontalScrollBar().getHeight() : 0;
+				zoom.setBounds(parent.getWidth() - right - d.width - 12, parent.getHeight() - bottom - d.height - 12,
+						d.width, d.height);
+			}
+		});
+		layers.add(scroll, JLayeredPane.DEFAULT_LAYER);
+		layers.add(zoom, JLayeredPane.PALETTE_LAYER);
+		scroll.getVerticalScrollBar().addComponentListener(new java.awt.event.ComponentAdapter()
+		{
+			public void componentShown(java.awt.event.ComponentEvent e) { layers.revalidate(); }
+
+			public void componentHidden(java.awt.event.ComponentEvent e) { layers.revalidate(); }
+		});
+		scroll.getHorizontalScrollBar().addComponentListener(new java.awt.event.ComponentAdapter()
+		{
+			public void componentShown(java.awt.event.ComponentEvent e) { layers.revalidate(); }
+
+			public void componentHidden(java.awt.event.ComponentEvent e) { layers.revalidate(); }
+		});
+		return layers;
+	}
+
+	private <C extends JComponent> C eventOnly(C c)
+	{
+		eventOnly.add(c);
+		return c;
+	}
+
+	private static JComponent separator()
+	{
+		JToolBar.Separator s = new JToolBar.Separator();
+		s.setOrientation(SwingConstants.VERTICAL);
+		return s;
+	}
+
+	/*
+	 * The Guests view (the whole occasion's guest list) or the Event view (the
+	 * plan of the event chosen); the plan's own controls show only with it.
+	 */
+	private void setGuestView(boolean guests)
+	{
+		guestView = guests;
+		(guests ? guestViewButton : eventViewButton).setSelected(true);
+		if (guests)
+		{
+			if (guestsPanel != null) viewHolder.remove(guestsPanel);
+			guestsPanel = new GuestsPanel(occasion, this::guestListChanged);
+			viewHolder.add(guestsPanel, "guests");
+		} else
+		{
+			seatingPanel.refresh();
+			planPanel.repaint();
+		}
+		views.show(viewHolder, guests ? "guests" : "event");
+		for (JComponent c : eventOnly) c.setVisible(!guests);
+		if (guests)
+		{
+			addTableButton.setVisible(false);
+			tableButton.setVisible(false);
+		} else setMode(mode);
+		updateTitle();
+	}
+
+	private void guestListChanged()
+	{
+		changed();
 	}
 
 	// a toolbar button that opens its menu below it
@@ -260,6 +377,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		event = o.events().get(0);
 		fillEventChooser();
 		showEvent(event);
+		if (guestView) setGuestView(true);
 		unsaved = false;
 		updateTitle();
 	}
@@ -287,7 +405,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JScrollPane scroll = new JScrollPane(planPanel);
 		scroll.getVerticalScrollBar().setUnitIncrement(16);
 		scroll.getHorizontalScrollBar().setUnitIncrement(16);
-		planHolder.add(scroll, BorderLayout.CENTER);
+		planHolder.add(withZoom(scroll), BorderLayout.CENTER);
 		planHolder.add(seatingPanel, BorderLayout.EAST);
 		setMode(mode);
 		selectionChanged(null);
@@ -314,8 +432,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			}
 			case GUESTS ->
 			{
-				if (!event.isSeated()) showEvent(occasion.events().stream().filter(Event::isSeated).findFirst().orElse(event));
-				setMode(PlanPanel.Mode.SEATING);
+				setGuestView(true);
 				return true;
 			}
 			case INVITATIONS -> writeToGuests(Messages.INVITATION, 3);
@@ -323,6 +440,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			case TABLES ->
 			{
 				showEvent(e);
+				if (guestView) setGuestView(false);
 				setMode(PlanPanel.Mode.LAYOUT);
 				return true;
 			}
@@ -333,6 +451,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			case SEATS ->
 			{
 				showEvent(e);
+				if (guestView) setGuestView(false);
 				setMode(PlanPanel.Mode.SEATING);
 				return true;
 			}
@@ -409,6 +528,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private void changed()
 	{
 		unsaved = true;
+		if (guestView && guestsPanel != null) guestsPanel.refresh();
 		updateTitle();
 	}
 
@@ -424,8 +544,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		mode = newMode;
 		boolean seating = mode == PlanPanel.Mode.SEATING;
 		(seating ? seatingButton : layoutButton).setSelected(true);
-		addTableButton.setVisible(!seating);
-		tableButton.setVisible(!seating);
+		addTableButton.setVisible(!seating && !guestView);
+		tableButton.setVisible(!seating && !guestView);
 		planPanel.setMode(mode);
 		seatingPanel.setVisible(seating);
 		if (seating)
@@ -844,7 +964,14 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 	private void updateTitle()
 	{
-		setTitle((unsaved ? "• " : "") + occasion.getName() + " — " + event.getName() + " — MyReceptionPlanner" + VERSION);
+		setTitle((unsaved ? "• " : "") + occasion.getName() + " — " + (guestView ? "Guests" : event.getName())
+				+ " — MyReceptionPlanner" + VERSION);
+		if (guestView)
+		{
+			status.setForeground(UIManager.getColor("Label.foreground"));
+			status.setText(occasion.heading());
+			return;
+		}
 		Plan plan = plan();
 		String head = plan.head().map(t -> "head table: " + plan.label(t)).orElse("no head table");
 		String people = switch (event.getKind())
