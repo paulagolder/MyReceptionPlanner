@@ -102,12 +102,13 @@ public class TemplatesDialog
 			listModel.removeElement(t);
 			if (!listModel.isEmpty()) list.setSelectedIndex(0);
 		});
-		JButton standard = new JButton("Add the standard ones");
-		standard.setToolTipText("Invitation, Request for details, Reminder, Table and arrangements");
+		JButton standard = new JButton("Add the standard ones missing");
+		standard.setToolTipText("Invitation, Menu choices, Request for details, Reminder, Table and arrangements");
 		standard.addActionListener(e ->
 		{
 			for (MessageTemplate t : Messages.standard())
 			{
+				if (work.stream().anyMatch(w -> w.getName().equals(t.getName()))) continue;
 				work.add(t);
 				listModel.addElement(t);
 			}

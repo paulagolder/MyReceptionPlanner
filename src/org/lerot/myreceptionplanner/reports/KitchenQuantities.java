@@ -29,7 +29,7 @@ public class KitchenQuantities extends Report
 		if (!event.hasMenu())
 		{
 			sections.add(new Section("No menu yet", List.of(), List.of(),
-					"Set the menu with Occasion ▾ → Menu…. The dietary needs are counted in the catering list."));
+					"Set the menu with Events ▾ → Menu…. The dietary needs are counted in the catering list."));
 			return;
 		}
 		sections.add(new Section("Guests", List.of(), List.of(),

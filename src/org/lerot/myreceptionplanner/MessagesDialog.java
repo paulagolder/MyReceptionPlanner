@@ -46,6 +46,7 @@ public class MessagesDialog
 	private final JComboBox<MessageTemplate> template;
 	private final JComboBox<Object> eventChoice = new JComboBox<>();
 	private final JComboBox<String> show = new JComboBox<>();
+	private int showing;
 	private final JTextArea preview = new JTextArea(18, 46);
 	private final JLabel previewSubject = new JLabel(" ");
 	private final List<Party> rows = new ArrayList<>();
@@ -80,6 +81,17 @@ public class MessagesDialog
 	public static boolean show(Component parent, Occasion occasion, Event current, Function<String, Path> choosePdf,
 			java.util.function.Consumer<Path> openFile)
 	{
+		return show(parent, occasion, current, choosePdf, openFile, null, 0);
+	}
+
+	/*
+	 * Starting with the template of that name (if there is one) and the Show
+	 * choice given: 0 all parties, 1 invited to the event, 2 with details
+	 * missing, 3 not yet sent this message, 4 with menu choices to make.
+	 */
+	public static boolean show(Component parent, Occasion occasion, Event current, Function<String, Path> choosePdf,
+			java.util.function.Consumer<Path> openFile, String templateName, int showing)
+	{
 		if (occasion.templates().isEmpty())
 		{
 			JOptionPane.showMessageDialog(parent, "There are no message templates; add some with Messages ▾ → "
@@ -92,7 +104,11 @@ public class MessagesDialog
 					JOptionPane.INFORMATION_MESSAGE);
 			return false;
 		}
-		return new MessagesDialog(occasion, current, choosePdf, openFile).run(parent);
+		MessagesDialog d = new MessagesDialog(occasion, current, choosePdf, openFile);
+		occasion.templates().stream().filter(t -> t.getName().equals(templateName)).findFirst()
+				.ifPresent(d.template::setSelectedItem);
+		d.showing = showing;
+		return d.run(parent);
 	}
 
 	private Event event()
@@ -103,8 +119,9 @@ public class MessagesDialog
 	private boolean run(Component parent)
 	{
 		for (String s : new String[] { "All parties", "Invited to the event", "With details missing",
-				"Not yet sent this message" })
+				"Not yet sent this message", "With menu choices to make" })
 			show.addItem(s);
+		show.setSelectedIndex(showing);
 		show.addActionListener(e -> reload());
 		eventChoice.addActionListener(e -> reload());
 		template.addActionListener(e -> reload());
@@ -207,6 +224,7 @@ public class MessagesDialog
 				case 2 -> !Messages.fill(new MessageTemplate("", "", "{missing}"), occasion, p, e).body()
 						.startsWith("We have everything");
 				case 3 -> t != null && occasion.lastSent(p, t.getName()) == null;
+				case 4 -> !Messages.menusToChoose(occasion, p).isEmpty();
 				default -> true;
 			};
 			if (keep) rows.add(p);

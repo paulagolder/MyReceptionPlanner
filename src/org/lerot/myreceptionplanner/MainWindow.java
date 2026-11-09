@@ -3,9 +3,11 @@ package org.lerot.myreceptionplanner;
 import net.miginfocom.swing.MigLayout;
 import org.lerot.myreceptionplanner.model.Event;
 import org.lerot.myreceptionplanner.model.GuestList;
+import org.lerot.myreceptionplanner.model.Messages;
 import org.lerot.myreceptionplanner.model.Occasion;
 import org.lerot.myreceptionplanner.model.OccasionXml;
 import org.lerot.myreceptionplanner.model.Plan;
+import org.lerot.myreceptionplanner.model.Progress;
 import org.lerot.myreceptionplanner.model.RectTable;
 import org.lerot.myreceptionplanner.model.RoundTable;
 import org.lerot.myreceptionplanner.model.Seating;
@@ -104,6 +106,39 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	{
 		JToolBar bar = new JToolBar();
 		bar.setFloatable(false);
+
+		JPopupMenu occasionMenu = new JPopupMenu();
+		occasionMenu.add("Progress…").addActionListener(e -> ProgressDialog.show(this, occasion, this::progressStep));
+		occasionMenu.addSeparator();
+		occasionMenu.add("Occasion details…").addActionListener(e -> editOccasion());
+		occasionMenu.add("Invitations…").addActionListener(e -> invitations());
+		occasionMenu.addSeparator();
+		occasionMenu.add("New occasion…").addActionListener(e -> newOccasion());
+		occasionMenu.add("Open occasion…").addActionListener(e -> openOccasion());
+		occasionMenu.addSeparator();
+		occasionMenu.add("Save…").addActionListener(e -> save());
+		bar.add(dropDown("Occasion", occasionMenu));
+
+		JPopupMenu eventsMenu = new JPopupMenu();
+		eventsMenu.add("Event details…").addActionListener(e -> editEvent());
+		eventsMenu.add("Menu…").addActionListener(e ->
+		{
+			if (MenuDialog.edit(this, occasion, event)) changed();
+		});
+		eventsMenu.add("Menu choices and dietary needs…").addActionListener(e ->
+		{
+			if (MenuChoicesDialog.show(this, event))
+			{
+				seatingPanel.refresh();
+				changed();
+			}
+		});
+		eventsMenu.addSeparator();
+		eventsMenu.add("New event…").addActionListener(e -> newEvent());
+		deleteEventItem.addActionListener(e -> deleteEvent());
+		eventsMenu.add(deleteEventItem);
+		bar.add(dropDown("Events", eventsMenu));
+		bar.addSeparator();
 		ButtonGroup modes = new ButtonGroup();
 		modes.add(layoutButton);
 		modes.add(seatingButton);
@@ -197,31 +232,6 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 				showEvent(chosen);
 		});
 		bar.add(eventChooser);
-		JPopupMenu occasionMenu = new JPopupMenu();
-		occasionMenu.add("Occasion details…").addActionListener(e -> editOccasion());
-		occasionMenu.add("Invitations…").addActionListener(e -> invitations());
-		occasionMenu.add("Menu…").addActionListener(e ->
-		{
-			if (MenuDialog.edit(this, occasion, event)) changed();
-		});
-		occasionMenu.add("Menu choices and dietary needs…").addActionListener(e ->
-		{
-			if (MenuChoicesDialog.show(this, event))
-			{
-				seatingPanel.refresh();
-				changed();
-			}
-		});
-		occasionMenu.addSeparator();
-		occasionMenu.add("Event details…").addActionListener(e -> editEvent());
-		occasionMenu.add("New event…").addActionListener(e -> newEvent());
-		deleteEventItem.addActionListener(e -> deleteEvent());
-		occasionMenu.add(deleteEventItem);
-		occasionMenu.addSeparator();
-		occasionMenu.add("New occasion…").addActionListener(e -> newOccasion());
-		occasionMenu.add("Open occasion…").addActionListener(e -> openOccasion());
-		bar.add(dropDown("Occasion", occasionMenu));
-		bar.add(button("Save…", this::save));
 		return bar;
 	}
 
@@ -287,6 +297,61 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private void editOccasion()
 	{
 		if (OccasionDialogs.editOccasion(this, occasion)) changed();
+	}
+
+	// a stage clicked on the progress screen; true to close it
+	private boolean progressStep(Progress.Step step, Event e)
+	{
+		switch (step)
+		{
+			case OCCASION -> editOccasion();
+			case EVENTS ->
+			{
+				Event first = occasion.events().stream().filter(x -> x.getPlace().isEmpty() || x.getTime().isEmpty())
+						.findFirst().orElse(event);
+				if (first != event) showEvent(first);
+				editEvent();
+			}
+			case GUESTS ->
+			{
+				if (!event.isSeated()) showEvent(occasion.events().stream().filter(Event::isSeated).findFirst().orElse(event));
+				setMode(PlanPanel.Mode.SEATING);
+				return true;
+			}
+			case INVITATIONS -> writeToGuests(Messages.INVITATION, 3);
+			case MENUS_SENT -> writeToGuests(Messages.MENU_CHOICES, 4);
+			case TABLES ->
+			{
+				showEvent(e);
+				setMode(PlanPanel.Mode.LAYOUT);
+				return true;
+			}
+			case MENU ->
+			{
+				if (MenuDialog.edit(this, occasion, e)) changed();
+			}
+			case SEATS ->
+			{
+				showEvent(e);
+				setMode(PlanPanel.Mode.SEATING);
+				return true;
+			}
+			case CHOICES ->
+			{
+				if (MenuChoicesDialog.show(this, e))
+				{
+					seatingPanel.refresh();
+					changed();
+				}
+			}
+			default -> { }
+		}
+		return false;
+	}
+
+	private void writeToGuests(String template, int showing)
+	{
+		if (MessagesDialog.show(this, occasion, event, this::choosePdf, this::open, template, showing)) changed();
 	}
 
 	private void invitations()
@@ -553,7 +618,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		form.add(turn);
 		JLabel note = new JLabel("<html>Each table where it stands, with its guests in seat order.<br>"
 				+ "Renumber the tables first if they have moved. The heading comes from<br>"
-				+ "Occasion ▾ → Occasion details and Event details.</html>");
+				+ "Occasion ▾ → Occasion details and Events ▾ → Event details.</html>");
 		note.setForeground(Theme.EDGE);
 		form.add(note, "skip, gaptop 6");
 		if (JOptionPane.showConfirmDialog(this, form, "Table plan: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,

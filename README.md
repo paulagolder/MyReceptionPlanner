@@ -40,17 +40,38 @@ can sit in one place at the breakfast and another in the evening. These
 names, places, dates and times head the reports and anything sent to the
 guests.
 
-On the right of the toolbar:
+At the left of the toolbar:
 
-- **Event** chooses which event's tables and seating are shown.
-- **Occasion ▾** → *Occasion details…* (name and date), *Invitations…*
-  (below), *Event details…*
-  (name, place, date and time; leave the date empty if it is on the
-  occasion's day), *New event…* (starting with an empty room or a copy of
-  another event's tables, and inviting everyone, no one or the guests of
-  another event), *Delete this event…*, *New occasion…* and
-  *Open occasion…*.
-- **Save…** saves the whole occasion.
+- **Occasion ▾** → *Progress…* (below), *Occasion details…* (name and date), *Invitations…*
+  (below), *New occasion…*, *Open occasion…* and *Save…* (saves the whole
+  occasion).
+- **Events ▾** → *Event details…* (name, place, date and time; leave the
+  date empty if it is on the occasion's day), *Menu…* and *Menu choices and
+  dietary needs…* (below), *New event…* (starting with an empty room or a
+  copy of another event's tables, and inviting everyone, no one or the
+  guests of another event) and *Delete this event…*.
+
+On the right, **Event** chooses which event's tables and seating are shown.
+
+### Progress
+
+**Occasion ▾ → Progress…** shows how far the planning has got, following
+the workflow. First the occasion's stages: *Define occasion* (date, sender,
+how to reply), *Define events* (each with a place and time), *Manage guests*
+(places named; leads with no way to reach them; names alike), *Send
+invitations* (parties invited that have been sent the *Invitation*
+message), *Send out menus* (parties sent the *Menu choices* message, or with
+nothing left to choose) and *Process replies* (not recorded yet). Then a
+grid with a column for each event: *Tables and seats* (places, or the
+capacity, against those invited), *Menu* (a dish in every course for every
+invited guest's needs), *Allocate seats* and *Menu choices*.
+
+Each stage has a mark (a green tick when done, an amber half when part done,
+a ring when not started, a dash when it does not apply), a bar, a count and
+what is left; red means something to put right. Click a stage to go and do
+it: the details, the menu and choices and the messages open over the
+screen, which then shows the new state; tables and seating take you to that
+event's plan.
 
 ### One person, once
 
@@ -87,10 +108,10 @@ duplicate in the Guests tab.
   (Ann Smith+1) chooses once it is named, and a guest whose name is cleared
   loses theirs. The catering list and Check… count places not yet named
   apart.
-- **Occasion ▾ → Menu…** sets out the shown event's menu: a line for each
+- **Events ▾ → Menu…** sets out the shown event's menu: a line for each
   dish, with its course (Starter, Main, Dessert …) and ticks for the diets it
   suits (a vegan dish suits vegetarians too).
-- **Occasion ▾ → Menu choices and dietary needs…** lists those invited to
+- **Events ▾ → Menu choices and dietary needs…** lists those invited to
   the event, where they sit, their needs, a choice for each course and a
   note for this event only. A dish that does not suit a guest's needs shows
   in red with ⚠.
@@ -282,12 +303,18 @@ international number for WhatsApp.
   the party is invited to) `{event}` `{eventplace}` `{eventwhen}` `{seats}`
   (where each of the party sits at the event chosen) `{menu}` `{missing}`
   (names of +1s, dietary needs and menu choices still needed, or thanks if
-  nothing is) `{from}` `{reply}`. A new occasion comes with *Invitation*,
-  *Request for details*, *Reminder* and *Table and arrangements*; change
-  them, copy them or add more.
+  nothing is) `{menuschosen}` (thanks for the choices made, naming the
+  events) `{menustochoose}` (every catered event the party is invited to
+  with choices still to make: each guest with what they have chosen so far,
+  to confirm, and what is left, then the menu) `{from}` `{reply}`. A new
+  occasion comes with *Invitation*, *Menu choices* (one message covering
+  every event, whenever the party was invited to it), *Request for details*,
+  *Reminder* and *Table and arrangements*; change them, copy them or add
+  more (*Add the standard ones missing* brings back any you lack).
 - **Messages ▾ → Write to guests…**: choose the message, the event its event
   fill-ins speak of, and which parties to show (all, invited to the event,
-  with details missing, or not yet sent this message). Each party's message
+  with details missing, not yet sent this message, or with menu choices to
+  make). Each party's message
   is shown completed, with ticks for whether the lead has an email, a
   WhatsApp or mobile number and an address, and when this message last went
   to them. For the ticked parties (or the one chosen):

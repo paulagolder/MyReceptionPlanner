@@ -25,6 +25,9 @@ public final class Messages
 	// a message prepared for a party, and how
 	public record Sent(Party party, LocalDateTime when, String what, String how, String event) {}
 
+	// the standard templates whose sending the progress screen counts
+	public static final String INVITATION = "Invitation", MENU_CHOICES = "Menu choices";
+
 	// each fill-in and what it gives
 	public static final Map<String, String> FILL_INS = new LinkedHashMap<>();
 
@@ -43,6 +46,9 @@ public final class Messages
 		FILL_INS.put("eventwhen", "the chosen event's date and time");
 		FILL_INS.put("seats", "a line for each of the party at the event chosen: where they sit");
 		FILL_INS.put("menu", "the chosen event's menu, course by course");
+		FILL_INS.put("menuschosen", "thanks for the menu choices made, naming the events, or nothing");
+		FILL_INS.put("menustochoose", "each catered event the party is invited to with choices still to make or "
+				+ "confirm: who, what they have chosen so far, and the menu; or nothing");
 		FILL_INS.put("missing", "what is still needed from the party: names, dietary needs, menu choices");
 		FILL_INS.put("from", "who the message is from (Occasion details)");
 		FILL_INS.put("reply", "how to reply (Occasion details)");
@@ -51,7 +57,7 @@ public final class Messages
 	public static List<MessageTemplate> standard()
 	{
 		return new ArrayList<>(List.of(
-				new MessageTemplate("Invitation", "{occasion}: an invitation",
+				new MessageTemplate(INVITATION, "{occasion}: an invitation",
 						"""
 						Dear {leadfirst},
 
@@ -63,6 +69,18 @@ public final class Messages
 						This invitation is for {guests}.
 
 						Please let us know whether you can come{reply}.
+
+						With love,
+						{from}"""),
+				new MessageTemplate(MENU_CHOICES, "{occasion}: menu choices",
+						"""
+						Dear {leadfirst},
+
+						{menuschosen}
+
+						{menustochoose}
+
+						Please let us know{reply}.
 
 						With love,
 						{from}"""),
@@ -138,6 +156,8 @@ public final class Messages
 			case "eventwhen" -> event == null ? "" : when(o, event);
 			case "seats" -> event == null ? "" : seatsText(o, party, event);
 			case "menu" -> event == null ? "" : menuText(event);
+			case "menuschosen" -> menusChosenText(o, party);
+			case "menustochoose" -> menusToChooseText(o, party);
 			case "missing" -> missingText(o, party);
 			case "from" -> o.getSender();
 			case "reply" -> o.getReplyTo().isEmpty() ? "" : " (" + o.getReplyTo() + ")";
@@ -199,6 +219,74 @@ public final class Messages
 		for (Menu.Course c : e.getMenu().courses())
 			lines.add("  " + c.getName() + ": " + String.join(" / ", c.dishes().stream().map(Menu.Dish::withDiets).toList()));
 		return String.join("\n", lines);
+	}
+
+	// the party's named guests invited to the event
+	private static List<Guest> namedInvited(Occasion o, Party party, Event e)
+	{
+		return o.getGuests().membersOf(party).stream().filter(g -> g.isNamed() && e.isInvited(g)).toList();
+	}
+
+	// the events with a menu where the party's named guests still have choices to make
+	public static List<Event> menusToChoose(Occasion o, Party party)
+	{
+		return o.events().stream().filter(Event::hasMenu)
+				.filter(e -> namedInvited(o, party, e).stream().anyMatch(g -> !e.hasChosenAll(g))).toList();
+	}
+
+	// "Thank you for your menu choices for the Wedding Breakfast and the Dinner." or nothing
+	static String menusChosenText(Occasion o, Party party)
+	{
+		List<String> done = o.events().stream().filter(Event::hasMenu)
+				.filter(e -> !namedInvited(o, party, e).isEmpty()
+						&& namedInvited(o, party, e).stream().allMatch(e::hasChosenAll))
+				.map(Event::getName).toList();
+		if (done.isEmpty()) return "";
+		return "Thank you for your menu choices for " + and(done) + ".";
+	}
+
+	/*
+	 * Each event still to choose for: what, where, when; each guest with what
+	 * they have chosen so far (to confirm) and what is left; then the menu.
+	 */
+	static String menusToChooseText(Occasion o, Party party)
+	{
+		List<Event> events = menusToChoose(o, party);
+		if (events.isEmpty()) return "";
+		StringBuilder out = new StringBuilder(events.size() == 1
+				? "We would love your menu choices for this event; where some are chosen already, please confirm them:"
+				: "We would love your menu choices for these events; where some are chosen already, please confirm them:");
+		for (Event e : events)
+		{
+			out.append("\n\n").append(e.getName());
+			String w = when(o, e);
+			if (!e.getPlace().isEmpty()) out.append(", ").append(e.getPlace());
+			if (!w.isEmpty()) out.append(", ").append(w);
+			for (Guest g : namedInvited(o, party, e))
+			{
+				List<String> chosen = new ArrayList<>(), left = new ArrayList<>();
+				for (Menu.Course c : e.getMenu().courses())
+				{
+					Menu.Dish d = e.choice(g, c);
+					if (d == null) left.add(c.getName());
+					else chosen.add(c.getName() + ": " + d.getName());
+				}
+				String line = "  • " + g.getName() + ": ";
+				if (left.isEmpty()) line += "all chosen (" + String.join(", ", chosen) + ")";
+				else if (chosen.isEmpty()) line += "please choose";
+				else line += String.join(", ", chosen) + " (please confirm); " + and(left) + " still to choose";
+				out.append('\n').append(line);
+			}
+			out.append("\n  The menu:\n").append(menuText(e).replaceAll("(?m)^", "  "));
+		}
+		return out.toString();
+	}
+
+	// "a", "a and b", "a, b and c"
+	private static String and(List<String> parts)
+	{
+		if (parts.size() <= 1) return parts.isEmpty() ? "" : parts.get(0);
+		return String.join(", ", parts.subList(0, parts.size() - 1)) + " and " + parts.get(parts.size() - 1);
 	}
 
 	// what is still needed; a line of thanks if nothing

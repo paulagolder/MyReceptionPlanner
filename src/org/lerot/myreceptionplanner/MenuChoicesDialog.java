@@ -132,7 +132,7 @@ public class MenuChoicesDialog
 		JLabel hint = new JLabel(event.hasMenu()
 				? "Choose a dish for each course. ⚠ marks a dish that does not suit the guest's needs. "
 				+ "Double-click needs to change them. Places not yet named choose once named."
-				: "There is no menu yet (Occasion ▾ → Menu…); dietary needs can be gathered now. "
+				: "There is no menu yet (Events ▾ → Menu…); dietary needs can be gathered now. "
 				+ "Double-click needs to change them.");
 		hint.setForeground(Theme.EDGE);
 		JPanel p = new JPanel(new BorderLayout(0, 6));

@@ -97,6 +97,44 @@ class MessagesTest
 	}
 
 	@Test
+	void theMenuMessageThanksForChoicesMadeAndAsksForTheRest()
+	{
+		wedding();
+		Menu.Course starter = new Menu.Course("Starter"), main = new Menu.Course("Main");
+		Menu.Dish soup = new Menu.Dish(1, "Soup"), beef = new Menu.Dish(2, "Beef");
+		starter.dishes().add(soup);
+		main.dishes().add(beef);
+		breakfast.getMenu().courses().addAll(List.of(starter, main));
+		Menu.Course pud = new Menu.Course("Pudding");
+		Menu.Dish trifle = new Menu.Dish(1, "Trifle");
+		pud.dishes().add(trifle);
+		evening.getMenu().courses().add(pud);
+		Guest ann = smiths.getLead(), bob = o.getGuests().membersOf(smiths).get(1);
+
+		assertEquals("", fill("{menuschosen}", null));
+		String ask = fill("{menustochoose}", null);
+		assertTrue(ask.startsWith("We would love your menu choices for these events"));
+		assertTrue(ask.contains("Wedding Breakfast, The Old Barn, 12 May 2026 at 2pm"));
+		assertTrue(ask.contains("• Ann Smith: please choose"));
+
+		evening.choose(ann, pud, trifle);
+		evening.choose(bob, pud, trifle);
+		breakfast.choose(ann, main, beef);
+		assertEquals("Thank you for your menu choices for Evening Party.", fill("{menuschosen}", null));
+		ask = fill("{menustochoose}", null);
+		assertTrue(ask.startsWith("We would love your menu choices for this event"));
+		assertFalse(ask.contains("Evening Party"));
+		assertTrue(ask.contains("• Ann Smith: Main: Beef (please confirm); Starter still to choose"), ask);
+		assertEquals(List.of(breakfast), Messages.menusToChoose(o, smiths));
+
+		breakfast.choose(ann, starter, soup);
+		breakfast.choose(bob, starter, soup);
+		breakfast.choose(bob, main, beef);
+		assertEquals("Thank you for your menu choices for Wedding Breakfast and Evening Party.", fill("{menuschosen}", null));
+		assertEquals("", fill("{menustochoose}", null));
+	}
+
+	@Test
 	void phoneNumbersBecomeInternationalForWhatsApp()
 	{
 		assertEquals("447700900123", Messages.whatsAppNumber("07700 900123", "44"));
@@ -117,8 +155,8 @@ class MessagesTest
 		assertEquals("Lydia and Isaac", loaded.getSender());
 		assertEquals("lydia@example.com", loaded.getReplyTo());
 		assertEquals("33", loaded.getCountryCode());
-		assertEquals(5, loaded.templates().size());
-		MessageTemplate d = loaded.templates().get(4);
+		assertEquals(6, loaded.templates().size());
+		MessageTemplate d = loaded.templates().get(5);
 		assertEquals("How to find us", d.getSubject());
 		assertEquals("Dear {leadfirst},\n\n   indented line\n\n{from}", d.getBody());
 		Party p = loaded.getGuests().parties().get(0);
