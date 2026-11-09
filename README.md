@@ -43,7 +43,7 @@ guests.
 The toolbar starts with:
 
 - **Occasion ▾** → *Progress…* (below), *Occasion details…* (name and
-  date), *Invitations…* (below), *New occasion…*, *Open occasion…* and
+  date), *Invitations…* (opens the Guests view), *New occasion…*, *Open occasion…* and
   *Save…* (saves the whole occasion).
 - **Event | Guests** switches between the two views. The **Event** view
   shows the plan of one event: next to it, the event chooser picks which,
@@ -190,7 +190,7 @@ Each event is one of three types, set in *New event…* or *Event details…*:
 - **Party, unreserved** (the evening do): guests are invited, and tables can
   be set out in Layout for the staff preparing the room, but no one is given
   a seat, so Seating is switched off. It can have a **capacity** (0 for no
-  limit): the status bar, *Invitations…* and *Check…* warn when more guests
+  limit): the status bar, the Guests view's totals and *Check…* warn when more guests
   are invited than it allows. Its table plan PDF shows each table with its
   number of places instead of names. Making a seated event unreserved clears
   its seats, after asking.
@@ -200,20 +200,17 @@ guests).
 
 ### Invitations
 
-Each event has its own list of who is invited, and only those invited can
-be seated there. **Occasion ▾ → Invitations…** shows every party with its
-guests down the side and a column of ticks for each event: click a guest's
-tick to invite or uninvite them, or a party's to do the whole party (it is
-half ticked when only some are invited). Whenever anyone of a party is
-invited, so is its lead; uninviting the lead uninvites the party. Nothing
-changes until OK, which says first if anyone would lose a seat. A new tick
-is a ring (to be invited); unticking someone whose invitation was sent marks
-it cancelled. Replies are recorded in the Guests view.
+Each event has its own list of who is invited, and only those expected can
+be seated there. Invitations and replies are changed only in the **Guests
+view** (*Occasion ▾ → Invitations…* opens it): a column of marks for each
+event, click one to change it (see The Guests view). The only other place
+is *New event…*, which can start the new event with everyone, no one or
+another event's guests to be invited.
 
 A new party is invited to every event. A new place in a party goes wherever
 the party is already invited. In Seating's Guests tab, only those with an
-invitation to the event shown are listed, with the same marks (click to
-change), the party list shows how many of each party are expected there, and
+invitation to the event shown are listed, with the same marks (click one
+for what it means; they are changed only in the Guests view), the party list shows how many of each party are expected there, and
 *Not seated* lists those expected but not yet seated.
 
 The plan works in two modes, chosen at the left of the toolbar:

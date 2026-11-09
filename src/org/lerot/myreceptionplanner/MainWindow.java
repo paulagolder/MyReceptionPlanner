@@ -121,7 +121,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		occasionMenu.add("Progress…").addActionListener(e -> ProgressDialog.show(this, occasion, this::progressStep));
 		occasionMenu.addSeparator();
 		occasionMenu.add("Occasion details…").addActionListener(e -> editOccasion());
-		occasionMenu.add("Invitations…").addActionListener(e -> invitations());
+		occasionMenu.add("Invitations…").addActionListener(e -> setGuestView(true));
 		occasionMenu.addSeparator();
 		occasionMenu.add("New occasion…").addActionListener(e -> newOccasion());
 		occasionMenu.add("Open occasion…").addActionListener(e -> openOccasion());
@@ -471,14 +471,6 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private void writeToGuests(String template, int showing)
 	{
 		if (MessagesDialog.show(this, occasion, event, this::choosePdf, this::open, template, showing)) changed();
-	}
-
-	private void invitations()
-	{
-		if (!InvitationsDialog.show(this, occasion)) return;
-		seatingPanel.refresh();
-		planPanel.repaint();
-		changed();
 	}
 
 	private void editEvent()

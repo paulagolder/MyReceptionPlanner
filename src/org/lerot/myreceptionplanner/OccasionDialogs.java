@@ -188,7 +188,7 @@ public class OccasionDialogs
 				+ "pews whose seats are open to all, and only seats you reserve are given to guests. A party, "
 				+ "unreserved, has invitations and may have tables set out, but no seats are given; its capacity "
 				+ "(0 for no limit) warns when too many are invited. Copied tables start with no one seated. "
-				+ "Change who is invited later with Occasion ▾ → Invitations….");
+				+ "Change who is invited later in the Guests view.");
 		while (true)
 		{
 			if (!ok(parent, form, "New event")) return null;

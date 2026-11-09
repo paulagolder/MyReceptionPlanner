@@ -33,7 +33,8 @@ import java.util.function.IntFunction;
  *
  * Guests lists the parties (each made and edited in PartyDialog) and the
  * guests with an invitation to this event, with its mark (see
- * InvitationMarks; click to change it). A place not named yet shows as the
+ * InvitationMarks; click for what it means; it is changed in the Guests
+ * view). A place not named yet shows as the
  * lead's name +1, +2 ...; type a name over it to name that guest.
  */
 public class SeatingPanel extends JPanel
@@ -398,7 +399,7 @@ public class SeatingPanel extends JPanel
 		unseatedOnly.addActionListener(e -> guestModel.reload());
 		people.add(unseatedOnly, "gapleft push");
 		setUp(guestTable, row -> guestModel.rows.get(guestTable.convertRowIndexToModel(row)), row -> null, 0);
-		guestTable.setDefaultRenderer(org.lerot.myreceptionplanner.model.Invitation.class, InvitationMarks.renderer());
+		guestTable.setDefaultRenderer(org.lerot.myreceptionplanner.model.Invitation.class, InvitationMarks.renderer(false));
 		guestTable.setAutoCreateRowSorter(true);
 		guestTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
 		guestTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(guestPartyCombo));
@@ -412,7 +413,7 @@ public class SeatingPanel extends JPanel
 				int col = guestTable.convertColumnIndexToModel(guestTable.columnAtPoint(e.getPoint()));
 				if (col == 3)
 				{
-					InvitationMarks.menu(guestTable, e.getX(), e.getY(), occasion, event, g, SeatingPanel.this::changed);
+					InvitationMarks.explain(guestTable, e.getX(), e.getY(), event, g);
 					return;
 				}
 				if (e.getClickCount() != 2) return;
@@ -428,7 +429,7 @@ public class SeatingPanel extends JPanel
 			int row = guestTable.getSelectedRow();
 			if (row >= 0) removeGuest(guestModel.rows.get(guestTable.convertRowIndexToModel(row)));
 		}));
-		JLabel hint = new JLabel("<html>Click a mark to change it;<br>double-click a diet or a seat</html>");
+		JLabel hint = new JLabel("<html>Click a mark for what it means;<br>double-click a diet or a seat</html>");
 		hint.setForeground(Theme.EDGE);
 		guestButtons.add(hint, "gapleft 8");
 		people.add(guestButtons);

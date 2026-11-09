@@ -332,6 +332,7 @@ public class GuestsPanel extends JPanel
 	private void showTotals()
 	{
 		long named = guests.guests().stream().filter(Guest::isNamed).count();
+		boolean over = false;
 		StringBuilder s = new StringBuilder(guests.parties().size() + (guests.parties().size() == 1 ? " party, " : " parties, ")
 				+ guests.guests().size() + " guests (" + named + " named)");
 		for (Event e : events)
@@ -343,7 +344,14 @@ public class GuestsPanel extends JPanel
 					.append(n[Invitation.INVITED.ordinal()]).append(" awaiting reply, ")
 					.append(n[Invitation.TO_INVITE.ordinal()]).append(" to invite), ")
 					.append(n[Invitation.DECLINED.ordinal()]).append(" declined");
+			if (e.overCapacity() > 0)
+			{
+				s.append(" ⚠ ").append(e.overCapacity()).append(" more than its ")
+						.append(e.getKind() == Event.Kind.HALL ? "seats" : "capacity");
+				over = true;
+			}
 		}
+		totals.setForeground(over ? Theme.HEAD.darker() : Theme.EDGE);
 		totals.setText(s.toString());
 	}
 

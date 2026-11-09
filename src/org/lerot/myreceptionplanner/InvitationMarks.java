@@ -71,9 +71,16 @@ public final class InvitationMarks
 		};
 	}
 
-	// a table cell showing an Invitation as its mark
+	// a table cell showing an Invitation as its mark, to click to change it
 	public static TableCellRenderer renderer()
 	{
+		return renderer(true);
+	}
+
+	// a table cell showing an Invitation as its mark; clicked, it changes it or explains it
+	public static TableCellRenderer renderer(boolean changeable)
+	{
+		String click = changeable ? ": click to change" : ": click for what it means";
 		JLabel l = new JLabel();
 		l.setHorizontalAlignment(SwingConstants.CENTER);
 		l.setOpaque(true);
@@ -81,7 +88,7 @@ public final class InvitationMarks
 		{
 			Invitation state = value instanceof Invitation i ? i : Invitation.NONE;
 			l.setIcon(icon(state, 16));
-			l.setToolTipText(state == Invitation.NONE ? "Not invited: click to change" : state + ": click to change");
+			l.setToolTipText(state + click);
 			l.setBackground(selected ? t.getSelectionBackground() : t.getBackground());
 			return l;
 		};
@@ -122,6 +129,45 @@ public final class InvitationMarks
 			menu.add(item);
 		}
 		menu.show(on, x, y);
+	}
+
+	// what each mark means
+	private static String meaning(Invitation state)
+	{
+		return switch (state)
+		{
+			case NONE -> "Not invited to this event.";
+			case TO_INVITE -> "To be invited: decided on, but the invitation has not been sent yet.";
+			case INVITED -> "Invited: the invitation has been sent; no reply yet.";
+			case ACCEPTED -> "Accepted the invitation.";
+			case DECLINED -> "Declined the invitation, or it was cancelled.";
+		};
+	}
+
+	/*
+	 * Where the guest stands with the event, explained, at x, y on the
+	 * component: for where it cannot be changed (it is changed in the
+	 * Guests view).
+	 */
+	public static void explain(JComponent on, int x, int y, Event event, Guest guest)
+	{
+		Invitation state = event.invitation(guest);
+		JPopupMenu tip = new JPopupMenu();
+		JPanel p = new JPanel(new BorderLayout(8, 4));
+		p.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
+		p.setOpaque(false);
+		JLabel mark = new JLabel(icon(state, 20));
+		p.add(mark, BorderLayout.WEST);
+		JLabel text = new JLabel("<html><b>" + esc(guest.displayName()) + " — " + esc(event.getName()) + "</b><br>"
+				+ esc(meaning(state)) + "<br><span style='color:#8A8A8E'>Change it in the Guests view.</span></html>");
+		p.add(text, BorderLayout.CENTER);
+		tip.add(p);
+		tip.show(on, x, y);
+	}
+
+	private static String esc(String s)
+	{
+		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 
 	// asks first when this takes the lead's whole party with them, or seats
