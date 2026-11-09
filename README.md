@@ -400,7 +400,9 @@ international number for WhatsApp.
 
 ### Files
 
-Each occasion is a folder (by default under `~/Documents/MyReceptions`):
+`~/Documents/MyReceptions` holds the occasions, each in a folder of its own
+named from the occasion ("Lydia and Isaac's Wedding" is
+`lydia-and-isaacs-wedding`), made when it is first saved:
 
 - `emblem.svg`: the occasion's emblem, if it has one
 - `occasion.xml`: the occasion's name and date, who messages are from and
@@ -413,11 +415,16 @@ Each occasion is a folder (by default under `~/Documents/MyReceptions`):
   `wedding-breakfast.xml`): its name, type, place, date and time, its menu
   and each guest's choices and note, who is invited, its tables and pews (shapes, positions, turns, numbers, seat 1,
   disabled and open seats) and who sits where
+- `Output/`: everything printed or written from it (table plans, catering,
+  kitchen and service reports, letters, labels, contact lists). The PDF
+  chooser opens here with a name filled in.
 
 **Save…** shows the folder it will save in and asks before writing. Choose
 another folder there to save a copy somewhere else; from then on the occasion
-saves to that folder. A new occasion asks for a folder the first time it is
-saved. When closing or opening another occasion with unsaved changes, you're
+saves to that folder. A new occasion is saved the first time in its own
+folder in MyReceptions (with a warning if that folder already holds an
+occasion); renamed later, it keeps its folder. *Open occasion…* starts in
+MyReceptions. When closing or opening another occasion with unsaved changes, you're
 asked whether to save them.
 
 A rectangular table has *N* places along each long side and *M* at each end.

@@ -109,6 +109,20 @@ public class Occasion
 	public void removeEvent(Event event) { events.remove(event); }
 
 	// a file name for a new event, from its name, not used by another
+	// the occasion's own folder, from its name: "Lydia and Isaac's Wedding" → "lydia-and-isaacs-wedding"
+	public static String folderName(String occasionName)
+	{
+		String base = java.text.Normalizer.normalize(occasionName, java.text.Normalizer.Form.NFD)
+				.replaceAll("\\p{M}", "").replaceAll("['’]", "").toLowerCase(Locale.UK)
+				.replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
+		return base.isEmpty() ? "occasion" : base;
+	}
+
+	public String folderName() { return folderName(name); }
+
+	// where the occasion's printed and written output goes, inside its folder
+	public static final String OUTPUT = "Output";
+
 	public String fileFor(String eventName)
 	{
 		String base = eventName.toLowerCase(Locale.UK).replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");

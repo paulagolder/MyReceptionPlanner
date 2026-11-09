@@ -142,4 +142,13 @@ class OccasionXmlTest
 		IOException e = assertThrows(IOException.class, () -> OccasionXml.load(folder));
 		assertTrue(e.getMessage().contains("hexagon"));
 	}
+
+	@Test
+	void eachOccasionHasAFolderNamedFromIt()
+	{
+		assertEquals("lydia-and-isaacs-wedding", Occasion.folderName("Lydia and Isaac's Wedding"));
+		assertEquals("the-wedding-of-the-century", Occasion.folderName("The wedding of the Century"));
+		assertEquals("noces-dete-2026", Occasion.folderName("  Noces d'Été 2026! "));
+		assertEquals("occasion", Occasion.folderName("???"));
+	}
 }

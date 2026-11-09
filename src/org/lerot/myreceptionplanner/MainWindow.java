@@ -784,9 +784,17 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	}
 
 	// where to save a report: in the occasion's folder unless chosen otherwise
+	// the occasion's folder: where it is kept, or will be when first saved
+	private Path occasionFolder()
+	{
+		return folder != null ? folder : ROOT.resolve(occasion.folderName());
+	}
+
+	// in the Output folder inside the occasion's folder
 	private Path choosePdf(String name)
 	{
-		File in = folder != null ? folder.toFile() : defaultFolder();
+		File in = occasionFolder().resolve(Occasion.OUTPUT).toFile();
+		in.mkdirs();
 		JFileChooser fc = new JFileChooser(in);
 		fc.setDialogTitle("Save the PDF");
 		fc.setSelectedFile(new File(in, name));
@@ -828,7 +836,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private void openOccasion()
 	{
 		if (!okToDiscard()) return;
-		Path f = chooseFolder("Open an occasion");
+		Path f = chooseFolder("Open an occasion", folder != null ? folder.getParent() : ROOT);
 		if (f == null) return;
 		if (!OccasionXml.isOccasion(f))
 		{
@@ -856,15 +864,16 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 	// Save on the toolbar: shows where the occasion will go, with a chance to
 	// choose another folder, before writing it
+	// first saved in a folder of its own in MyReceptions, named from the occasion
 	private boolean save()
 	{
-		Path to = folder != null ? folder : chooseFolder("Choose a folder for " + occasion.getName());
+		Path to = occasionFolder();
 		while (to != null)
 		{
 			int answer = confirmSave(to);
 			if (answer == 0) return write(to);
 			if (answer != 1) return false;
-			Path other = chooseFolder("Choose a folder for " + occasion.getName());
+			Path other = chooseFolder("Choose a folder for " + occasion.getName(), to);
 			if (other != null) to = other;
 		}
 		return false;
@@ -916,24 +925,23 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		}
 	}
 
-	private Path chooseFolder(String title)
+	// a folder, starting at (or choosing) the one given
+	private Path chooseFolder(String title, Path at)
 	{
-		File start = folder != null ? folder.toFile() : defaultFolder();
-		start.mkdirs();
-		JFileChooser fc = new JFileChooser(start);
+		File start = at.toFile();
+		File open = start.isDirectory() ? start : start.getParentFile();
+		open.mkdirs();
+		JFileChooser fc = new JFileChooser(open);
 		fc.setDialogTitle(title);
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		fc.setApproveButtonText("Use this folder");
-		if (folder == null)
-			fc.setSelectedFile(new File(start, occasion.getName().replaceAll("[^A-Za-z0-9]+", "")));
+		if (!start.isDirectory()) fc.setSelectedFile(start);
 		if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return null;
 		return fc.getSelectedFile().toPath();  // made when the occasion is saved there
 	}
 
-	private static File defaultFolder()
-	{
-		return new File(System.getProperty("user.home"), "Documents/MyReceptions");
-	}
+	// where the occasions are kept, each in a folder of its own
+	private static final Path ROOT = Path.of(System.getProperty("user.home"), "Documents", "MyReceptions");
 
 	private static void remember(Path f)
 	{
