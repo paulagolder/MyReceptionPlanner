@@ -56,8 +56,9 @@ public class Report
 		return h.append("</body></html>").toString();
 	}
 
+	// a line break kept as one
 	protected static String esc(String s)
 	{
-		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>");
 	}
 }

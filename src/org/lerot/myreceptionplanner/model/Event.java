@@ -11,8 +11,9 @@ import java.util.Set;
 
 /*
  * One event of an occasion, such as the Wedding Breakfast: where and when it
- * is, who is invited, its tables and who sits where. Only those invited can
- * be seated. Whenever anyone of a party is invited, so is its lead.
+ * is, where each guest stands with it (see Invitation), its tables and who
+ * sits where. Only those expected (to be invited, invited or accepted) can be
+ * seated. Whenever anyone of a party is expected, so is its lead.
  *
  * An unreserved party (the evening do) has invitations and may have tables
  * set out for the staff, but no one is given a seat; it may have a capacity,
@@ -63,7 +64,7 @@ public class Event
 	private final String file;
 	private final Plan plan;
 	private final Seating seating;
-	private final Set<Guest> invited = new LinkedHashSet<>();
+	private final Map<Guest, Invitation> invitations = new LinkedHashMap<>();  // NONE is left out
 	private final Menu menu = new Menu();
 	// each guest's dish for each course, and any note for this event
 	private final Map<Guest, Map<Menu.Course, Menu.Dish>> choices = new LinkedHashMap<>();
@@ -113,7 +114,7 @@ public class Event
 	public int overCapacity()
 	{
 		int limit = capacityLimit();
-		return limit == 0 ? 0 : Math.max(0, invited.size() - limit);
+		return limit == 0 ? 0 : Math.max(0, invited().size() - limit);
 	}
 
 	public String getPlace() { return place; }
@@ -190,8 +191,8 @@ public class Event
 	// dishes no longer on the menu
 	private void tidyChoices()
 	{
-		choices.keySet().retainAll(invited);
-		notes.keySet().retainAll(invited);
+		choices.keySet().removeIf(g -> !isInvited(g));
+		notes.keySet().removeIf(g -> !isInvited(g));
 		choices.keySet().removeIf(Guest::isPlaceholder);
 		notes.keySet().removeIf(Guest::isPlaceholder);
 		for (Map<Menu.Course, Menu.Dish> mine : choices.values())
@@ -201,40 +202,89 @@ public class Event
 
 	// ---- who is invited ----
 
-	public boolean isInvited(Guest guest) { return invited.contains(guest); }
+	public Invitation invitation(Guest guest) { return invitations.getOrDefault(guest, Invitation.NONE); }
 
-	public Set<Guest> invited() { return Collections.unmodifiableSet(invited); }
+	// expected: to be invited, invited or accepted
+	public boolean isInvited(Guest guest) { return invitation(guest).expected(); }
 
-	// with their lead
-	public void invite(Guest guest)
+	// those expected, in the order first invited
+	public Set<Guest> invited()
 	{
-		invited.add(guest);
-		if (guest.getParty() != null && guest.getParty().getLead() != null) invited.add(guest.getParty().getLead());
+		Set<Guest> out = new LinkedHashSet<>();
+		invitations.forEach((g, i) -> { if (i.expected()) out.add(g); });
+		return Collections.unmodifiableSet(out);
 	}
 
-	// they lose their seat here; uninviting a lead uninvites their whole party
-	public void uninvite(Guest guest, GuestList guests)
+	// everyone with an invitation of any kind, declined too
+	public Map<Guest, Invitation> invitations() { return Collections.unmodifiableMap(invitations); }
+
+	// to be invited, if not expected already; with their lead
+	public void invite(Guest guest)
 	{
+		if (!isInvited(guest)) invitations.put(guest, Invitation.TO_INVITE);
+		Guest lead = guest.getParty() == null ? null : guest.getParty().getLead();
+		if (lead != null && lead != guest && !isInvited(lead)) invitations.put(lead, Invitation.TO_INVITE);
+	}
+
+	/*
+	 * Sets where the guest stands, keeping a party's lead expected whenever
+	 * any of the party is. A lead not expected (not invited, or declined)
+	 * takes the party with them; anyone no longer expected loses their seat,
+	 * choices and notes here.
+	 */
+	public void setInvitation(Guest guest, Invitation state, GuestList guests)
+	{
+		if (state.expected())
+		{
+			invitations.put(guest, state);
+			invite(guest);
+			return;
+		}
 		List<Guest> going = guest.isLead() ? guests.membersOf(guest.getParty()) : List.of(guest);
 		for (Guest g : going)
 		{
-			invited.remove(g);
+			if (g != guest && !isInvited(g)) continue;  // others keep a refusal already given
+			if (state == Invitation.NONE) invitations.remove(g);
+			else invitations.put(g, state);
 			seating.unseat(g);
 			choices.remove(g);
 			notes.remove(g);
 		}
 	}
 
-	public int invitedIn(Party party, GuestList guests)
+	// not invited at all; uninviting a lead uninvites their whole party
+	public void uninvite(Guest guest, GuestList guests)
 	{
-		return (int) guests.membersOf(party).stream().filter(invited::contains).count();
+		setInvitation(guest, Invitation.NONE, guests);
 	}
 
-	// exactly these (and their leads); returns how many lose their seats here
+	// those to be invited now invited: their invitation has been sent
+	public void sent(Collection<Guest> these)
+	{
+		for (Guest g : these)
+			if (invitation(g) == Invitation.TO_INVITE) invitations.put(g, Invitation.INVITED);
+	}
+
+	public int invitedIn(Party party, GuestList guests)
+	{
+		return (int) guests.membersOf(party).stream().filter(this::isInvited).count();
+	}
+
+	/*
+	 * Exactly these (and their leads) expected; returns how many lose their
+	 * seats here. Of the others, one whose invitation was sent is cancelled
+	 * (declined); one only to be invited is not invited.
+	 */
 	public int setInvited(Collection<Guest> these, GuestList guests)
 	{
-		invited.clear();
-		these.forEach(this::invite);
+		Set<Guest> keep = new LinkedHashSet<>(these);
+		for (Guest g : List.copyOf(invitations.keySet()))
+		{
+			if (keep.contains(g) || !isInvited(g)) continue;
+			if (invitation(g).sent()) invitations.put(g, Invitation.DECLINED);
+			else invitations.remove(g);
+		}
+		keep.forEach(this::invite);
 		return tidy(guests);
 	}
 
@@ -242,14 +292,14 @@ public class Event
 	// the seats to those invited; returns how many lose their seats
 	public int tidy(GuestList guests)
 	{
-		invited.retainAll(guests.guests());
-		for (Guest g : List.copyOf(invited))
+		invitations.keySet().retainAll(guests.guests());
+		for (Guest g : invited())
 			invite(g);
 		tidyChoices();
 		int lost = 0;
 		for (Guest g : List.copyOf(seating.all().keySet()))
 		{
-			if (!invited.contains(g) || !isSeated())
+			if (!isInvited(g) || !isSeated())
 			{
 				seating.unseat(g);
 				lost++;

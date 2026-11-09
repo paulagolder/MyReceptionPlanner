@@ -430,12 +430,12 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 				if (first != event) showEvent(first);
 				editEvent();
 			}
-			case GUESTS ->
+			case GUESTS, REPLIES ->
 			{
 				setGuestView(true);
 				return true;
 			}
-			case INVITATIONS -> writeToGuests(Messages.INVITATION, 3);
+			case INVITATIONS -> writeToGuests(Messages.INVITATION, 5);
 			case MENUS_SENT -> writeToGuests(Messages.MENU_CHOICES, 4);
 			case TABLES ->
 			{

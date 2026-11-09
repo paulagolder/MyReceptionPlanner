@@ -6,6 +6,7 @@ import org.lerot.myreceptionplanner.model.Event;
 import org.lerot.myreceptionplanner.model.Gender;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
+import org.lerot.myreceptionplanner.model.Invitation;
 import org.lerot.myreceptionplanner.model.Occasion;
 import org.lerot.myreceptionplanner.model.Party;
 
@@ -22,10 +23,10 @@ import java.util.List;
  * The Guests view: the guest list of the whole occasion, full width. The
  * parties on the left, each made and edited in PartyDialog; every guest on the
  * right with their gender, party and dietary needs, how their party's lead can
- * be reached (email, phone, address), and a tick for each event they are
- * invited to. Inviting anyone of a party invites its lead; uninviting the lead
- * uninvites the party, asking first if anyone loses a seat. Seats are given in
- * the Event view.
+ * be reached (email, phone, address), and where they stand with each event
+ * (see InvitationMarks; click a mark to change it). Inviting anyone of a
+ * party invites its lead; uninviting the lead uninvites the party, asking
+ * first if anyone loses a seat. Seats are given in the Event view.
  */
 public class GuestsPanel extends JPanel
 {
@@ -181,14 +182,11 @@ public class GuestsPanel extends JPanel
 		Party p = selectedParty();
 		if (p == null) return;
 		int named = guests.namedIn(p);
-		if (guests.placesOf(p) > 0)
-		{
-			int answer = JOptionPane.showConfirmDialog(this, "Remove the party " + p.getName() + "?\n"
-							+ "Its places not named yet go. Its " + named
-							+ (named == 1 ? " named guest stays" : " named guests stay") + " on the guest list, in no party.",
-					"Remove party", JOptionPane.OK_CANCEL_OPTION);
-			if (answer != JOptionPane.OK_OPTION) return;
-		}
+		List<Guest> going = guests.membersOf(p).stream().filter(g -> !g.isNamed()).toList();
+		if (!InvitationMarks.mayRemove(this, occasion, going, "Remove the party " + p.getName() + "?\n"
+				+ "Its places not named yet go. Its " + named
+				+ (named == 1 ? " named guest stays" : " named guests stay") + " on the guest list, in no party."))
+			return;
 		guests.removeParty(p);
 		changed();
 	}
@@ -228,7 +226,7 @@ public class GuestsPanel extends JPanel
 		p.add(chosenPartyOnly, "gapleft push");
 		setUp(guestTable);
 		guestTable.setAutoCreateRowSorter(true);
-		guestTable.setDefaultRenderer(Boolean.class, new TickRenderer());
+		guestTable.setDefaultRenderer(Invitation.class, InvitationMarks.renderer());
 		TableColumn gender = guestTable.getColumnModel().getColumn(1);
 		gender.setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
 		gender.setPreferredWidth(90);
@@ -249,9 +247,16 @@ public class GuestsPanel extends JPanel
 			public void mouseClicked(MouseEvent e)
 			{
 				int row = guestTable.rowAtPoint(e.getPoint());
-				if (e.getClickCount() != 2 || row < 0) return;
+				if (row < 0) return;
 				Guest g = guestAt(row);
 				int col = guestTable.convertColumnIndexToModel(guestTable.columnAtPoint(e.getPoint()));
+				if (col >= EVENTS_FROM)
+				{
+					InvitationMarks.menu(guestTable, e.getX(), e.getY(), occasion, events.get(col - EVENTS_FROM), g,
+							GuestsPanel.this::changed);
+					return;
+				}
+				if (e.getClickCount() != 2) return;
 				if (col == 3 && DietDialog.editNamed(GuestsPanel.this, g)) changed();
 				else if (col == 4 && g.getParty() != null)
 				{
@@ -268,7 +273,8 @@ public class GuestsPanel extends JPanel
 			int row = guestTable.getSelectedRow();
 			if (row >= 0) removeGuest(guestAt(row));
 		}));
-		JLabel hint = new JLabel("Double-click a diet to change it, the lead's contact to edit the party");
+		JLabel hint = new JLabel("Click an invitation mark to change it; double-click a diet to change it, "
+				+ "the lead's contact to edit the party");
 		hint.setForeground(Theme.EDGE);
 		buttons.add(hint, "gapleft 8");
 		p.add(buttons);
@@ -306,34 +312,10 @@ public class GuestsPanel extends JPanel
 					JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
-		if (g.isNamed())
-		{
-			int answer = JOptionPane.showConfirmDialog(this, "Remove " + g.getName() + " from the guest list?",
-					"Remove guest", JOptionPane.OK_CANCEL_OPTION);
-			if (answer != JOptionPane.OK_OPTION) return;
-		}
+		if (!InvitationMarks.mayRemove(this, occasion, List.of(g), "Remove " + g.displayName() + " from the guest list?"))
+			return;
 		guests.removeGuest(g);
 		changed();
-	}
-
-	// asks first if this takes away others too (the lead's party) or a seat
-	private boolean uninvite(Guest g, Event e)
-	{
-		int others = g.isLead() ? e.invitedIn(g.getParty(), guests) - 1 : 0;
-		boolean seated = e.getSeating().isSeated(g) || (g.isLead()
-				&& guests.membersOf(g.getParty()).stream().anyMatch(e.getSeating()::isSeated));
-		if (others > 0 || seated)
-		{
-			String what = others > 0
-					? g.getName() + " leads " + g.getParty().getName() + ", so the whole party (" + (others + 1)
-					+ " guests) will no longer be invited to " + e.getName() + "."
-					: g.displayName() + " will no longer be invited to " + e.getName() + ".";
-			int answer = JOptionPane.showConfirmDialog(this, what + (seated ? "\nTheir seats there are cleared." : ""),
-					"Invitation", JOptionPane.OK_CANCEL_OPTION);
-			if (answer != JOptionPane.OK_OPTION) return false;
-		}
-		e.uninvite(g, guests);
-		return true;
 	}
 
 	// "✉ ☎ ⌂" for the ways a party's lead can be reached, a dot for each missing
@@ -353,7 +335,15 @@ public class GuestsPanel extends JPanel
 		StringBuilder s = new StringBuilder(guests.parties().size() + (guests.parties().size() == 1 ? " party, " : " parties, ")
 				+ guests.guests().size() + " guests (" + named + " named)");
 		for (Event e : events)
-			s.append("   ·   ").append(e.getName()).append(": ").append(e.invited().size()).append(" invited");
+		{
+			int[] n = new int[Invitation.values().length];
+			e.invitations().values().forEach(i -> n[i.ordinal()]++);
+			s.append("   ·   ").append(e.getName()).append(": ").append(e.invited().size()).append(" expected (")
+					.append(n[Invitation.ACCEPTED.ordinal()]).append(" accepted, ")
+					.append(n[Invitation.INVITED.ordinal()]).append(" awaiting reply, ")
+					.append(n[Invitation.TO_INVITE.ordinal()]).append(" to invite), ")
+					.append(n[Invitation.DECLINED.ordinal()]).append(" declined");
+		}
 		totals.setText(s.toString());
 	}
 
@@ -375,7 +365,7 @@ public class GuestsPanel extends JPanel
 
 		public String getColumnName(int col) { return col < columns.length ? columns[col] : events.get(col - EVENTS_FROM).getName(); }
 
-		public Class<?> getColumnClass(int col) { return col >= EVENTS_FROM ? Boolean.class : Object.class; }
+		public Class<?> getColumnClass(int col) { return col >= EVENTS_FROM ? Invitation.class : Object.class; }
 
 		public Object getValueAt(int row, int col)
 		{
@@ -387,11 +377,11 @@ public class GuestsPanel extends JPanel
 				case 2 -> g.getParty() == null ? NO_PARTY : g.getParty();
 				case 3 -> g.dietText();
 				case 4 -> reach(g);
-				default -> events.get(col - EVENTS_FROM).isInvited(g);
+				default -> events.get(col - EVENTS_FROM).invitation(g);
 			};
 		}
 
-		public boolean isCellEditable(int row, int col) { return col <= 2 || col >= EVENTS_FROM; }
+		public boolean isCellEditable(int row, int col) { return col <= 2; }
 
 		public void setValueAt(Object value, int row, int col)
 		{
@@ -415,12 +405,7 @@ public class GuestsPanel extends JPanel
 						return;
 					}
 				}
-				default ->
-				{
-					Event e = events.get(col - EVENTS_FROM);
-					if ((Boolean) value) e.invite(g);
-					else if (!uninvite(g, e)) return;
-				}
+				default -> { return; }
 			}
 			changed();
 		}
@@ -482,28 +467,25 @@ public class GuestsPanel extends JPanel
 		}
 	}
 
-	private static class TickRenderer implements javax.swing.table.TableCellRenderer
+	// the five marks, in a row
+	static JComponent marksKey()
 	{
-		private final JCheckBox box = new JCheckBox();
-
-		TickRenderer()
+		JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+		p.setOpaque(false);
+		for (Invitation state : Invitation.values())
 		{
-			box.setHorizontalAlignment(SwingConstants.CENTER);
-			box.setOpaque(true);
+			if (state == Invitation.NONE) continue;
+			JLabel l = new JLabel(state.toString().replace(" (sent)", "").replace(" or cancelled", ""),
+					InvitationMarks.icon(state, 14), SwingConstants.LEADING);
+			l.setForeground(Theme.EDGE);
+			p.add(l);
 		}
-
-		public Component getTableCellRendererComponent(JTable t, Object value, boolean selected, boolean focus,
-				int row, int col)
-		{
-			box.setSelected(Boolean.TRUE.equals(value));
-			box.setBackground(selected ? t.getSelectionBackground() : t.getBackground());
-			return box;
-		}
+		return p;
 	}
 
 	private JComponent legend()
 	{
-		JPanel p = new JPanel(new MigLayout("insets 6 8 6 8", "[]12[]12[]12[]push[]"));
+		JPanel p = new JPanel(new MigLayout("insets 6 8 6 8", "[]12[]12[]12[]12[]push"));
 		p.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Theme.GRID));
 		p.add(new JLabel("Female", Marks.icon(Gender.FEMALE, Theme.EDGE, ICON), SwingConstants.LEADING));
 		p.add(new JLabel("Male", Marks.icon(Gender.MALE, Theme.EDGE, ICON), SwingConstants.LEADING));
@@ -511,8 +493,9 @@ public class GuestsPanel extends JPanel
 		JLabel key = new JLabel("Reach: ✉ email  ☎ phone  ⌂ address");
 		key.setForeground(Theme.EDGE);
 		p.add(key);
+		p.add(marksKey());
 		totals.setForeground(Theme.EDGE);
-		p.add(totals);
+		p.add(totals, "newline, span");
 		return p;
 	}
 }

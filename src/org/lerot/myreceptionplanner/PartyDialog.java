@@ -60,6 +60,7 @@ public class PartyDialog
 		boolean named() { return !name.isBlank(); }
 
 		boolean seated;  // at any event
+		boolean locked;  // an invitation sent to them stands, so they stay
 	}
 
 	private final Occasion occasion;
@@ -106,7 +107,12 @@ public class PartyDialog
 					.sorted(Comparator.comparing((Guest g) -> !g.isLead())
 							.thenComparing(g -> !g.isNamed())
 							.thenComparingInt(Guest::getPlus))
-					.forEach(g -> rows.add(new Row(g, occasion.seatedAnywhere(g))));
+					.forEach(g ->
+					{
+						Row r = new Row(g, occasion.seatedAnywhere(g));
+						r.locked = !occasion.invitationsStanding(g).isEmpty();
+						rows.add(r);
+					});
 			Guest lead = party.getLead();
 			if (lead == null)
 			{
@@ -195,6 +201,13 @@ public class PartyDialog
 					JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 			if (answer != JOptionPane.OK_OPTION) return null;
 			if (memberTable.isEditing()) memberTable.getCellEditor().stopCellEditing();
+			long goingNow = party == null ? 0 : guests.membersOf(party).stream()
+					.filter(g -> rows.stream().noneMatch(r -> r.guest == g)).count();
+			if (goingNow > 0 && JOptionPane.showConfirmDialog(parent, goingNow == 1
+							? "One place not named yet will be taken off the guest list. Are you sure?"
+							: goingNow + " places not named yet will be taken off the guest list. Are you sure?",
+					title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION)
+				continue;
 			if (!leadName.getText().isBlank())
 			{
 				List<Pending> alike = namesAlike();
@@ -232,10 +245,12 @@ public class PartyDialog
 	private void updatePlacesLimit()
 	{
 		int named = Math.max(1, (int) rows.stream().filter(Row::named).count());
-		((SpinnerNumberModel) places.getModel()).setMinimum(named);
-		if ((Integer) places.getValue() < named) places.setValue(named);
+		int locked = (int) rows.stream().filter(r -> !r.named() && r.locked).count();
+		((SpinnerNumberModel) places.getModel()).setMinimum(named + locked);
+		if ((Integer) places.getValue() < named + locked) places.setValue(named + locked);
 		long open = rows.stream().filter(r -> !r.named()).count();
-		placesHint.setText(named + " named" + (open > 0 ? ", " + open + " not named yet" : ""));
+		placesHint.setText(named + " named" + (open > 0 ? ", " + open + " not named yet" : "")
+				+ (locked > 0 ? " (" + locked + " invited, so staying)" : ""));
 	}
 
 	// adds places not named yet, or takes them away: those not seated first,
@@ -248,7 +263,7 @@ public class PartyDialog
 		if (rows.size() > n)
 		{
 			List<Row> going = rows.stream()
-					.filter(r -> !r.named() && !r.lead)
+					.filter(r -> !r.named() && !r.lead && !r.locked)
 					.sorted(Comparator.comparing((Row r) -> r.seated).thenComparing(Comparator.comparingInt((Row r) -> r.plus).reversed()))
 					.limit(rows.size() - n)
 					.toList();

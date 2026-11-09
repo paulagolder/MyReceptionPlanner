@@ -31,9 +31,10 @@ import java.util.function.IntFunction;
  * new guest there. Right-click a seat to seat someone from the guest list, or
  * to clear it.
  *
- * Guests lists the parties (each made and edited in PartyDialog) and every
- * guest. A place not named yet shows as the lead's name +1, +2 ...; type a
- * name over it to name that guest.
+ * Guests lists the parties (each made and edited in PartyDialog) and the
+ * guests with an invitation to this event, with its mark (see
+ * InvitationMarks; click to change it). A place not named yet shows as the
+ * lead's name +1, +2 ...; type a name over it to name that guest.
  */
 public class SeatingPanel extends JPanel
 {
@@ -247,12 +248,8 @@ public class SeatingPanel extends JPanel
 					JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
-		if (g.isNamed())
-		{
-			int answer = JOptionPane.showConfirmDialog(this, "Remove " + g.getName() + " from the guest list?",
-					"Remove guest", JOptionPane.OK_CANCEL_OPTION);
-			if (answer != JOptionPane.OK_OPTION) return;
-		}
+		if (!InvitationMarks.mayRemove(this, occasion, List.of(g), "Remove " + g.displayName() + " from the guest list?"))
+			return;
 		guests.removeGuest(g);
 		occasion.tidy();
 		changed();
@@ -396,11 +393,12 @@ public class SeatingPanel extends JPanel
 		partyButtons.add(button("Remove", this::removeParty));
 		parties.add(partyButtons);
 
-		JPanel people = new JPanel(new MigLayout("insets 8, fill, wrap 1", "[grow]", "[][grow][]"));
+		JPanel people = new JPanel(new MigLayout("insets 8, fill, wrap 1", "[grow]", "[][grow][][]"));
 		people.add(new JLabel("<html><b>Guests</b></html>"), "split 2");
 		unseatedOnly.addActionListener(e -> guestModel.reload());
 		people.add(unseatedOnly, "gapleft push");
 		setUp(guestTable, row -> guestModel.rows.get(guestTable.convertRowIndexToModel(row)), row -> null, 0);
+		guestTable.setDefaultRenderer(org.lerot.myreceptionplanner.model.Invitation.class, InvitationMarks.renderer());
 		guestTable.setAutoCreateRowSorter(true);
 		guestTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
 		guestTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(guestPartyCombo));
@@ -409,9 +407,15 @@ public class SeatingPanel extends JPanel
 			public void mouseClicked(MouseEvent e)
 			{
 				int row = guestTable.rowAtPoint(e.getPoint());
-				if (e.getClickCount() != 2 || row < 0) return;
+				if (row < 0) return;
 				Guest g = guestModel.rows.get(guestTable.convertRowIndexToModel(row));
-				int col = guestTable.columnAtPoint(e.getPoint());
+				int col = guestTable.convertColumnIndexToModel(guestTable.columnAtPoint(e.getPoint()));
+				if (col == 3)
+				{
+					InvitationMarks.menu(guestTable, e.getX(), e.getY(), occasion, event, g, SeatingPanel.this::changed);
+					return;
+				}
+				if (e.getClickCount() != 2) return;
 				if (col == 5) findSeat(g);
 				else if (col == 4 && DietDialog.editNamed(SeatingPanel.this, g)) changed();
 			}
@@ -424,10 +428,11 @@ public class SeatingPanel extends JPanel
 			int row = guestTable.getSelectedRow();
 			if (row >= 0) removeGuest(guestModel.rows.get(guestTable.convertRowIndexToModel(row)));
 		}));
-		JLabel hint = new JLabel("Double-click a diet to change it, a seat to find it");
+		JLabel hint = new JLabel("<html>Click a mark to change it;<br>double-click a diet or a seat</html>");
 		hint.setForeground(Theme.EDGE);
 		guestButtons.add(hint, "gapleft 8");
 		people.add(guestButtons);
+		people.add(GuestsPanel.marksKey());
 
 		JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, parties, people);
 		split.setResizeWeight(0.3);
@@ -492,14 +497,11 @@ public class SeatingPanel extends JPanel
 		Party p = selectedParty();
 		if (p == null) return;
 		int named = guests.namedIn(p);
-		if (guests.placesOf(p) > 0)
-		{
-			int answer = JOptionPane.showConfirmDialog(this, "Remove the party " + p.getName() + "?\n"
-							+ "Its places not named yet go. Its " + named
-							+ (named == 1 ? " named guest stays" : " named guests stay") + " on the guest list, in no party.",
-					"Remove party", JOptionPane.OK_CANCEL_OPTION);
-			if (answer != JOptionPane.OK_OPTION) return;
-		}
+		List<Guest> going = guests.membersOf(p).stream().filter(g -> !g.isNamed()).toList();
+		if (!InvitationMarks.mayRemove(this, occasion, going, "Remove the party " + p.getName() + "?\n"
+				+ "Its places not named yet go. Its " + named
+				+ (named == 1 ? " named guest stays" : " named guests stay") + " on the guest list, in no party."))
+			return;
 		guests.removeParty(p);
 		occasion.tidy();
 		changed();
@@ -576,7 +578,8 @@ public class SeatingPanel extends JPanel
 
 		void reload()
 		{
-			rows = unseatedOnly.isSelected() ? invitedNotSeated() : guests.guests();
+			rows = unseatedOnly.isSelected() ? invitedNotSeated()
+					: guests.guests().stream().filter(g -> event.invitation(g) != org.lerot.myreceptionplanner.model.Invitation.NONE).toList();
 			fireTableDataChanged();
 		}
 
@@ -594,15 +597,15 @@ public class SeatingPanel extends JPanel
 				case 0 -> g.getName();
 				case 1 -> g.getGender();
 				case 2 -> partyOf(g);
-				case 3 -> event.isInvited(g);
+				case 3 -> event.invitation(g);
 				case 4 -> g.dietText();
 				default -> seatOf(g);
 			};
 		}
 
-		public Class<?> getColumnClass(int col) { return col == 3 ? Boolean.class : Object.class; }
+		public Class<?> getColumnClass(int col) { return col == 3 ? org.lerot.myreceptionplanner.model.Invitation.class : Object.class; }
 
-		public boolean isCellEditable(int row, int col) { return col < 4; }
+		public boolean isCellEditable(int row, int col) { return col < 3; }
 
 		public void setValueAt(Object value, int row, int col)
 		{
@@ -620,35 +623,10 @@ public class SeatingPanel extends JPanel
 				{
 					if (!guests.setParty(g, value instanceof Party p ? p : null)) leadStays(g);
 				}
-				case 3 ->
-				{
-					if ((Boolean) value) event.invite(g);
-					else if (!uninvite(g)) return;
-				}
 				default -> { return; }
 			}
 			changed();
 		}
-	}
-
-	// asks first if this takes away others too (the lead's party) or a seat
-	private boolean uninvite(Guest g)
-	{
-		int others = g.isLead() ? event.invitedIn(g.getParty(), guests) - 1 : 0;
-		boolean seated = seating.isSeated(g) || (g.isLead()
-				&& guests.membersOf(g.getParty()).stream().anyMatch(seating::isSeated));
-		if (others > 0 || seated)
-		{
-			String what = others > 0
-					? g.getName() + " leads " + g.getParty().getName() + ", so the whole party (" + (others + 1)
-					+ " guests) will no longer be invited to " + event.getName() + "."
-					: g.displayName() + " will no longer be invited to " + event.getName() + ".";
-			int answer = JOptionPane.showConfirmDialog(this, what + (seated ? "\nTheir seats here are cleared." : ""),
-					"Invitation", JOptionPane.OK_CANCEL_OPTION);
-			if (answer != JOptionPane.OK_OPTION) return false;
-		}
-		event.uninvite(g, guests);
-		return true;
 	}
 
 	// ---- drawing the cells ----

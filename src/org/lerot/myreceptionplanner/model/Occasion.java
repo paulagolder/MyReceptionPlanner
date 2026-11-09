@@ -76,10 +76,21 @@ public class Occasion
 	// the messages prepared so far, oldest first
 	public List<Messages.Sent> sent() { return sent; }
 
+	// noted as sent; the Invitation makes those of the party to be invited invited
 	public void logSent(Party party, String what, String how, Event event)
 	{
 		sent.add(new Messages.Sent(party, java.time.LocalDateTime.now().withNano(0), what, how,
 				event == null ? "" : event.getName()));
+		if (Messages.INVITATION.equals(what))
+			for (Event e : events)
+				e.sent(guests.membersOf(party));
+	}
+
+	// the events whose invitation has gone to the guest and stands; until
+	// declined or cancelled there, they stay on the guest list
+	public List<Event> invitationsStanding(Guest guest)
+	{
+		return events.stream().filter(e -> e.invitation(guest).sent()).toList();
 	}
 
 	// the last time this message went to the party, or null

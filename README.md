@@ -63,10 +63,36 @@ to edit, or the colour to change it) and every guest on the right: name
 (type over it; a place not named yet shows as the lead's name +1),
 gender, party, dietary needs (double-click to change), how the party's lead
 can be reached (✉ email, ☎ phone, ⌂ address; double-click to edit the
-party), and a tick for each event they are invited to. Inviting anyone of a
-party invites its lead; unticking the lead uninvites the party, asking first
-if anyone loses a seat. *Only the party chosen* narrows the list to one
-party. Seats are given in the Event view, in Seating.
+party), and a mark for where they stand with each event (below; click it to
+change it). *Only the party chosen* narrows the list to one party; the
+totals at the foot count, for each event, those expected, accepted,
+awaiting a reply, to invite and declined. Seats are given in the Event view,
+in Seating.
+
+Each guest stands with each event in one of five ways:
+
+| Mark | Meaning |
+|---|---|
+| (nothing) | not invited |
+| ○ ring | to be invited: decided on, the invitation not yet sent |
+| ● dot | invited: the invitation has been sent |
+| ✔ tick | accepted |
+| ✘ cross | declined, or cancelled |
+
+Those with a ring, dot or tick are expected: they can be seated, are
+catered for and count against the capacity. A new guest gets a ring
+wherever their party is invited (a new party, every event). Noting the
+*Invitation* message as sent to a party (Messages ▾ → Write to guests…)
+turns its rings into dots; writing the Invitation to a party already
+invited says a reminder may suit better. Inviting anyone of a party brings
+its lead; a lead marked not invited or declined takes the party with them,
+asking first if anyone loses a seat. A sent invitation cannot go back to
+nothing, only be declined or cancelled.
+
+**Taking guests off the list.** Removing a guest, a party's places not named
+yet, or places in the party dialog always asks "are you sure?", and is
+refused while an invitation sent to them stands (a dot or tick anywhere):
+mark it declined or cancelled first.
 
 ### Progress
 
@@ -74,9 +100,10 @@ party. Seats are given in the Event view, in Seating.
 the workflow. First the occasion's stages: *Define occasion* (date, sender,
 how to reply), *Define events* (each with a place and time), *Manage guests*
 (places named; leads with no way to reach them; names alike), *Send
-invitations* (parties invited that have been sent the *Invitation*
-message), *Send out menus* (parties sent the *Menu choices* message, or with
-nothing left to choose) and *Process replies* (not recorded yet). Then a
+invitations* (invitations sent, ● or ✔, of all those decided on), *Send out
+menus* (parties sent the *Menu choices* message, or with nothing left to
+choose) and *Process replies* (of the invitations sent, those accepted or
+declined). Then a
 grid with a column for each event: *Tables and seats* (places, or the
 capacity, against those invited), *Menu* (a dish in every course for every
 invited guest's needs), *Allocate seats* and *Menu choices*.
@@ -179,13 +206,15 @@ guests down the side and a column of ticks for each event: click a guest's
 tick to invite or uninvite them, or a party's to do the whole party (it is
 half ticked when only some are invited). Whenever anyone of a party is
 invited, so is its lead; uninviting the lead uninvites the party. Nothing
-changes until OK, which says first if anyone would lose a seat.
+changes until OK, which says first if anyone would lose a seat. A new tick
+is a ring (to be invited); unticking someone whose invitation was sent marks
+it cancelled. Replies are recorded in the Guests view.
 
 A new party is invited to every event. A new place in a party goes wherever
-the party is already invited. In the Guests tab, the *Invited* column ticks
-who is invited to the event shown (and can change it), the party list shows
-how many of each party are invited there, and *Not seated* lists those
-invited but not yet seated.
+the party is already invited. In Seating's Guests tab, only those with an
+invitation to the event shown are listed, with the same marks (click to
+change), the party list shows how many of each party are expected there, and
+*Not seated* lists those expected but not yet seated.
 
 The plan works in two modes, chosen at the left of the toolbar:
 
@@ -328,11 +357,18 @@ international number for WhatsApp.
   more (*Add the standard ones missing* brings back any you lack).
 - **Messages ▾ → Write to guests…**: choose the message, the event its event
   fill-ins speak of, and which parties to show (all, invited to the event,
-  with details missing, not yet sent this message, or with menu choices to
-  make). Each party's message
+  with details missing, not yet sent this message, with menu choices to
+  make, or with invitations to send). Each party's message
   is shown completed, with ticks for whether the lead has an email, a
   WhatsApp or mobile number and an address, and when this message last went
   to them. For the ticked parties (or the one chosen):
+  - **List…** makes a list to contact them by hand: a line for each party
+    with every way to reach the lead and a box to tick, then each party's
+    message in full. Note them as sent (with or without saving the list as
+    a PDF) and they count as sent "by list", just as an email would: the
+    *Invitation* turns their rings into dots. Use it when contacting guests
+    in person or by phone, or to try out the whole process without sending
+    anything.
   - **Email…** opens a ready-written email for each in your mail program;
   - **WhatsApp…** opens WhatsApp (app or web) with the message for each;
   - **Letters (PDF)…** makes a letter for each, dated, from you and addressed

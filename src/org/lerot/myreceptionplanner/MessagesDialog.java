@@ -10,7 +10,9 @@ import org.lerot.myreceptionplanner.model.MessageTemplate;
 import org.lerot.myreceptionplanner.model.Messages;
 import org.lerot.myreceptionplanner.model.Occasion;
 import org.lerot.myreceptionplanner.model.Party;
+import org.lerot.myreceptionplanner.reports.ContactList;
 import org.lerot.myreceptionplanner.reports.LettersPdf;
+import org.lerot.myreceptionplanner.reports.ReportPdf;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -24,7 +26,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /*
@@ -87,7 +91,8 @@ public class MessagesDialog
 	/*
 	 * Starting with the template of that name (if there is one) and the Show
 	 * choice given: 0 all parties, 1 invited to the event, 2 with details
-	 * missing, 3 not yet sent this message, 4 with menu choices to make.
+	 * missing, 3 not yet sent this message, 4 with menu choices to make, 5
+	 * with invitations to send.
 	 */
 	public static boolean show(Component parent, Occasion occasion, Event current, Function<String, Path> choosePdf,
 			java.util.function.Consumer<Path> openFile, String templateName, int showing)
@@ -119,7 +124,7 @@ public class MessagesDialog
 	private boolean run(Component parent)
 	{
 		for (String s : new String[] { "All parties", "Invited to the event", "With details missing",
-				"Not yet sent this message", "With menu choices to make" })
+				"Not yet sent this message", "With menu choices to make", "With invitations to send (○)" })
 			show.addItem(s);
 		show.setSelectedIndex(showing);
 		show.addActionListener(e -> reload());
@@ -178,12 +183,14 @@ public class MessagesDialog
 
 		JPanel send = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
 		send.add(new JLabel("For the ticked parties:"));
+		send.add(button("List…", this::list));
 		send.add(button("Email…", this::email));
 		send.add(button("WhatsApp…", this::whatsApp));
 		send.add(button("Letters (PDF)…", this::letters));
 		send.add(button("Address labels (PDF)…", this::labels));
-		JLabel hint = new JLabel("Emails open in your mail program and WhatsApp in its app or browser, "
-				+ "ready to check and send. Each is noted as last sent.");
+		JLabel hint = new JLabel("List makes a list to contact by hand (or to try things out without sending). "
+				+ "Emails open in your mail program and WhatsApp in its app or browser, ready to check and send. "
+				+ "Each is noted as last sent.");
 		hint.setForeground(Theme.EDGE);
 
 		JPanel p = new JPanel(new BorderLayout(0, 8));
@@ -225,6 +232,7 @@ public class MessagesDialog
 						.startsWith("We have everything");
 				case 3 -> t != null && occasion.lastSent(p, t.getName()) == null;
 				case 4 -> !Messages.menusToChoose(occasion, p).isEmpty();
+				case 5 -> toInvite(p);
 				default -> true;
 			};
 			if (keep) rows.add(p);
@@ -235,6 +243,13 @@ public class MessagesDialog
 		if (at < 0 && !rows.isEmpty()) at = 0;
 		if (at >= 0) table.setRowSelectionInterval(at, at);
 		showPreview();
+	}
+
+	// some of the party are to be invited somewhere: the invitation is still to send
+	private boolean toInvite(Party p)
+	{
+		return occasion.events().stream().anyMatch(e -> guests.membersOf(p).stream()
+				.anyMatch(g -> e.invitation(g) == org.lerot.myreceptionplanner.model.Invitation.TO_INVITE));
 	}
 
 	private boolean anyEvent(Party p)
@@ -264,7 +279,11 @@ public class MessagesDialog
 			return;
 		}
 		Messages.Message m = message(p);
-		previewSubject.setText(m.subject().isEmpty() ? " " : m.subject());
+		String subject = m.subject().isEmpty() ? " " : escape(m.subject());
+		boolean invitation = ((MessageTemplate) template.getSelectedItem()).getName().equals(Messages.INVITATION);
+		if (invitation && !toInvite(p) && anyEvent(p))
+			subject += "<br><span style='color:#C0392B;font-weight:normal'>Already invited: a reminder may suit better</span>";
+		previewSubject.setText("<html>" + subject + "</html>");
 		preview.setText(m.body());
 		preview.setCaretPosition(0);
 	}
@@ -345,6 +364,52 @@ public class MessagesDialog
 			}
 		}
 		model.fireTableDataChanged();
+	}
+
+	/*
+	 * A list of the ticked parties with every way to reach them and their
+	 * message in full, to contact by hand; noting them as sent "by list"
+	 * moves on their invitations as if sent. A PDF of it if wanted.
+	 */
+	private void list()
+	{
+		List<Party> to = tickedOrSelected();
+		if (to.isEmpty()) return;
+		MessageTemplate t = (MessageTemplate) template.getSelectedItem();
+		Map<Party, Messages.Message> messages = new LinkedHashMap<>();
+		for (Party p : to) messages.put(p, message(p));
+		ContactList report = new ContactList(occasion, t.getName(), messages);
+		JEditorPane page = new JEditorPane("text/html", report.html());
+		page.setEditable(false);
+		page.setCaretPosition(0);
+		JScrollPane scroll = new JScrollPane(page);
+		scroll.setPreferredSize(new Dimension(820, 520));
+		JPanel p = new JPanel(new BorderLayout(0, 6));
+		p.add(scroll, BorderLayout.CENTER);
+		JLabel note = new JLabel("Noting them as sent records \"" + t.getName() + "\" against each party, by list"
+				+ (t.getName().equals(Messages.INVITATION) ? ", and turns their rings (to be invited) into dots (invited)." : "."));
+		note.setForeground(Theme.EDGE);
+		p.add(note, BorderLayout.SOUTH);
+		Object[] options = { "Note as sent and save as PDF…", "Note as sent", "Cancel" };
+		int choice = JOptionPane.showOptionDialog(table, p, "List: " + t.getName(), JOptionPane.DEFAULT_OPTION,
+				JOptionPane.PLAIN_MESSAGE, null, options, options[2]);
+		if (choice != 0 && choice != 1) return;
+		if (choice == 0)
+		{
+			Path file = choosePdf.apply("list-" + slug(t.getName()) + ".pdf");
+			if (file == null) return;
+			try
+			{
+				ReportPdf.write(report, file, false);
+				openFile.accept(file);
+			} catch (IOException ex)
+			{
+				problem(ex.getMessage());
+				return;
+			}
+		}
+		to.forEach(party -> note(party, "list"));
+		reload();
 	}
 
 	private void letters()
@@ -464,5 +529,10 @@ public class MessagesDialog
 			if ((Boolean) value) { if (!ticked.contains(p)) ticked.add(p); }
 			else ticked.remove(p);
 		}
+	}
+
+	private static String escape(String s)
+	{
+		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 }

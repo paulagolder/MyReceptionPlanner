@@ -123,11 +123,14 @@ class InvitationsTest
 	{
 		java.nio.file.Files.writeString(folder.resolve("occasion.xml"), "<occasion name=\"W\"><event file=\"e.xml\"/>"
 				+ "<guests><guest id=\"1\" name=\"Ann\" gender=\"f\"/><guest id=\"2\" name=\"Bob\" gender=\"m\"/></guests></occasion>");
-		java.nio.file.Files.writeString(folder.resolve("e.xml"), "<event name=\"E\"><invited guests=\"1\"/>"
+		java.nio.file.Files.writeString(folder.resolve("e.xml"), "<event name=\"E\"><invitations decided=\"1\"/>"
 				+ "<tables><table id=\"1\" shape=\"round\" places=\"8\"/></tables>"
 				+ "<seating><seat guest=\"1\" table=\"1\" chair=\"1\"/><seat guest=\"2\" table=\"1\" chair=\"2\"/></seating></event>");
 		Event e = OccasionXml.load(folder).events().get(0);
 		assertEquals(1, e.getSeating().seatedCount());
+		java.nio.file.Files.writeString(folder.resolve("e.xml"), "<event name=\"E\"><invited guests=\"1\"/></event>");
+		e = OccasionXml.load(folder).events().get(0);
+		assertEquals(Invitation.TO_INVITE, e.invitation(e.invited().iterator().next()), "an older file's invitations");
 	}
 
 	@Test
@@ -170,5 +173,68 @@ class InvitationsTest
 		e.invite(g.addGuest("Bob", null, null));
 		e.setCapacity(1);
 		assertEquals(0, e.overCapacity(), "a seated event is limited by its tables");
+	}
+
+	@Test
+	void sendingTheInvitationTurnsDecidedIntoInvited()
+	{
+		Occasion o = wedding();
+		Party p = o.getGuests().createParty("Ann", 2, "");
+		o.tidy();
+		Event breakfast = o.events().get(0), evening = o.events().get(1);
+		Guest ann = p.getLead();
+		assertEquals(Invitation.TO_INVITE, breakfast.invitation(ann), "new guests are decided on, not yet sent");
+		evening.uninvite(ann, o.getGuests());
+		o.logSent(p, "Reminder", "email", null);
+		assertEquals(Invitation.TO_INVITE, breakfast.invitation(ann), "only the Invitation counts");
+		o.logSent(p, Messages.INVITATION, "email", null);
+		assertEquals(Invitation.INVITED, breakfast.invitation(ann));
+		assertEquals(Invitation.NONE, evening.invitation(ann), "not invited there, so not sent");
+		assertEquals(List.of(breakfast), o.invitationsStanding(ann));
+	}
+
+	@Test
+	void aLeadDecliningTakesTheirPartyAndRepliesAreKept() throws IOException
+	{
+		Occasion o = wedding();
+		GuestList g = o.getGuests();
+		Party p = g.createParty("Ann", 3, "");
+		o.tidy();
+		Event breakfast = o.events().get(0);
+		Guest ann = p.getLead(), plus1 = g.membersOf(p).get(1), plus2 = g.membersOf(p).get(2);
+		o.logSent(p, Messages.INVITATION, "email", null);
+		breakfast.setInvitation(plus1, Invitation.ACCEPTED, g);
+		breakfast.setInvitation(plus2, Invitation.DECLINED, g);
+		assertEquals(2, breakfast.invitedIn(p, g));
+		assertEquals(List.of(o.events().get(1)), o.invitationsStanding(plus2), "still invited to the evening");
+		o.events().get(1).setInvitation(plus2, Invitation.DECLINED, g);
+		assertTrue(o.invitationsStanding(plus2).isEmpty(), "declined everywhere, so they may be taken off");
+
+		OccasionXml.save(o, folder);
+		Occasion loaded = OccasionXml.load(folder);
+		Event e = loaded.events().get(0);
+		List<Guest> members = loaded.getGuests().membersOf(loaded.getGuests().parties().get(0));
+		assertEquals(List.of(Invitation.INVITED, Invitation.ACCEPTED, Invitation.DECLINED),
+				members.stream().map(e::invitation).toList());
+
+		breakfast.setInvitation(ann, Invitation.DECLINED, g);
+		assertEquals(0, breakfast.invitedIn(p, g));
+		assertEquals(Invitation.DECLINED, breakfast.invitation(plus1));
+		breakfast.setInvitation(plus1, Invitation.TO_INVITE, g);
+		assertTrue(breakfast.isInvited(ann), "inviting one of the party brings the lead back");
+	}
+
+	@Test
+	void untickingASentInvitationCancelsIt()
+	{
+		Occasion o = wedding();
+		GuestList g = o.getGuests();
+		Party sent = g.createParty("Ann", 1, ""), notSent = g.createParty("Bob", 1, "");
+		o.tidy();
+		o.logSent(sent, Messages.INVITATION, "letter", null);
+		Event breakfast = o.events().get(0);
+		breakfast.setInvited(List.of(), g);
+		assertEquals(Invitation.DECLINED, breakfast.invitation(sent.getLead()));
+		assertEquals(Invitation.NONE, breakfast.invitation(notSent.getLead()));
 	}
 }

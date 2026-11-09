@@ -103,8 +103,9 @@ public class InvitationsDialog
 		JScrollPane scroll = new JScrollPane(table);
 		scroll.setPreferredSize(new Dimension(Math.min(1000, 260 + 120 * events.size()), 460));
 		JPanel p = new JPanel(new BorderLayout(0, 6));
-		JLabel hint = new JLabel("Click a tick to invite or uninvite. A party's lead is invited whenever "
-				+ "anyone of the party is; uninviting the lead uninvites the party.");
+		JLabel hint = new JLabel("<html>Click a tick to invite or uninvite. A party's lead is invited whenever "
+				+ "anyone of the party is; uninviting the lead uninvites the party.<br>Unticking someone whose "
+				+ "invitation has been sent marks it cancelled (✘). Replies are recorded in the Guests view.</html>");
 		hint.setForeground(Theme.EDGE);
 		p.add(hint, BorderLayout.NORTH);
 		p.add(scroll, BorderLayout.CENTER);

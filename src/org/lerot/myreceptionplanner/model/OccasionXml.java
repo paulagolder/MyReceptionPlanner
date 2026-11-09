@@ -11,6 +11,7 @@ import org.dom4j.io.XMLWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.List;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -42,7 +43,7 @@ import java.time.format.DateTimeParseException;
  * tables):
  *
  *   <event name="Wedding Breakfast" type="seated" place="The Old Barn, Lichfield" time="2pm">
- *     <invited guests="1 2 3 12"/>
+ *     <invitations decided="1 2" invited="3 12" accepted="4" declined="7"/>
  *     <tables> ... </tables>
  *     <seating>
  *       <seat guest="12" table="3" chair="5"/>
@@ -116,8 +117,14 @@ public class OccasionXml
 		if (!event.getPlace().isEmpty()) root.addAttribute("place", event.getPlace());
 		if (event.getDate() != null) root.addAttribute("date", event.getDate().toString());
 		if (!event.getTime().isEmpty()) root.addAttribute("time", event.getTime());
-		root.addElement("invited").addAttribute("guests",
-				String.join(" ", event.invited().stream().map(g -> Integer.toString(g.getId())).toList()));
+		Element inv = root.addElement("invitations");
+		for (Invitation state : Invitation.values())
+		{
+			if (state == Invitation.NONE) continue;
+			List<String> ids = event.invitations().entrySet().stream().filter(x -> x.getValue() == state)
+					.map(x -> Integer.toString(x.getKey().getId())).toList();
+			if (!ids.isEmpty()) inv.addAttribute(state.code(), String.join(" ", ids));
+		}
 		PlanXml.write(event.getPlan(), root);
 		Element seating = root.addElement("seating");
 		for (var s : event.getSeating().all().entrySet())
@@ -219,14 +226,23 @@ public class OccasionXml
 		Event event = new Event(root.attributeValue("name", "Event"), file, plan, seating);
 		event.setKind(Event.Kind.fromCode(root.attributeValue("type", "seated")));
 		event.setCapacity(PlanXml.number(root, "capacity", 0));
-		Element inv = root.element("invited");
+		Element inv = root.element("invitations");
+		Element old = root.element("invited");  // before replies were kept: all to be invited
+		if (inv == null && old != null)
+			inv = DocumentHelper.createElement("invitations").addAttribute(Invitation.TO_INVITE.code(),
+					old.attributeValue("guests", ""));
 		if (inv != null)
 		{
-			for (String id : inv.attributeValue("guests", "").trim().split("\\s+"))
+			// the declined first, so that a lead brought in by their party is not taken for one
+			for (Invitation state : List.of(Invitation.DECLINED, Invitation.TO_INVITE, Invitation.INVITED, Invitation.ACCEPTED))
 			{
-				if (!id.matches("\\d+")) continue;
-				int n = Integer.parseInt(id);
-				guests.guests().stream().filter(g -> g.getId() == n).findFirst().ifPresent(event::invite);
+				for (String id : inv.attributeValue(state.code(), "").trim().split("\\s+"))
+				{
+					if (!id.matches("\\d+")) continue;
+					int n = Integer.parseInt(id);
+					guests.guests().stream().filter(g -> g.getId() == n).findFirst()
+							.ifPresent(g -> event.setInvitation(g, state, guests));
+				}
 			}
 		}
 		Element me = root.element("menu");

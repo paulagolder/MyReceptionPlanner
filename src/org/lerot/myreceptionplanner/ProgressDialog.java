@@ -143,7 +143,6 @@ public class ProgressDialog
 
 	private void clickable(JComponent c, Stage s, Event e)
 	{
-		if (s.step() == Step.REPLIES) return;
 		c.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		c.setToolTipText("Click to work on " + s.step().label.toLowerCase() + (e == null ? "" : " for " + e.getName()));
 		MouseAdapter click = new MouseAdapter()

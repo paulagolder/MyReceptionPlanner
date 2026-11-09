@@ -43,7 +43,7 @@ class ProgressTest
 		assertTrue(guests.note().contains("1 place to name"));
 		assertEquals(Progress.State.NOT_STARTED, stage(s, Progress.Step.INVITATIONS).state());
 		assertEquals(Progress.State.NOT_NEEDED, stage(s, Progress.Step.MENUS_SENT).state());
-		assertEquals(Progress.State.NOT_NEEDED, stage(s, Progress.Step.REPLIES).state());
+		assertEquals(Progress.State.NOT_STARTED, stage(s, Progress.Step.REPLIES).state());
 
 		o.setDate(Occasion.parseDate("12 May 2026"));
 		o.setSender("Lydia and Isaac");
@@ -52,6 +52,14 @@ class ProgressTest
 		s = Progress.ofOccasion(o);
 		assertEquals(Progress.State.DONE, stage(s, Progress.Step.OCCASION).state());
 		assertEquals(Progress.State.DONE, stage(s, Progress.Step.INVITATIONS).state());
+		Progress.Stage replies = stage(s, Progress.Step.REPLIES);
+		assertEquals("0 of 6", replies.count(), "3 guests at 2 events");
+
+		breakfast.setInvitation(smiths.getLead(), Invitation.ACCEPTED, o.getGuests());
+		evening.setInvitation(smiths.getLead(), Invitation.DECLINED, o.getGuests());
+		replies = stage(Progress.ofOccasion(o), Progress.Step.REPLIES);
+		assertEquals("4 of 6", replies.count(), "the lead declining takes the party");
+		assertTrue(replies.note().contains("1 accepted, 3 declined; 2 awaiting a reply"), replies.note());
 	}
 
 	@Test

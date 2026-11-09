@@ -135,6 +135,27 @@ class MessagesTest
 	}
 
 	@Test
+	void aListToContactByHandBecomesAPdfAndCountsAsSent() throws Exception
+	{
+		wedding();
+		smiths.getLead().getContact().setMobile("07700 900123");
+		smiths.getLead().getContact().setAddress("1 High Street\nLichfield");
+		MessageTemplate inv = Messages.standard().get(0);
+		var list = new org.lerot.myreceptionplanner.reports.ContactList(o, inv.getName(),
+				java.util.Map.of(smiths, Messages.fill(inv, o, smiths, null)));
+		assertEquals(List.of("[   ]", "Ann Smith", "Ann Smith", "", "07700 900123 (mobile)", "1 High Street, Lichfield"),
+				list.sections.get(0).rows().get(0));
+		assertTrue(list.html().contains("Dear Ann,"));
+		Path pdf = folder.resolve("list.pdf");
+		org.lerot.myreceptionplanner.reports.ReportPdf.write(list, pdf, false);
+		assertTrue(Files.size(pdf) > 500);
+
+		assertEquals(Invitation.TO_INVITE, breakfast.invitation(smiths.getLead()));
+		o.logSent(smiths, inv.getName(), "list", null);
+		assertEquals(Invitation.INVITED, breakfast.invitation(smiths.getLead()));
+	}
+
+	@Test
 	void phoneNumbersBecomeInternationalForWhatsApp()
 	{
 		assertEquals("447700900123", Messages.whatsAppNumber("07700 900123", "44"));

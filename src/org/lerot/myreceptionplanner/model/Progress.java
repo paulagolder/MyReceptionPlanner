@@ -54,8 +54,7 @@ public final class Progress
 
 	public static List<Stage> ofOccasion(Occasion o)
 	{
-		return List.of(details(o), events(o), guests(o), invitations(o), menusSent(o),
-				notNeeded(Step.REPLIES, "replies are not recorded yet"));
+		return List.of(details(o), events(o), guests(o), invitations(o), menusSent(o), replies(o));
 	}
 
 	public static List<Stage> ofEvent(Occasion o, Event e)
@@ -106,16 +105,41 @@ public final class Progress
 				&& c.getAddress().isEmpty());
 	}
 
+	// each guest's invitation to each event they are expected at: sent, or still to send
 	static Stage invitations(Occasion o)
 	{
-		GuestList guests = o.getGuests();
-		List<Party> invited = guests.parties().stream()
-				.filter(p -> o.events().stream().anyMatch(e -> e.invitedIn(p, guests) > 0)).toList();
-		if (invited.isEmpty()) return notStarted(Step.INVITATIONS, "no one is invited yet");
-		int sent = (int) invited.stream().filter(p -> o.lastSent(p, Messages.INVITATION) != null).count();
-		String note = sent == invited.size() ? "sent to every party invited"
-				: (invited.size() - sent) + " of the parties invited not yet sent the \"" + Messages.INVITATION + "\" message";
-		return counted(Step.INVITATIONS, sent, invited.size(), note, false);
+		int toSend = 0, sent = 0;
+		for (Event e : o.events())
+			for (Invitation i : e.invitations().values())
+			{
+				if (i == Invitation.TO_INVITE) toSend++;
+				else if (i.sent()) sent++;
+			}
+		if (toSend + sent == 0) return notStarted(Step.INVITATIONS, "no one is invited yet");
+		String note = toSend == 0 ? "every invitation sent"
+				: toSend + (toSend == 1 ? " invitation" : " invitations") + " to send (○); send the \""
+				+ Messages.INVITATION + "\" message";
+		return counted(Step.INVITATIONS, sent, toSend + sent, note, false);
+	}
+
+	// of the invitations sent, those answered: accepted or declined
+	static Stage replies(Occasion o)
+	{
+		int waiting = 0, accepted = 0, declined = 0;
+		for (Event e : o.events())
+			for (Invitation i : e.invitations().values())
+				switch (i)
+				{
+					case INVITED -> waiting++;
+					case ACCEPTED -> accepted++;
+					case DECLINED -> declined++;
+					default -> { }
+				}
+		int total = waiting + accepted + declined;
+		if (total == 0) return notStarted(Step.REPLIES, "no invitation sent yet");
+		String note = accepted + " accepted, " + declined + " declined"
+				+ (waiting == 0 ? "" : "; " + waiting + " awaiting a reply");
+		return counted(Step.REPLIES, accepted + declined, total, note, false);
 	}
 
 	// done for a party once sent the menu message, or with nothing left to choose
