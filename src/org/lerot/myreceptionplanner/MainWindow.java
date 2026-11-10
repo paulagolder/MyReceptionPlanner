@@ -272,6 +272,12 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			if (TemplatesDialog.edit(this, occasion, ROOT.resolve(OccasionXml.TEMPLATES))) changed();
 		});
 		bar.add(dropDown("Messages", messages));
+
+		JPopupMenu info = new JPopupMenu();
+		info.add("Help…").addActionListener(e -> InfoDialogs.help(this));
+		info.add("About MyReceptionPlanner…").addActionListener(e -> InfoDialogs.about(this, occasion, folder));
+		bar.add(Box.createHorizontalGlue());
+		bar.add(dropDown("Info", info));
 		return bar;
 	}
 
