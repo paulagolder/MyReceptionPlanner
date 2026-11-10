@@ -139,8 +139,8 @@ public class MenuChoicesDialog
 		p.add(hint, BorderLayout.NORTH);
 		p.add(scroll, BorderLayout.CENTER);
 		Object[] close = { "Close" };
-		JOptionPane.showOptionDialog(parent, p, "Menu choices and dietary needs: " + event.getName(),
-				JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, close, close[0]);
+		ResizableDialog.show(parent, new JOptionPane(p, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION,
+				null, close, close[0]), "Menu choices and dietary needs: " + event.getName(), "menuChoicesDialog");
 		if (table.isEditing()) table.getCellEditor().stopCellEditing();
 		return changed[0];
 	}

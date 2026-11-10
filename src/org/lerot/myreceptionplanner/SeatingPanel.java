@@ -24,7 +24,8 @@ import java.util.function.IntFunction;
 
 /*
  * Seating mode's side panel, with two tabs. It sits beside the plan, and
- * its width is dragged (MainWindow keeps it).
+ * its width is dragged (MainWindow keeps it). It opens on Guests, and turns
+ * to Table when a table is chosen on the plan.
  *
  * Table lists the seats of the table chosen on the plan, seat 1 first, and
  * who sits in each. On an empty seat, choosing a party seats one of its
@@ -67,6 +68,7 @@ public class SeatingPanel extends JPanel
 	private Party lastParty;  // given to a new guest put in an empty seat
 
 	private final JTabbedPane tabs = new JTabbedPane();
+	private static final int TABLE_TAB = 1;  // Guests first, as no table is chosen at the start
 	private final JLabel tableTitle = new JLabel();
 	private final SeatModel seatModel = new SeatModel();
 	private final JTable seatTable = new JTable(seatModel);
@@ -92,8 +94,8 @@ public class SeatingPanel extends JPanel
 		setPreferredSize(new Dimension(START_WIDTH, 0));
 		setMinimumSize(new Dimension(MIN_WIDTH, 0));
 		setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, Theme.GRID));
-		tabs.addTab("Table", tableTab());
 		tabs.addTab("Guests", guestsTab());
+		tabs.addTab("Table", tableTab());
 		add(tabs, BorderLayout.CENTER);
 		add(legend(), BorderLayout.SOUTH);
 		refresh();
@@ -106,7 +108,7 @@ public class SeatingPanel extends JPanel
 		table = t;
 		seatModel.fireTableDataChanged();
 		updateTitle();
-		tabs.setSelectedIndex(0);
+		if (t != null) tabs.setSelectedIndex(TABLE_TAB);
 		if (t != null && chair >= 0)
 		{
 			int row = t.seatNumber(chair) - 1;

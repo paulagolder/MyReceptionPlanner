@@ -88,7 +88,7 @@ public class MenuDialog
 			table.getColumnModel().getColumn(c).setHeaderValue(diets[c - 2].code());
 		}
 		JScrollPane scroll = new JScrollPane(table);
-		scroll.setPreferredSize(new Dimension(640, 320));
+		scroll.setPreferredSize(new Dimension(760, 420));
 
 		JButton addCourse = new JButton("Add course");
 		addCourse.addActionListener(e ->
@@ -145,8 +145,7 @@ public class MenuDialog
 
 		while (true)
 		{
-			if (JOptionPane.showConfirmDialog(parent, p, "Menu: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
-					JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return false;
+			if (!ResizableDialog.ok(parent, p, "Menu: " + event.getName(), "menuDialog")) return false;
 			stop(table);
 			long lost = event.choices().values().stream().flatMap(m -> m.values().stream())
 					.filter(d -> rows.stream().noneMatch(r -> r.was == d && !r.dish.isBlank())).count();
