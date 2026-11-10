@@ -185,6 +185,7 @@ public class OccasionXml
 			occasion.templates().clear();
 			occasion.templates().addAll(templates);
 		}
+		occasion.setHonorifics(Honorifics.find(folder));
 		Element communications = root.element("communications");
 		for (Element s : (communications != null ? communications : root).elements("sent"))
 		{

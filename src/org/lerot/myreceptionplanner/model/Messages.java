@@ -34,7 +34,7 @@ public final class Messages
 	static
 	{
 		FILL_INS.put("lead", "the lead's full name");
-		FILL_INS.put("leadfirst", "the lead's first name");
+		FILL_INS.put("leadfirst", "the lead's first name, or title and name: Count Paris, Dr Smith (honorifics.yml)");
 		FILL_INS.put("party", "the party's name");
 		FILL_INS.put("guests", "the party's guests, e.g. \"Ann Smith, Bob Smith and a guest\"");
 		FILL_INS.put("places", "how many places the party has");
@@ -144,7 +144,7 @@ public final class Messages
 		return switch (key)
 		{
 			case "lead" -> lead == null ? party.getName() : lead.getName();
-			case "leadfirst" -> lead == null ? party.getName() : lead.getName().split("\\s+")[0];
+			case "leadfirst" -> lead == null ? party.getName() : o.getHonorifics().greeting(lead.getName());
 			case "party" -> party.getName();
 			case "guests" -> guestsText(guests.membersOf(party));
 			case "places" -> Integer.toString(guests.placesOf(party));

@@ -579,6 +579,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		if (o == null) return;
 		try
 		{
+			o.setHonorifics(org.lerot.myreceptionplanner.model.Honorifics.find(ROOT.resolve(o.folderName())));
 			List<org.lerot.myreceptionplanner.model.MessageTemplate> shared = OccasionXml.sharedTemplates(ROOT.resolve(o.folderName()));
 			if (shared != null)
 			{

@@ -149,10 +149,10 @@ public class MessagesDialog
 		preview.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, preview.getFont().getSize()));
 
 		JPanel top = new JPanel(new MigLayout("insets 0", "[][grow,fill]20[][grow,fill]20[][grow,fill]"));
-		top.add(new JLabel("Message"));
-		top.add(template);
 		top.add(new JLabel("Event"));
 		top.add(eventChoice);
+		top.add(new JLabel("Message"));
+		top.add(template);
 		top.add(new JLabel("Show"));
 		top.add(show);
 

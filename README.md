@@ -396,8 +396,17 @@ international number for WhatsApp.
   every event, whenever the party was invited to it), *Request for details*,
   *Reminder* and *Table and arrangements*; change them, copy them or add
   more (*Add the standard ones missing* brings back any you lack).
-- **Messages ▾ → Write to guests…**: choose the message, the event its event
-  fill-ins speak of, and which parties to show (all, invited to the event,
+- **Honorifics**: `{leadfirst}` greets a titled lead by title and name:
+  "Dear Count Paris", "Dear Friar Laurence", not "Dear Count"; some titles
+  take the surname instead ("Dr John Smith" → "Dear Dr Smith"). The titles
+  are listed in `honorifics.yml`, a short YAML file of two lists,
+  `with-name:` and `with-surname:`. To change them, put your own
+  `honorifics.yml` in the occasion's folder, or in MyReceptions to share it;
+  otherwise the standard list is used (it is in the source, under
+  `resources/org/lerot/myreceptionplanner/model/`). It is read when the
+  occasion opens.
+- **Messages ▾ → Write to guests…**: choose the event its event fill-ins
+  speak of, the message, and which parties to show (all, invited to the event,
   with details missing, not yet sent this message, with menu choices to
   make, or with invitations to send). Each party's message
   is shown completed, with ticks for whether the lead has an email, a

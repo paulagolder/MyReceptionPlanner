@@ -1,0 +1,67 @@
+# The titles that go with a name when a guest is greeted ({leadfirst}).
+# To change them, copy this file as honorifics.yml into an occasion's folder,
+# or into MyReceptions to share it between occasions, and edit it there.
+
+# the title and the name after it: Count Paris, Friar Laurence, Sir John
+with-name:
+  - Sir
+  - Dame
+  - Lord
+  - Lady
+  - King
+  - Queen
+  - Prince
+  - Princess
+  - Duke
+  - Duchess
+  - Count
+  - County
+  - Countess
+  - Marquis
+  - Marchioness
+  - Baron
+  - Baroness
+  - Emperor
+  - Empress
+  - Signior
+  - Signor
+  - Signora
+  - Messer
+  - Monna
+  - Madonna
+  - Don
+  - Donna
+  - Friar
+  - Brother
+  - Sister
+  - Father
+  - Mother
+  - Abbot
+  - Abbess
+  - Cardinal
+  - Bishop
+  - Pope
+  - Saint
+  - Widow
+  - Cousin
+  - Uncle
+  - Aunt
+  - Master
+  - Mistress
+
+# the title and the surname, the last word: Dr John Smith → Dr Smith
+with-surname:
+  - Mr
+  - Mrs
+  - Ms
+  - Miss
+  - Mx
+  - Captain
+  - Dr
+  - Prof
+  - Professor
+  - Rev
+  - Revd
+  - Reverend
+  - The Reverend
+  - The Rev

@@ -33,6 +33,7 @@ public class Occasion
 	private String countryCode = "44"; // for making phone numbers international (WhatsApp)
 	private String emblem;             // the occasion's SVG emblem, as text; null for none
 	private final List<MessageTemplate> templates = Messages.standard();
+	private Honorifics honorifics = Honorifics.standard();
 	private final List<Messages.Sent> sent = new ArrayList<>();
 	// guests whose invitations have been settled; anyone else is new
 	private final Set<Guest> settled = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -76,6 +77,11 @@ public class Occasion
 
 	// the message templates; change the list directly
 	public List<MessageTemplate> templates() { return templates; }
+
+	// the titles greeted with the name after them (Count Paris); from honorifics.yml, not saved
+	public Honorifics getHonorifics() { return honorifics; }
+
+	public void setHonorifics(Honorifics honorifics) { this.honorifics = honorifics == null ? Honorifics.standard() : honorifics; }
 
 	// the messages prepared so far, oldest first
 	public List<Messages.Sent> sent() { return sent; }
