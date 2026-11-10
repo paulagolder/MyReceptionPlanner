@@ -1,6 +1,6 @@
 # Builds the MyReceptionPlanner installers, each with its own Java: a .deb
 # for Linux and an .msi for Windows (each built on its own system; the .msi
-# needs the WiX Toolset 3, installed here from Chocolatey).
+# needs the WiX Toolset 3, on GitHub's Windows images or else from Chocolatey).
 #
 #  - "Run workflow" on the repository's Actions page builds it; download it
 #    from the run's page (Artifacts).
@@ -60,7 +60,10 @@ jobs:
 
       - name: WiX Toolset 3 (jpackage makes the .msi with it)
         run: |
-          choco install wixtoolset --version 3.14.1 -y --no-progress
+          # GitHub's Windows images usually have it already
+          if (-not (Test-Path "C:\Program Files (x86)\WiX Toolset v3.14\bin\candle.exe")) {
+            choco install wixtoolset -y --no-progress
+          }
           echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" >> $env:GITHUB_PATH
 
       - name: Version (from the tag, e.g. v1.2.0)
