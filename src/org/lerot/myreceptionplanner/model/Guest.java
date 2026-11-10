@@ -8,10 +8,13 @@ import java.util.Set;
  * name and goes by the lead's name and a number, "Ann Smith+2" (the plus one,
  * built in). They can be seated like anyone else until a name is given;
  * where each guest sits is kept by each event (Seating).
- * Gender may not be known.
+ * Gender may not be known. A role says who they are at the occasion,
+ * "Mother of the bride", "Guest speaker", in at most ROLE_LENGTH characters.
  */
 public class Guest
 {
+	public static final int ROLE_LENGTH = 20;
+
 	private final int id;
 	private String name;
 	private Gender gender;
@@ -20,6 +23,7 @@ public class Guest
 	private Contact contact = new Contact();
 	private final Set<Diet> diets = EnumSet.noneOf(Diet.class);
 	private String dietNote = "";  // allergies and the like, in words
+	private String role = "";      // "Mother of the bride", or ""
 
 	public Guest(int id, String name, Gender gender, Party party)
 	{
@@ -58,6 +62,15 @@ public class Guest
 	public boolean isLead() { return party != null && party.getLead() == this; }
 
 	public Contact getContact() { return contact; }
+
+	public String getRole() { return role; }
+
+	// trimmed, and cut to ROLE_LENGTH characters
+	public void setRole(String role)
+	{
+		String r = role == null ? "" : role.strip();
+		this.role = r.length() > ROLE_LENGTH ? r.substring(0, ROLE_LENGTH).strip() : r;
+	}
 
 	// the guest's dietary needs, the same at every event; change it directly
 	public Set<Diet> diets() { return diets; }

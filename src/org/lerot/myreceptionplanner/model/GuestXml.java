@@ -11,7 +11,7 @@ import java.io.IOException;
  *
  *   <guests>
  *     <party id="1" name="Smith family" colour="#1F77B4" lead="1">
- *       <guest id="1" name="Ann Smith" gender="f">
+ *       <guest id="1" name="Ann Smith" gender="f" role="Mother of the bride">
  *         <contact source="MyContacts" phone="01234 567890" mobile="07700 900123"
  *                  whatsapp="07700 900123" email="ann@example.com">
  *           <address><line>1 High Street</line><line>Lichfield</line></address>
@@ -28,7 +28,8 @@ import java.io.IOException;
  * is a place kept for one of the party, shown as the lead's name +plus. A
  * guest outside any party sits directly under guests. diet gives a guest's
  * dietary needs (see Diet: v vg gf df nf h k) and dietnote any more in
- * words; they hold at every event. distinct records two
+ * words; they hold at every event. role is who the guest is at the occasion
+ * (at most 20 characters). distinct records two
  * guests whose names are alike but who are said to be different people.
  */
 public class GuestXml
@@ -63,6 +64,7 @@ public class GuestXml
 		Element e = parent.addElement("guest").addAttribute("id", Integer.toString(g.getId()));
 		if (g.isNamed()) e.addAttribute("name", g.getName());
 		e.addAttribute("gender", g.getGender().code());
+		if (!g.getRole().isEmpty()) e.addAttribute("role", g.getRole());
 		if (g.isPlaceholder()) e.addAttribute("plus", Integer.toString(g.getPlus()));
 		if (!g.diets().isEmpty()) e.addAttribute("diet", Diet.codes(g.diets()));
 		if (!g.getDietNote().isEmpty()) e.addAttribute("dietnote", g.getDietNote());
@@ -126,6 +128,7 @@ public class GuestXml
 		Guest g = new Guest(PlanXml.number(e, "id", 0), e.attributeValue("name", ""),
 				Gender.fromCode(e.attributeValue("gender", "u")), party);
 		if (g.isPlaceholder()) g.setPlus(PlanXml.number(e, "plus", 0));
+		g.setRole(e.attributeValue("role"));
 		g.diets().addAll(Diet.fromCodes(e.attributeValue("diet")));
 		g.setDietNote(e.attributeValue("dietnote"));
 		Element ce = e.element("contact");

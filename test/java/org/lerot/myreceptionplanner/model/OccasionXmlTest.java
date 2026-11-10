@@ -36,6 +36,8 @@ class OccasionXmlTest
 		Guest plus2 = list.membersOf(smiths).get(2);
 		list.rename(list.membersOf(smiths).get(1), "Bob Smith");
 		Guest priest = list.addGuest("Father Brown", Gender.MALE, null);
+		priest.setRole("  Officiant ");
+		plus2.setRole("Guest speaker");
 		list.createParty("Cath Jones", 1, "");
 
 		Plan breakfastPlan = new Plan();
@@ -98,9 +100,24 @@ class OccasionXmlTest
 		assertEquals("ann@example.com", a.getContact().getEmail());
 		assertEquals("MyContacts", a.getContact().getSource());
 		assertEquals("Ann Smith+2", b.getSeating().guestAt(1, 5).orElseThrow().displayName());
-		assertEquals(priest.getId(), g.guests().stream().filter(x -> x.getName().equals("Father Brown"))
-				.findFirst().orElseThrow().getId());
+		Guest brown = g.guests().stream().filter(x -> x.getName().equals("Father Brown")).findFirst().orElseThrow();
+		assertEquals(priest.getId(), brown.getId());
+		assertEquals("Officiant", brown.getRole());
+		assertEquals("Guest speaker", b.getSeating().guestAt(1, 5).orElseThrow().getRole());
+		assertEquals("", a.getRole());
 		assertEquals(0, loaded.events().get(1).getSeating().seatedCount());
+	}
+
+	@Test
+	void aRoleIsKeptShort()
+	{
+		Guest g = new GuestList().addGuest("Ann Smith", Gender.FEMALE, null);
+		g.setRole("Mother of the bride");
+		assertEquals("Mother of the bride", g.getRole());
+		g.setRole("Very great grandmother of the groom");
+		assertEquals(Guest.ROLE_LENGTH, g.getRole().length());
+		g.setRole(null);
+		assertEquals("", g.getRole());
 	}
 
 	@Test

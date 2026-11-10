@@ -22,7 +22,7 @@ import java.util.List;
 /*
  * The Guests view: the guest list of the whole occasion, full width. The
  * parties on the left, each made and edited in PartyDialog; every guest on the
- * right with their gender, party and dietary needs, how their party's lead can
+ * right with their role, gender, party and dietary needs, how their party's lead can
  * be reached (email, phone, address), and where they stand with each event
  * (see InvitationMarks; click a mark to change it). Inviting anyone of a
  * party invites its lead; uninviting the lead uninvites the party, asking
@@ -37,7 +37,7 @@ public class GuestsPanel extends JPanel
 
 	private static final String NO_PARTY = "No party";
 	private static final int ICON = 14;
-	private static final int EVENTS_FROM = 5;  // the first event's column in the guest table
+	private static final int EVENTS_FROM = 6;  // the first event's column in the guest table
 
 	private final Occasion occasion;
 	private final GuestList guests;
@@ -227,14 +227,16 @@ public class GuestsPanel extends JPanel
 		setUp(guestTable);
 		guestTable.setAutoCreateRowSorter(true);
 		guestTable.setDefaultRenderer(Invitation.class, InvitationMarks.renderer());
-		TableColumn gender = guestTable.getColumnModel().getColumn(1);
+		guestTable.getColumnModel().getColumn(0).setPreferredWidth(200);
+		guestTable.getColumnModel().getColumn(1).setCellEditor(RoleField.editor());
+		guestTable.getColumnModel().getColumn(1).setPreferredWidth(150);
+		TableColumn gender = guestTable.getColumnModel().getColumn(2);
 		gender.setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
 		gender.setPreferredWidth(90);
-		guestTable.getColumnModel().getColumn(0).setPreferredWidth(200);
-		guestTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(partyCombo));
-		guestTable.getColumnModel().getColumn(2).setPreferredWidth(160);
-		guestTable.getColumnModel().getColumn(4).setPreferredWidth(90);
-		guestTable.getColumnModel().getColumn(4).setMaxWidth(110);
+		guestTable.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(partyCombo));
+		guestTable.getColumnModel().getColumn(3).setPreferredWidth(160);
+		guestTable.getColumnModel().getColumn(5).setPreferredWidth(90);
+		guestTable.getColumnModel().getColumn(5).setMaxWidth(110);
 		for (int i = 0; i < events.size(); i++)
 		{
 			TableColumn c = guestTable.getColumnModel().getColumn(EVENTS_FROM + i);
@@ -257,8 +259,8 @@ public class GuestsPanel extends JPanel
 					return;
 				}
 				if (e.getClickCount() != 2) return;
-				if (col == 3 && DietDialog.editNamed(GuestsPanel.this, g)) changed();
-				else if (col == 4 && g.getParty() != null)
+				if (col == 4 && DietDialog.editNamed(GuestsPanel.this, g)) changed();
+				else if (col == 5 && g.getParty() != null)
 				{
 					select(g.getParty());
 					editParty();
@@ -363,7 +365,7 @@ public class GuestsPanel extends JPanel
 
 	private class GuestModel extends AbstractTableModel
 	{
-		private final String[] columns = { "Name", "Gender", "Party", "Diet", "Reach" };
+		private final String[] columns = { "Name", "Role", "Gender", "Party", "Diet", "Reach" };
 		private List<Guest> rows = List.of();
 
 		void reload()
@@ -387,15 +389,16 @@ public class GuestsPanel extends JPanel
 			return switch (col)
 			{
 				case 0 -> g.getName();
-				case 1 -> g.getGender();
-				case 2 -> g.getParty() == null ? NO_PARTY : g.getParty();
-				case 3 -> g.dietText();
-				case 4 -> reach(g);
+				case 1 -> g.getRole();
+				case 2 -> g.getGender();
+				case 3 -> g.getParty() == null ? NO_PARTY : g.getParty();
+				case 4 -> g.dietText();
+				case 5 -> reach(g);
 				default -> events.get(col - EVENTS_FROM).invitation(g);
 			};
 		}
 
-		public boolean isCellEditable(int row, int col) { return col <= 2; }
+		public boolean isCellEditable(int row, int col) { return col <= 3; }
 
 		public void setValueAt(Object value, int row, int col)
 		{
@@ -409,8 +412,13 @@ public class GuestsPanel extends JPanel
 					if (NameCheck.ask(GuestsPanel.this, guests, value.toString(), g, false) != NameCheck.Answer.DIFFERENT) return;
 					guests.rename(g, value.toString());
 				}
-				case 1 -> g.setGender((Gender) value);
-				case 2 ->
+				case 1 ->
+				{
+					if (value.toString().strip().equals(g.getRole())) return;
+					g.setRole(value.toString());
+				}
+				case 2 -> g.setGender((Gender) value);
+				case 3 ->
 				{
 					if (!guests.setParty(g, value instanceof Party p ? p : null))
 					{

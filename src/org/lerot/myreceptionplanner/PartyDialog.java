@@ -27,7 +27,8 @@ import java.util.List;
  * in, or copied once from MyContacts), the party's own name if it has one,
  * its number of places, and its guests. A new party is the lead and places
  * not named yet, "Ann Smith+1", "Ann Smith+2" ...; type over those to name
- * them. Places cannot go below the named guests. Nothing changes until OK.
+ * them. Each guest, named or not, may have a role ("Guest speaker"). Places
+ * cannot go below the named guests. Nothing changes until OK.
  */
 public class PartyDialog
 {
@@ -37,6 +38,7 @@ public class PartyDialog
 		Guest guest;  // null for a place added here
 		String name;
 		Gender gender;
+		String role = "";
 		int plus;
 		boolean lead;
 
@@ -46,6 +48,7 @@ public class PartyDialog
 			this.seated = seated;
 			name = g.getName();
 			gender = g.getGender();
+			role = g.getRole();
 			plus = g.getPlus();
 			lead = g.isLead();
 		}
@@ -173,12 +176,14 @@ public class PartyDialog
 
 		form.add(heading("Guests"), "span 3, gaptop 10, growx");
 		memberTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
+		memberTable.getColumnModel().getColumn(2).setCellEditor(RoleField.editor());
+		memberTable.getColumnModel().getColumn(2).setPreferredWidth(150);
 		memberTable.getColumnModel().getColumn(0).setPreferredWidth(200);
 		memberTable.setDefaultRenderer(Object.class, new MemberRenderer());
 		memberTable.putClientProperty("terminateEditOnFocusLost", true);
 		memberTable.setRowHeight(Math.max(memberTable.getRowHeight(), 22));
 		memberTable.setFillsViewportHeight(true);
-		memberTable.setPreferredScrollableViewportSize(new Dimension(420, 150));
+		memberTable.setPreferredScrollableViewportSize(new Dimension(520, 150));
 		form.add(new JScrollPane(memberTable), "span 3, grow");
 		JLabel hint = new JLabel("Type over a +1, +2 … to name that guest.");
 		hint.setForeground(Theme.EDGE);
@@ -356,6 +361,7 @@ public class PartyDialog
 			if (r.guest == null) r.guest = guests.addGuest(r.name, r.gender, p);
 			else if (!r.lead) guests.rename(r.guest, r.name);
 			r.guest.setGender(r.gender);
+			r.guest.setRole(r.role);
 		}
 		Contact c = p.getLead().getContact();
 		c.setAddress(address.getText());
@@ -477,7 +483,7 @@ public class PartyDialog
 
 	private class MemberModel extends AbstractTableModel
 	{
-		private final String[] columns = { "Name", "Gender", "Seat" };
+		private final String[] columns = { "Name", "Gender", "Role", "Seat" };
 
 		public int getRowCount() { return rows.size(); }
 
@@ -492,6 +498,7 @@ public class PartyDialog
 			{
 				case 0 -> r.name;
 				case 1 -> r.gender;
+				case 2 -> r.role;
 				default -> r.seated ? "seated" : "";
 			};
 		}
@@ -499,7 +506,7 @@ public class PartyDialog
 		// the lead's name is the one above
 		public boolean isCellEditable(int row, int col)
 		{
-			return col == 1 || (col == 0 && !rows.get(row).lead);
+			return col == 1 || col == 2 || (col == 0 && !rows.get(row).lead);
 		}
 
 		public void setValueAt(Object value, int row, int col)
@@ -508,6 +515,7 @@ public class PartyDialog
 			Row r = rows.get(row);
 			if (col == 0) r.name = value.toString().trim();
 			else if (col == 1) r.gender = (Gender) value;
+			else if (col == 2) r.role = value.toString().strip();
 			updatePlacesLimit();
 		}
 	}

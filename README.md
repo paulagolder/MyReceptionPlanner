@@ -97,7 +97,8 @@ occasion) can be imported as a layout or a menu too.
 The parties on the left (*New…*, *Edit…*, *Colour…*, *Remove*; double-click
 to edit, or the colour to change it) and every guest on the right: name
 (type over it; a place not named yet shows as the lead's name +1),
-gender, party, dietary needs (double-click to change), how the party's lead
+role (type it in: who they are at the occasion, "Mother of the bride",
+"Guest speaker", up to 20 characters), gender, party, dietary needs (double-click to change), how the party's lead
 can be reached (✉ email, ☎ phone, ⌂ address; double-click to edit the
 party), and a mark for where they stand with each event (below; click it to
 change it). *Only the party chosen* narrows the list to one party; the
@@ -286,7 +287,7 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
   one is built in. Type a real name over a place to name that guest. Places
   not named yet can still be seated.
 - **Edit…** (or double-click the party) changes the same things and the
-  party's guests. Places can be added, or taken away (those not seated go
+  party's guests, with each one's role. Places can be added, or taken away (those not seated go
   first, the highest numbered first), but never below the number of named
   guests. The Places and Named columns show how many of each.
 - The lead's **address, phone, mobile, WhatsApp and email** can be typed in,
@@ -453,7 +454,7 @@ named from the occasion ("Lydia and Isaac's Wedding" is
   how to reply, its list of events, and the messages sent (under
   `<communications>`)
 - `guests.xml`: the guest list: the parties, their leads and contact
-  details, their guests and their dietary needs, and pairs of guests with
+  details, their guests with their roles and dietary needs, and pairs of guests with
   names alike who are different people
 - `email_templates.xml`: the occasion's message templates. These can be
   shared: in *Message templates…*, **Make these the default** saves them as
