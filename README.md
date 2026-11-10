@@ -294,21 +294,16 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
   first, the highest numbered first), but never below the number of named
   guests. The Places and Named columns show how many of each.
 - The lead's **address, phone, mobile, WhatsApp and email** can be typed in,
-  or copied from MyContacts with **Find in MyContacts…**. The details are
-  copied once and not kept in step: MyContacts is only read, never changed.
-  Someone with no address or home phone of their own (Tim Perks, say) takes
-  them from the household or group contact they belong to in MyContacts
-  (Tim & Claire Perks); the dialog says where they came from. Mobile and
-  email are only ever their own. (MyContacts has no WhatsApp field; *Same as
-  mobile* fills it in.)
-- Or copy them from an address book with **Find in a contacts file…**:
+  or copied from an address book with **Find in a contacts file…**:
   export your contacts to a file and the planner searches it. From Google
   Contacts (contacts.google.com → Export) choose *vCard* or *Google CSV*;
   Apple Contacts, Thunderbird and Outlook export vCard (.vcf) too, and
-  Outlook's CSV is read as well. The planner never connects to Google or
-  anywhere else: it only reads the file, and remembers which one, so the
-  next search goes straight to it (*Other file…* picks another). Export
-  again when your contacts change.
+  Outlook's CSV is read as well. The details are copied once and not kept
+  in step; the dialog says which file they came from. The planner never
+  connects to Google or anywhere else: it only reads the file, and
+  remembers which one, so the next search goes straight to it (*Other
+  file…* picks another). Export again when your contacts change. (*Same
+  as mobile* fills in WhatsApp.)
 - The lead can't be removed or moved to another party. Removing a party
   removes its places not named yet; its named guests stay, in no party.
 - On an empty seat in the Table tab, choosing a party seats one of its places

@@ -2,7 +2,6 @@ package org.lerot.myreceptionplanner;
 
 import net.miginfocom.swing.MigLayout;
 import org.lerot.myreceptionplanner.contacts.ContactFile;
-import org.lerot.myreceptionplanner.contacts.MyContactsBook;
 import org.lerot.myreceptionplanner.model.Contact;
 import org.lerot.myreceptionplanner.model.Gender;
 import org.lerot.myreceptionplanner.model.Guest;
@@ -29,8 +28,8 @@ import java.util.prefs.Preferences;
 
 /*
  * Makes a new party or edits one: the lead guest and how to reach them (typed
- * in, or copied once from MyContacts or a contacts file exported from Google
- * Contacts or another address book), the party's own name if it has one,
+ * in, or copied once from a contacts file exported from Google Contacts or
+ * another address book), the party's own name if it has one,
  * its number of places, and its guests. A new party is the lead and places
  * not named yet, "Ann Smith+1", "Ann Smith+2" ...; type over those to name
  * them. Each guest, named or not, may have a role ("Guest speaker"). Places
@@ -150,9 +149,6 @@ public class PartyDialog
 		JPanel form = new JPanel(new MigLayout("insets 0, wrap 3", "[right][grow,fill][]"));
 		form.add(new JLabel("Lead guest"));
 		form.add(leadName, "w 220!");
-		JButton find = new JButton("Find in MyContacts…");
-		find.addActionListener(e -> findInMyContacts(form));
-		form.add(find, "split 2");
 		JButton findInFile = new JButton("Find in a contacts file…");
 		findInFile.setToolTipText("A vCard (.vcf) or CSV file exported from Google Contacts or another address book");
 		findInFile.addActionListener(e -> findInContactsFile(form));
@@ -389,30 +385,7 @@ public class PartyDialog
 		source.setText(contactSource.isEmpty() ? " " : "Copied from " + contactSource + "; not kept in step with it.");
 	}
 
-	// ---- MyContacts ----
-
-	private void findInMyContacts(Component parent)
-	{
-		List<MyContactsBook.Entry> entries;
-		try
-		{
-			parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			entries = MyContactsBook.standard().all();
-		} catch (IOException e)
-		{
-			JOptionPane.showMessageDialog(parent, e.getMessage(), "MyContacts", JOptionPane.ERROR_MESSAGE);
-			return;
-		} finally
-		{
-			parent.setCursor(Cursor.getDefaultCursor());
-		}
-		MyContactsBook.Entry chosen = choose(parent, entries, leadName.getText().trim(), "MyContacts", null);
-		if (chosen == null) return;
-		copy(chosen, chosen.addressFrom().isEmpty() ? "MyContacts"
-				: "MyContacts (address from " + chosen.addressFrom() + ")");
-	}
-
-	private void copy(MyContactsBook.Entry chosen, String from)
+	private void copy(ContactFile.Entry chosen, String from)
 	{
 		leadName.setText(chosen.name());
 		address.setText(chosen.address());
@@ -435,7 +408,7 @@ public class PartyDialog
 		Path file = !last.isEmpty() && Files.isRegularFile(Path.of(last)) ? Path.of(last) : chooseContactsFile(parent, last);
 		while (file != null)
 		{
-			List<MyContactsBook.Entry> entries;
+			List<ContactFile.Entry> entries;
 			try
 			{
 				parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -451,7 +424,7 @@ public class PartyDialog
 			}
 			PREFS.put(CONTACTS_FILE, file.toString());
 			boolean[] other = { false };
-			MyContactsBook.Entry chosen = choose(parent, entries, leadName.getText().trim(),
+			ContactFile.Entry chosen = choose(parent, entries, leadName.getText().trim(),
 					file.getFileName().toString(), other);
 			if (chosen != null)
 			{
@@ -475,17 +448,17 @@ public class PartyDialog
 
 	// a list of the contacts, narrowed as you type; with other, an Other file… button
 	// that closes it with other[0] set
-	private static MyContactsBook.Entry choose(Component parent, List<MyContactsBook.Entry> entries, String start,
+	private static ContactFile.Entry choose(Component parent, List<ContactFile.Entry> entries, String start,
 			String from, boolean[] other)
 	{
-		DefaultListModel<MyContactsBook.Entry> shown = new DefaultListModel<>();
-		JList<MyContactsBook.Entry> list = new JList<>(shown);
+		DefaultListModel<ContactFile.Entry> shown = new DefaultListModel<>();
+		JList<ContactFile.Entry> list = new JList<>(shown);
 		list.setCellRenderer(new DefaultListCellRenderer()
 		{
 			public Component getListCellRendererComponent(JList<?> l, Object value, int index, boolean sel, boolean focus)
 			{
 				super.getListCellRendererComponent(l, value, index, sel, focus);
-				MyContactsBook.Entry e = (MyContactsBook.Entry) value;
+				ContactFile.Entry e = (ContactFile.Entry) value;
 				setText(e.place().isEmpty() ? e.name() : e.name() + "   —   " + e.place());
 				return this;
 			}
@@ -497,7 +470,7 @@ public class PartyDialog
 		{
 			String words = search.getText().trim().toLowerCase();
 			shown.clear();
-			for (MyContactsBook.Entry e : entries)
+			for (ContactFile.Entry e : entries)
 			{
 				if (words.isEmpty() || e.name().toLowerCase().contains(words)) shown.addElement(e);
 			}

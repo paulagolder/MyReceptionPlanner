@@ -24,20 +24,31 @@ import java.util.regex.Pattern;
  */
 public class ContactFile
 {
-	public static List<MyContactsBook.Entry> read(Path file) throws IOException
+	// a contact found, with what the planner copies from it
+	public record Entry(String name, String address, String phone, String mobile, String email)
+	{
+		// the line before the last of the address (usually the town), to tell
+		// people of the same name apart
+		public String place()
+		{
+			String[] lines = address.split("\n");
+			return lines.length > 1 ? lines[lines.length - 2] : "";
+		}
+	}
+
+	public static List<Entry> read(Path file) throws IOException
 	{
 		String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
 		if (text.startsWith("﻿")) text = text.substring(1);
 		List<Fields> found = text.stripLeading().regionMatches(true, 0, "BEGIN:VCARD", 0, 11) ? vcards(text) : csv(text);
-		List<MyContactsBook.Entry> out = new ArrayList<>();
+		List<Entry> out = new ArrayList<>();
 		for (Fields f : found)
 		{
 			if (f.name.isBlank()) f.name = f.email;  // known only by their address
 			if (f.name.isBlank()) continue;
-			out.add(new MyContactsBook.Entry(out.size() + 1, f.name.strip(), f.address.strip(), f.phone, f.mobile,
-					f.email, ""));
+			out.add(new Entry(f.name.strip(), f.address.strip(), f.phone, f.mobile, f.email));
 		}
-		out.sort(Comparator.comparing(MyContactsBook.Entry::name, String.CASE_INSENSITIVE_ORDER));
+		out.sort(Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER));
 		return out;
 	}
 

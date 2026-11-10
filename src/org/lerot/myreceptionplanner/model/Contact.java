@@ -2,7 +2,7 @@ package org.lerot.myreceptionplanner.model;
 
 /*
  * How to reach a guest (so far, a party's lead guest). It may be typed in or
- * copied once from MyContacts; it is not kept in step with MyContacts after.
+ * copied once from a contacts file; it is not kept in step with the file after.
  */
 public class Contact
 {
@@ -11,7 +11,7 @@ public class Contact
 	private String mobile = "";
 	private String whatsApp = "";
 	private String email = "";
-	private String source = "";    // where it was copied from, e.g. "MyContacts", or ""
+	private String source = "";    // where it was copied from, e.g. "contacts.vcf", or ""
 
 	public String getAddress() { return address; }
 

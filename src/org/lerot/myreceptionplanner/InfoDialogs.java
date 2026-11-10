@@ -20,7 +20,7 @@ public class InfoDialogs
 			MyReceptionPlanner plans the guests, tables, seating, menus and messages
 			for an occasion of a few events: a ceremony, a wedding breakfast, a party.
 			Each occasion is a folder of its own; guests' details can be copied from
-			MyContacts or from a contacts file exported from Google, Apple or Outlook.
+			a contacts file exported from Google, Apple or Outlook.
 			Developed by Paul Golder, with Claude (Anthropic) as AI pair programmer.""";
 
 	public static void about(Component parent, Occasion occasion, Path folder)
@@ -34,7 +34,6 @@ public class InfoDialogs
 		String[][] facts = {
 				{ "Version", version == null ? "development" : version },
 				{ "Built", buildDate() },
-				{ "Written by", "Paul Golder and Claude" },
 				{ "Java", System.getProperty("java.version") + "  (" + System.getProperty("java.vendor") + ")" },
 				{ "Occasion", occasion.getName() },
 				{ "Guests", occasion.getGuests().guests().size() + " in " + occasion.getGuests().parties().size()
