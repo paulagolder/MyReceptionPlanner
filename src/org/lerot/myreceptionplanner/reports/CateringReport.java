@@ -15,7 +15,8 @@ import java.util.Map;
 /*
  * The catering list for an event, as headed sections of rows, for showing on
  * screen or writing as a PDF: dietary needs and how many have each, then if
- * there is a menu the dishes and how many of each (and at each table), then
+ * there is a menu the dishes and how many of each (and a grid of how many at
+ * each table, a dish to a row and a table to a column), then
  * everyone with a need or a note, then choices that do not suit a guest and
  * who has yet to choose.
  */
@@ -52,17 +53,32 @@ public class CateringReport extends Report
 
 			if (event.isSeated() && event.getSeating().seatedCount() > 0)
 			{
-				List<List<String>> tables = new ArrayList<>();
+				// the tables with anyone at them, across; the dishes, down; blank for none
+				List<String> columns = new ArrayList<>(List.of("Dish"));
+				List<List<Catering.DishCount>> perTable = new ArrayList<>();
 				for (Table t : org.lerot.myreceptionplanner.model.Checks.inGuideOrder(event.getPlan()))
 				{
 					List<Guest> there = event.getSeating().seatedAt(t.getId());
 					if (there.isEmpty()) continue;
-					List<String> counts = new ArrayList<>();
-					for (Catering.DishCount d : Catering.dishCounts(event, there))
-						if (d.count() > 0) counts.add(d.count() + " " + d.dish().getName());
-					tables.add(List.of(event.getPlan().label(t), String.join(", ", counts)));
+					columns.add(t.isHead() ? "Head" : t.hasName() ? t.getName() : Integer.toString(t.getNumber()));
+					perTable.add(Catering.dishCounts(event, there));
 				}
-				sections.add(new Section("At each table", List.of("Table", "Dishes"), tables, ""));
+				columns.add("All");
+				List<Catering.DishCount> all = Catering.dishCounts(event);
+				List<List<String>> grid = new ArrayList<>();
+				for (int i = 0; i < all.size(); i++)
+				{
+					List<String> row = new ArrayList<>(List.of(all.get(i).dish().getName()));
+					int seated = 0;
+					for (List<Catering.DishCount> at : perTable)
+					{
+						row.add(countOrBlank(at.get(i).count()));
+						seated += at.get(i).count();
+					}
+					row.add(countOrBlank(seated));
+					grid.add(row);
+				}
+				sections.add(new Section("At each table", columns, grid, "Seated guests only (All is across the tables); the dishes in the order of the menu."));
 			}
 		}
 
@@ -95,4 +111,6 @@ public class CateringReport extends Report
 			sections.add(new Section("Not yet chosen", List.of("Guest", "Seat"), rows, ""));
 		}
 	}
+
+	private static String countOrBlank(int n) { return n == 0 ? "" : Integer.toString(n); }
 }

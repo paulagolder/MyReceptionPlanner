@@ -3,6 +3,7 @@ package org.lerot.myreceptionplanner.reports;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
@@ -57,8 +58,8 @@ public class ReportPdf
 					heading = new Font(bold, 13), head = new Font(bold, 10), cell = new Font(regular, 10),
 					note = new Font(regular, 10, Font.NORMAL, GREY);
 			Files.createDirectories(file.toAbsolutePath().getParent());
-			int widest = report.sections.stream().mapToInt(s -> s.columns().size()).max().orElse(1);
-			Document doc = new Document(widest > 6 ? PageSize.A4.rotate() : PageSize.A4, 40, 40, 40, 40);
+			Document doc = new Document(report.sections.stream().anyMatch(ReportPdf::wide)
+					? PageSize.A4.rotate() : PageSize.A4, 40, 40, 40, 40);
 			try (OutputStream out = Files.newOutputStream(file))
 			{
 				PdfWriter writer = PdfWriter.getInstance(doc, out);
@@ -104,38 +105,47 @@ public class ReportPdf
 						doc.add(again);
 					}
 					first = false;
-					Paragraph h = new Paragraph(s.heading().replace("⚠ ", "! "), heading);
-					h.setKeepTogether(true);
-					h.setSpacingBefore(10);
-					h.setSpacingAfter(4);
-					doc.add(h);
+					PdfPTable t = null;
 					if (!s.rows().isEmpty())
 					{
 						int cols = s.columns().isEmpty() ? s.rows().get(0).size() : s.columns().size();
-						PdfPTable t = new PdfPTable(cols);
+						t = new PdfPTable(cols);
 						t.setWidthPercentage(100);
 						t.setWidths(widths(s, cols));
 						t.setHorizontalAlignment(PdfPTable.ALIGN_LEFT);
 						t.setHeaderRows(s.columns().isEmpty() ? 0 : 1);
 						t.setKeepTogether(true);
-						for (String c : s.columns())
+						boolean[] numbers = numberColumns(s, cols);
+						for (int ci = 0; ci < s.columns().size(); ci++)
 						{
-							PdfPCell pc = new PdfPCell(new Phrase(c, head));
+							PdfPCell pc = new PdfPCell(new Phrase(s.columns().get(ci), head));
+							if (ci < cols && numbers[ci]) pc.setHorizontalAlignment(Element.ALIGN_CENTER);
 							pc.setBackgroundColor(BAND);
 							pc.setBorderColor(BAND);
 							pc.setPadding(4);
 							t.addCell(pc);
 						}
 						for (List<String> r : s.rows())
-							for (String c : r)
+							for (int ci = 0; ci < r.size(); ci++)
 							{
+								String c = r.get(ci);
 								PdfPCell pc = new PdfPCell(new Phrase(c, cell));
+								if (ci < cols && numbers[ci]) pc.setHorizontalAlignment(Element.ALIGN_CENTER);
 								pc.setBorderColor(BAND);
 								pc.setPadding(4);
 								t.addCell(pc);
 							}
-						doc.add(t);
 					}
+					// the heading goes with its table: if what follows it will not fit
+					// below, both start the next page
+					if (t != null && writer.getVerticalPosition(true) - doc.bottom() < HEADING_ROOM + firstPart(t, doc))
+						doc.newPage();
+					Paragraph h = new Paragraph(s.heading().replace("⚠ ", "! "), heading);
+					h.setKeepTogether(true);
+					h.setSpacingBefore(10);
+					h.setSpacingAfter(4);
+					doc.add(h);
+					if (t != null) doc.add(t);
 					if (!s.footnote().isEmpty())
 					{
 						Paragraph f = new Paragraph(s.footnote(), note);
@@ -149,6 +159,56 @@ public class ReportPdf
 		{
 			throw new IOException("Cannot make the PDF: " + e.getMessage(), e);
 		}
+	}
+
+	private static final float HEADING_ROOM = 48;  // a section's heading with the space round it, and a little to spare
+
+	// the height of the table that must follow its heading on the same page:
+	// all of it if it fits on a page (it is kept together), or else its
+	// header and first few rows
+	private static float firstPart(PdfPTable t, Document doc)
+	{
+		t.setTotalWidth(doc.right() - doc.left());
+		float all = t.getTotalHeight();
+		if (all <= doc.top() - doc.bottom() - HEADING_ROOM) return all;
+		return rowsHeight(t, Math.min(t.size(), t.getHeaderRows() + 3));
+	}
+
+	private static float rowsHeight(PdfPTable t, int rows)
+	{
+		float h = 0;
+		for (int i = 0; i < rows; i++) h += t.getRowHeight(i);
+		return h;
+	}
+
+	// too wide for an upright page: more than 6 columns, unless nearly all are
+	// numbers (a grid of counts, which take little room), or more than 14
+	private static boolean wide(Report.Section s)
+	{
+		int cols = s.columns().isEmpty() ? (s.rows().isEmpty() ? 0 : s.rows().get(0).size()) : s.columns().size();
+		boolean[] numbers = numberColumns(s, cols);
+		int words = 0;
+		for (boolean n : numbers) if (!n) words++;
+		return (cols > 6 && words > 3) || cols > 14;
+	}
+
+	// the columns holding only numbers (or nothing), which are centred
+	private static boolean[] numberColumns(Report.Section s, int cols)
+	{
+		boolean[] out = new boolean[cols];
+		for (int c = 0; c < cols; c++)
+		{
+			boolean any = false, all = true;
+			for (List<String> r : s.rows())
+			{
+				String v = c < r.size() ? r.get(c).strip() : "";
+				if (v.isEmpty()) continue;
+				any = true;
+				if (!v.chars().allMatch(Character::isDigit)) all = false;
+			}
+			out[c] = any && all;
+		}
+		return out;
 	}
 
 	// "Name  ·  Wednesday 16 July 1595" never wraps inside the date (or any
