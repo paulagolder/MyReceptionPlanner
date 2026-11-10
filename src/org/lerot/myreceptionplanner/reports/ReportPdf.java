@@ -63,6 +63,8 @@ public class ReportPdf
 			{
 				PdfWriter writer = PdfWriter.getInstance(doc, out);
 				var picture = Emblem.parse(report.emblem);
+				// the headings keep clear of the emblem, wrapping rather than running under it
+				float clear = picture == null ? 0 : Emblem.widthFor(picture, 44) + 12;
 				if (picture != null)
 				{
 					// the emblem at the top right of every page
@@ -84,8 +86,11 @@ public class ReportPdf
 				doc.addTitle(report.subtitle);
 				doc.addCreator("MyReceptionPlanner");
 				doc.open();
-				doc.add(new Paragraph(report.title, title));
+				Paragraph top = new Paragraph(keepTogether(report.title), title);
+				top.setIndentationRight(clear);
+				doc.add(top);
 				Paragraph p = new Paragraph(report.subtitle, sub);
+				p.setIndentationRight(clear);
 				p.setSpacingAfter(10);
 				doc.add(p);
 				boolean first = true;
@@ -94,7 +99,9 @@ public class ReportPdf
 					if (pagePerSection && !first)
 					{
 						doc.newPage();
-						doc.add(new Paragraph(report.title + "  ·  " + report.subtitle, sub));
+						Paragraph again = new Paragraph(report.title + "  ·  " + report.subtitle, sub);
+						again.setIndentationRight(clear);
+						doc.add(again);
 					}
 					first = false;
 					Paragraph h = new Paragraph(s.heading().replace("⚠ ", "! "), heading);
@@ -142,5 +149,14 @@ public class ReportPdf
 		{
 			throw new IOException("Cannot make the PDF: " + e.getMessage(), e);
 		}
+	}
+
+	// "Name  ·  Wednesday 16 July 1595" never wraps inside the date (or any
+	// part after the name: its spaces made non-breaking); the name may wrap
+	private static String keepTogether(String heading)
+	{
+		String[] parts = heading.split("  ·  ");
+		for (int i = 1; i < parts.length; i++) parts[i] = parts[i].replace(' ', '\u00A0');
+		return String.join("  ·  ", parts);
 	}
 }

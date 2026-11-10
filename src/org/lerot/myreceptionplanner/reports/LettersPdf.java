@@ -54,6 +54,8 @@ public class LettersPdf
 				doc.addTitle(occasion.getName());
 				doc.addCreator("MyReceptionPlanner");
 				doc.open();
+				// who it is from keeps clear of the emblem, wrapping rather than running into it
+				float clear = picture == null ? 0 : Emblem.widthFor(picture, 64) + 16;
 				boolean first = true;
 				for (Letter l : letters)
 				{
@@ -68,11 +70,13 @@ public class LettersPdf
 					}
 					Paragraph from = new Paragraph(occasion.getSender(), strong);
 					from.setAlignment(Element.ALIGN_RIGHT);
+					from.setIndentationLeft(clear);
 					doc.add(from);
 					if (!occasion.getReplyTo().isEmpty())
 					{
 						Paragraph reply = new Paragraph(occasion.getReplyTo(), small);
 						reply.setAlignment(Element.ALIGN_RIGHT);
+						reply.setIndentationLeft(clear);
 						doc.add(reply);
 					}
 					Paragraph date = new Paragraph(Occasion.DATE.format(LocalDate.now()), small);
