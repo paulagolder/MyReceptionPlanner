@@ -1,6 +1,7 @@
 package org.lerot.myreceptionplanner;
 
 import net.miginfocom.swing.MigLayout;
+import org.lerot.myreceptionplanner.contacts.ContactFile;
 import org.lerot.myreceptionplanner.contacts.MyContactsBook;
 import org.lerot.myreceptionplanner.model.Contact;
 import org.lerot.myreceptionplanner.model.Gender;
@@ -17,14 +18,19 @@ import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 /*
  * Makes a new party or edits one: the lead guest and how to reach them (typed
- * in, or copied once from MyContacts), the party's own name if it has one,
+ * in, or copied once from MyContacts or a contacts file exported from Google
+ * Contacts or another address book), the party's own name if it has one,
  * its number of places, and its guests. A new party is the lead and places
  * not named yet, "Ann Smith+1", "Ann Smith+2" ...; type over those to name
  * them. Each guest, named or not, may have a role ("Guest speaker"). Places
@@ -146,7 +152,11 @@ public class PartyDialog
 		form.add(leadName, "w 220!");
 		JButton find = new JButton("Find in MyContacts…");
 		find.addActionListener(e -> findInMyContacts(form));
-		form.add(find);
+		form.add(find, "split 2");
+		JButton findInFile = new JButton("Find in a contacts file…");
+		findInFile.setToolTipText("A vCard (.vcf) or CSV file exported from Google Contacts or another address book");
+		findInFile.addActionListener(e -> findInContactsFile(form));
+		form.add(findInFile);
 		partyName.putClientProperty("JTextField.placeholderText", "the lead's name");
 		form.add(new JLabel("Party name"));
 		form.add(partyName, "wrap");
@@ -396,20 +406,77 @@ public class PartyDialog
 		{
 			parent.setCursor(Cursor.getDefaultCursor());
 		}
-		MyContactsBook.Entry chosen = choose(parent, entries, leadName.getText().trim());
+		MyContactsBook.Entry chosen = choose(parent, entries, leadName.getText().trim(), "MyContacts", null);
 		if (chosen == null) return;
+		copy(chosen, chosen.addressFrom().isEmpty() ? "MyContacts"
+				: "MyContacts (address from " + chosen.addressFrom() + ")");
+	}
+
+	private void copy(MyContactsBook.Entry chosen, String from)
+	{
 		leadName.setText(chosen.name());
 		address.setText(chosen.address());
 		phone.setText(chosen.phone());
 		mobile.setText(chosen.mobile());
 		email.setText(chosen.email());
-		contactSource = chosen.addressFrom().isEmpty() ? "MyContacts"
-				: "MyContacts (address from " + chosen.addressFrom() + ")";
+		contactSource = from;
 		showSource();
 	}
 
-	// a list of the contacts, narrowed as you type
-	private static MyContactsBook.Entry choose(Component parent, List<MyContactsBook.Entry> entries, String start)
+	// ---- a contacts file ----
+
+	private static final Preferences PREFS = Preferences.userNodeForPackage(MainWindow.class);
+	private static final String CONTACTS_FILE = "contactsFile";  // the file last searched
+
+	// the file searched last time, else one chosen now; Other file… chooses again
+	private void findInContactsFile(Component parent)
+	{
+		String last = PREFS.get(CONTACTS_FILE, "");
+		Path file = !last.isEmpty() && Files.isRegularFile(Path.of(last)) ? Path.of(last) : chooseContactsFile(parent, last);
+		while (file != null)
+		{
+			List<MyContactsBook.Entry> entries;
+			try
+			{
+				parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				entries = ContactFile.read(file);
+			} catch (IOException e)
+			{
+				JOptionPane.showMessageDialog(parent, "Cannot read " + file + ":\n" + e.getMessage(), "Contacts file",
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			} finally
+			{
+				parent.setCursor(Cursor.getDefaultCursor());
+			}
+			PREFS.put(CONTACTS_FILE, file.toString());
+			boolean[] other = { false };
+			MyContactsBook.Entry chosen = choose(parent, entries, leadName.getText().trim(),
+					file.getFileName().toString(), other);
+			if (chosen != null)
+			{
+				copy(chosen, file.getFileName().toString());
+				return;
+			}
+			if (!other[0]) return;
+			file = chooseContactsFile(parent, file.toString());
+		}
+	}
+
+	private static Path chooseContactsFile(Component parent, String last)
+	{
+		JFileChooser fc = new JFileChooser(last.isEmpty() ? new File(System.getProperty("user.home"), "Downloads")
+				: new File(last).getParentFile());
+		fc.setDialogTitle("A contacts file: vCard (.vcf) or CSV, exported from Google Contacts or another address book");
+		fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Contacts (.vcf, .csv)", "vcf", "vcard", "csv"));
+		if (!last.isEmpty()) fc.setSelectedFile(new File(last));
+		return fc.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION ? fc.getSelectedFile().toPath() : null;
+	}
+
+	// a list of the contacts, narrowed as you type; with other, an Other file… button
+	// that closes it with other[0] set
+	private static MyContactsBook.Entry choose(Component parent, List<MyContactsBook.Entry> entries, String start,
+			String from, boolean[] other)
 	{
 		DefaultListModel<MyContactsBook.Entry> shown = new DefaultListModel<>();
 		JList<MyContactsBook.Entry> list = new JList<>(shown);
@@ -448,25 +515,27 @@ public class PartyDialog
 		JPanel p = new JPanel(new BorderLayout(0, 6));
 		p.add(search, BorderLayout.NORTH);
 		p.add(new JScrollPane(list), BorderLayout.CENTER);
-		JLabel note = new JLabel("The details are copied once; MyContacts is not changed.");
+		JLabel note = new JLabel(entries.size() + " contacts. The details are copied once; " + from + " is not changed.");
 		note.setForeground(Theme.EDGE);
 		p.add(note, BorderLayout.SOUTH);
-		JOptionPane pane = new JOptionPane(p, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
-		JDialog dialog = pane.createDialog(parent, "Find in MyContacts");
+		String ok = UIManager.getString("OptionPane.okButtonText"), cancel = UIManager.getString("OptionPane.cancelButtonText");
+		Object[] options = other == null ? new Object[] { ok, cancel } : new Object[] { ok, "Other file…", cancel };
+		JOptionPane pane = new JOptionPane(p, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, options, ok);
+		JDialog dialog = pane.createDialog(parent, "Find in " + from);
 		list.addMouseListener(new MouseAdapter()
 		{
 			public void mouseClicked(MouseEvent e)
 			{
 				if (e.getClickCount() == 2 && list.getSelectedValue() != null)
 				{
-					pane.setValue(JOptionPane.OK_OPTION);
+					pane.setValue(ok);
 					dialog.dispose();
 				}
 			}
 		});
 		search.addActionListener(e ->
 		{
-			pane.setValue(JOptionPane.OK_OPTION);
+			pane.setValue(ok);
 			dialog.dispose();
 		});
 		dialog.addWindowListener(new java.awt.event.WindowAdapter()
@@ -475,8 +544,8 @@ public class PartyDialog
 		});
 		dialog.setVisible(true);
 		Object value = pane.getValue();
-		if (!(value instanceof Integer i) || i != JOptionPane.OK_OPTION) return null;
-		return list.getSelectedValue();
+		if (other != null) other[0] = "Other file…".equals(value);
+		return ok.equals(value) ? list.getSelectedValue() : null;
 	}
 
 	// ---- the guests ----
