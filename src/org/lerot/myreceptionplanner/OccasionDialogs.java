@@ -279,7 +279,7 @@ public class OccasionDialogs
 				event.isCatered());
 		row(form, "", catered);
 		note(form, "Leave the date empty if it is on the occasion's day"
-				+ (occasion.getDate() == null ? "." : " (" + Occasion.DATE.format(occasion.getDate()) + ")."));
+				+ (occasion.getDate() == null ? "." : " (" + Occasion.format(occasion.getDate()) + ")."));
 		while (true)
 		{
 			if (!ok(parent, form, "Event")) return false;
@@ -371,7 +371,7 @@ public class OccasionDialogs
 
 	private static JTextField dateField(LocalDate date)
 	{
-		JTextField f = new JTextField(date == null ? "" : Occasion.DATE.format(date));
+		JTextField f = new JTextField(date == null ? "" : Occasion.format(date));
 		f.putClientProperty("JTextField.placeholderText", "12 May 2026");
 		return f;
 	}

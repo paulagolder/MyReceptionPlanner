@@ -120,11 +120,23 @@ class OccasionXmlTest
 		Event e = new Event("Wedding Breakfast", "wb.xml", new Plan(), new Seating());
 		e.setPlace("The Old Barn");
 		e.setTime("2pm");
-		assertEquals("Lydia and Isaac's Wedding  ·  12 May 2026", o.heading());
+		assertEquals("Lydia and Isaac's Wedding  ·  Tuesday 12 May 2026", o.heading());
 		assertEquals("Wedding Breakfast  ·  The Old Barn  ·  2pm", o.headingOf(e));
 		e.setDate(Occasion.parseDate("13/5/2026"));
-		assertEquals("Wedding Breakfast  ·  The Old Barn  ·  13 May 2026 2pm", o.headingOf(e));
+		assertEquals("Wedding Breakfast  ·  The Old Barn  ·  Wednesday 13 May 2026 2pm", o.headingOf(e));
 		assertThrows(IllegalArgumentException.class, () -> Occasion.parseDate("next Tuesday"));
+	}
+
+	@Test
+	void historicalDatesTakeTheirOwnWeekday()
+	{
+		LocalDate d = Occasion.parseDate("Monday, 16 July 1595");
+		assertEquals(LocalDate.of(1595, 7, 16), d);
+		assertEquals("Wednesday 16 July 1595", Occasion.format(d));     // Old Style
+		assertEquals("Wednesday 2 September 1752", Occasion.format(Occasion.parseDate("2 September 1752")));
+		assertEquals("Thursday 14 September 1752", Occasion.format(Occasion.parseDate("Thu 14/9/1752")));
+		assertEquals("Tuesday 12 May 2026", Occasion.format(Occasion.parseDate("Friday 12 May 2026")));
+		assertThrows(IllegalArgumentException.class, () -> Occasion.parseDate("Monday"));
 	}
 
 	@Test

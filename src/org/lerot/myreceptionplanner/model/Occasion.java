@@ -1,8 +1,10 @@
 package org.lerot.myreceptionplanner.model;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -19,6 +21,8 @@ import java.util.Set;
 public class Occasion
 {
 	public static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK);
+	// Britain's first New Style day; dates before it are Old Style (Julian)
+	private static final LocalDate NEW_STYLE = LocalDate.of(1752, 9, 14);
 
 	private String name;
 	private LocalDate date;  // null if not set
@@ -147,7 +151,7 @@ public class Occasion
 	// "Lydia and Isaac's Wedding" and "12 May 2026", as headings put them
 	public String heading()
 	{
-		return date == null ? name : name + "  ·  " + DATE.format(date);
+		return date == null ? name : name + "  ·  " + format(date);
 	}
 
 	// "Wedding Breakfast · The Old Barn, Lichfield · 2pm", with the event's
@@ -159,7 +163,7 @@ public class Occasion
 		if (!event.getPlace().isEmpty()) parts.add(event.getPlace());
 		String when = event.getTime();
 		if (event.getDate() != null && !event.getDate().equals(date))
-			when = (DATE.format(event.getDate()) + " " + when).trim();
+			when = (format(event.getDate()) + " " + when).trim();
 		if (!when.isEmpty()) parts.add(when);
 		return String.join("  ·  ", parts);
 	}
@@ -201,12 +205,32 @@ public class Occasion
 		return events.stream().anyMatch(e -> e.getSeating().isSeated(guest));
 	}
 
-	// "12 May 2026", "12/5/2026", "2026-05-12" ...; null for blank, and an
-	// exception if it cannot be read
+	// "Tuesday 12 May 2026", with the day of the week the date fell on
+	public static String format(LocalDate date)
+	{
+		return weekday(date).getDisplayName(TextStyle.FULL, Locale.UK) + " " + DATE.format(date);
+	}
+
+	// the day of the week, as it was in Britain: before 14 September 1752 a
+	// date is Old Style (Julian), so 16 July 1595 was a Wednesday
+	public static DayOfWeek weekday(LocalDate date)
+	{
+		if (!date.isBefore(NEW_STYLE)) return date.getDayOfWeek();
+		int a = (14 - date.getMonthValue()) / 12;
+		long y = date.getYear() + 4800 - a;
+		long m = date.getMonthValue() + 12 * a - 3;
+		long julianDay = date.getDayOfMonth() + (153 * m + 2) / 5 + 365 * y + y / 4 - 32083;
+		return DayOfWeek.of((int) (julianDay % 7) + 1);  // Julian day 0 was a Monday
+	}
+
+	// "12 May 2026", "12/5/2026", "2026-05-12" ..., perhaps after a day of the
+	// week ("Monday, 16 July 1595"), which is dropped: the date says which day
+	// it was. null for blank, and an exception if it cannot be read
 	public static LocalDate parseDate(String text)
 	{
 		if (text == null || text.isBlank()) return null;
-		String t = text.trim();
+		String t = text.trim().replaceFirst("(?i)^(mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun|"
+				+ "monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\.?,?\\s+", "");
 		for (String pattern : new String[] { "d MMMM yyyy", "d MMM yyyy", "d/M/yyyy", "d-M-yyyy", "d.M.yyyy", "yyyy-MM-dd" })
 		{
 			try

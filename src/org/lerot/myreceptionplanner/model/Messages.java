@@ -149,7 +149,7 @@ public final class Messages
 			case "guests" -> guestsText(guests.membersOf(party));
 			case "places" -> Integer.toString(guests.placesOf(party));
 			case "occasion" -> o.getName();
-			case "date" -> o.getDate() == null ? "" : Occasion.DATE.format(o.getDate());
+			case "date" -> o.getDate() == null ? "" : Occasion.format(o.getDate());
 			case "events" -> eventsText(o, party);
 			case "event" -> event == null ? "" : event.getName();
 			case "eventplace" -> event == null ? "" : event.getPlace();
@@ -176,11 +176,11 @@ public final class Messages
 		return String.join(", ", parts.subList(0, parts.size() - 1)) + " and " + parts.get(parts.size() - 1);
 	}
 
-	// "12 May 2026 at 2pm", or just the time on the occasion's day
+	// "Tuesday 12 May 2026 at 2pm", or just the time on the occasion's day
 	static String when(Occasion o, Event e)
 	{
 		LocalDate d = o.dateOf(e);
-		String date = d == null ? "" : Occasion.DATE.format(d);
+		String date = d == null ? "" : Occasion.format(d);
 		if (e.getTime().isEmpty()) return date;
 		return date.isEmpty() ? "at " + e.getTime() : date + " at " + e.getTime();
 	}

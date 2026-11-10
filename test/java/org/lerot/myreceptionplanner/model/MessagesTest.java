@@ -56,8 +56,8 @@ class MessagesTest
 		wedding();
 		assertEquals("Dear Ann,", fill("Dear {leadfirst},", null));
 		assertEquals("Ann Smith, Bob Smith and a guest", fill("{guests}", null));
-		assertEquals("Lydia and Isaac's Wedding on 12 May 2026", fill("{occasion} on {date}", null));
-		assertEquals("• Wedding Breakfast, The Old Barn, 12 May 2026 at 2pm\n  • Evening Party, 12 May 2026 at 7.30pm",
+		assertEquals("Lydia and Isaac's Wedding on Tuesday 12 May 2026", fill("{occasion} on {date}", null));
+		assertEquals("• Wedding Breakfast, The Old Barn, Tuesday 12 May 2026 at 2pm\n  • Evening Party, Tuesday 12 May 2026 at 7.30pm",
 				fill("{events}", null));
 		assertEquals("{nonsense} stays", fill("{nonsense} stays", null));
 		assertEquals("Lydia and Isaac", fill("{from}", null));
@@ -116,7 +116,7 @@ class MessagesTest
 		assertEquals("", fill("{menuschosen}", null));
 		String ask = fill("{menustochoose}", null);
 		assertTrue(ask.startsWith("We would love your menu choices for these events"));
-		assertTrue(ask.contains("Wedding Breakfast, The Old Barn, 12 May 2026 at 2pm"));
+		assertTrue(ask.contains("Wedding Breakfast, The Old Barn, Tuesday 12 May 2026 at 2pm"));
 		assertTrue(ask.contains("• Ann Smith: please choose"));
 
 		evening.choose(ann, pud, trifle);
