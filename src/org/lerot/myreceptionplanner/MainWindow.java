@@ -1159,8 +1159,11 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		return fc.getSelectedFile().toPath();  // made when the occasion is saved there
 	}
 
-	// where the occasions are kept, each in a folder of its own
-	private static final Path ROOT = Path.of(System.getProperty("user.home"), "Documents", "MyReceptions");
+	// where the occasions are kept, each in a folder of its own: in Documents
+	// (on Windows wherever Documents really is, which may be in OneDrive)
+	private static final Path ROOT = (System.getProperty("os.name").startsWith("Windows")
+			? javax.swing.filechooser.FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+			: Path.of(System.getProperty("user.home"), "Documents")).resolve("MyReceptions");
 
 	private static void remember(Path f)
 	{

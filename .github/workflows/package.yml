@@ -1,5 +1,6 @@
-# Builds the MyReceptionPlanner installer, with its own Java: a .deb for
-# Linux (Windows to come: it needs an .ico icon in packaging/).
+# Builds the MyReceptionPlanner installers, each with its own Java: a .deb
+# for Linux and an .msi for Windows (each built on its own system; the .msi
+# needs the WiX Toolset 3, installed here from Chocolatey).
 #
 #  - "Run workflow" on the repository's Actions page builds it; download it
 #    from the run's page (Artifacts).
@@ -40,6 +41,41 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: MyReceptionPlanner-Linux
+          path: build/package/*
+      - name: Release page
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: build/package/*
+
+  windows:
+    needs: package   # after Linux, which makes the release page this adds to
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: WiX Toolset 3 (jpackage makes the .msi with it)
+        run: |
+          choco install wixtoolset --version 3.14.1 -y --no-progress
+          echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" >> $env:GITHUB_PATH
+
+      - name: Version (from the tag, e.g. v1.2.0)
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then v="${GITHUB_REF_NAME#v}"; else v=1.0.0; fi
+          echo "APP_VERSION=$v" >> "$GITHUB_ENV"
+
+      - name: Windows installer
+        shell: bash
+        run: ./gradlew packageApp -PappVersion=$APP_VERSION
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: MyReceptionPlanner-Windows
           path: build/package/*
       - name: Release page
         if: startsWith(github.ref, 'refs/tags/v')

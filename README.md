@@ -15,15 +15,25 @@ in the Office menu, and in `/opt/myreceptionplanner`. A newer version
 installs over the old; `sudo apt remove myreceptionplanner` takes it away.
 Your occasions, in `~/Documents/MyReceptions`, are not touched.
 
+On Windows (10 or 11), download `MyReceptionPlanner-<version>.msi` from the
+same release and open it. It installs for you alone, so no administrator is
+needed, and it too brings its own Java. MyReceptionPlanner is then in the
+Start menu and on the desktop. Windows may warn that the installer is from
+an unknown publisher, since it is not signed: choose *More info → Run
+anyway*. A newer version installs over the old; *Settings → Apps* removes
+it. Your occasions are in `Documents\MyReceptions` (wherever Windows keeps
+your Documents, OneDrive included), and the settings in the registry.
+
 ## Commands (from this folder)
 
     ./gradlew run     start the app
     ./gradlew test    run the automated tests
     ./gradlew packageApp -PappVersion=1.0.0
-                      build the installer (a .deb on Linux) in build/package
+                      build the installer (a .deb on Linux, an .msi on
+                      Windows, which needs the WiX Toolset 3) in build/package
 
 A release is made by pushing a version tag; GitHub then builds the
-installer and puts it on a release page:
+installers, Linux and Windows, and puts them on a release page:
 
     git tag v1.0.0 && git push origin v1.0.0
 

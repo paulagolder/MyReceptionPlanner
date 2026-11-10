@@ -39,8 +39,7 @@ public class InfoDialogs
 				{ "Guests", occasion.getGuests().guests().size() + " in " + occasion.getGuests().parties().size()
 						+ " parties, " + occasion.events().size() + (occasion.events().size() == 1 ? " event" : " events") },
 				{ "Folder", folder == null ? "not saved yet" : folder.toString() },
-				{ "Settings", Path.of(System.getProperty("user.home"), ".java", ".userPrefs", "org", "lerot",
-						"myreceptionplanner", "prefs.xml").toString() } };
+				{ "Settings", settings() } };
 		for (String[] fact : facts)
 		{
 			c.gridx = 0;
@@ -67,6 +66,15 @@ public class InfoDialogs
 	{
 		JOptionPane.showMessageDialog(parent, "Help is still to be written.", "MyReceptionPlanner Help",
 				JOptionPane.PLAIN_MESSAGE);
+	}
+
+	// where Java keeps the planner's preferences: the registry on Windows, a file elsewhere
+	private static String settings()
+	{
+		if (System.getProperty("os.name").startsWith("Windows"))
+			return "Registry: HKEY_CURRENT_USER\\Software\\JavaSoft\\Prefs\\org\\lerot\\myreceptionplanner";
+		return Path.of(System.getProperty("user.home"), ".java", ".userPrefs", "org", "lerot", "myreceptionplanner",
+				"prefs.xml").toString();
 	}
 
 	// when the jar (or, run from the class folders, this class) was made
