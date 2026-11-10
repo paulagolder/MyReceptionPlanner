@@ -40,6 +40,11 @@ can sit in one place at the breakfast and another in the evening. These
 names, places, dates and times head the reports and anything sent to the
 guests.
 
+A date is typed as "12 May 2026", "12/5/2026" or "2026-05-12", and may
+start with a day of the week ("Monday, 16 July 1595"). The planner always
+shows the weekday the date fell on, replacing any that was typed; before
+14 September 1752 that is the Old Style (Julian) weekday, as in Britain.
+
 The toolbar starts with:
 
 - **Occasion ▾** → *Progress…* (below), *Occasion details…* (name and
