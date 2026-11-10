@@ -44,6 +44,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 {
 	private static final Preferences PREFS = Preferences.userNodeForPackage(MainWindow.class);
 	private static final String LAST_OCCASION = "lastOccasion";
+	private static final String SEATING_WIDTH = "seatingWidth";  // of the side panel in seating mode, as last dragged
 	// " 1.2.0" from the jar's manifest; "" when run from the build
 	private static final String VERSION = MainWindow.class.getPackage().getImplementationVersion() == null ? ""
 			: " " + MainWindow.class.getPackage().getImplementationVersion();
@@ -65,6 +66,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private final List<JComponent> eventOnly = new ArrayList<>();  // toolbar items hidden in the Guests view
 	private PlanPanel planPanel;
 	private SeatingPanel seatingPanel;
+	private JSplitPane seatingSplit;  // the plan, and the seating panel beside it
+	private boolean placingDivider;   // the divider moved here, not dragged
 	private final JToggleButton seatingButton = new JToggleButton("Seating");
 	private JButton addTableButton;
 	private JButton tableButton;
@@ -426,11 +429,51 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JScrollPane scroll = new JScrollPane(planPanel);
 		scroll.getVerticalScrollBar().setUnitIncrement(16);
 		scroll.getHorizontalScrollBar().setUnitIncrement(16);
-		planHolder.add(withZoom(scroll), BorderLayout.CENTER);
-		planHolder.add(seatingPanel, BorderLayout.EAST);
+		seatingSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, withZoom(scroll), seatingPanel);
+		seatingSplit.setResizeWeight(1);  // a wider window widens the plan
+		seatingSplit.setContinuousLayout(true);
+		seatingSplit.setBorder(null);
+		seatingSplit.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, ev ->
+		{
+			int width = seatingSplit.getWidth() - seatingSplit.getDividerLocation() - seatingSplit.getDividerSize();
+			if (!placingDivider && seatingPanel.isVisible() && seatingSplit.isShowing() && width >= SeatingPanel.MIN_WIDTH)
+				PREFS.putInt(SEATING_WIDTH, width);
+		});
+		planHolder.add(seatingSplit, BorderLayout.CENTER);
 		setMode(mode);
 		selectionChanged(null);
 		updateTitle();
+	}
+
+	// in seating mode, the seating panel as wide as last dragged (but leaving
+	// the plan room) and a divider to drag; otherwise the plan has it all
+	private void placeSeatingDivider(boolean seating)
+	{
+		seatingSplit.setDividerSize(seating ? UIManager.getInt("SplitPane.dividerSize") : 0);
+		if (!seating) return;
+		if (seatingSplit.getWidth() > 0)
+		{
+			SwingUtilities.invokeLater(this::setSeatingWidth);
+			return;
+		}
+		// not laid out yet: once it has its size
+		seatingSplit.addComponentListener(new java.awt.event.ComponentAdapter()
+		{
+			public void componentResized(java.awt.event.ComponentEvent e)
+			{
+				seatingSplit.removeComponentListener(this);
+				setSeatingWidth();
+			}
+		});
+	}
+
+	private void setSeatingWidth()
+	{
+		int total = seatingSplit.getWidth();
+		int w = Math.max(SeatingPanel.MIN_WIDTH, Math.min(PREFS.getInt(SEATING_WIDTH, SeatingPanel.START_WIDTH), total - 300));
+		placingDivider = true;
+		seatingSplit.setDividerLocation(total - w - seatingSplit.getDividerSize());
+		placingDivider = false;
 	}
 
 	private void editOccasion()
@@ -579,6 +622,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			seatingPanel.refresh();
 			seatingPanel.showTable(planPanel.getSelected(), -1);
 		}
+		placeSeatingDivider(seating);
 		planHolder.revalidate();
 		planHolder.repaint();
 	}

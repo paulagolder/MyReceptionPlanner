@@ -23,7 +23,8 @@ import java.util.List;
 import java.util.function.IntFunction;
 
 /*
- * Seating mode's side panel, with two tabs.
+ * Seating mode's side panel, with two tabs. It sits beside the plan, and
+ * its width is dragged (MainWindow keeps it).
  *
  * Table lists the seats of the table chosen on the plan, seat 1 first, and
  * who sits in each. On an empty seat, choosing a party seats one of its
@@ -34,7 +35,8 @@ import java.util.function.IntFunction;
  * Guests lists the parties (each made and edited in PartyDialog) and the
  * guests with an invitation to this event, with its mark (see
  * InvitationMarks; click for what it means; it is changed in the Guests
- * view). A place not named yet shows as the
+ * view). Choosing a party lists only its guests, until Show all (or Esc,
+ * or Ctrl-click on the party). A place not named yet shows as the
  * lead's name +1, +2 ...; type a name over it to name that guest.
  */
 public class SeatingPanel extends JPanel
@@ -46,6 +48,9 @@ public class SeatingPanel extends JPanel
 		// a seat chosen here, to show on the plan
 		void seatSelected(Table table, int chair);
 	}
+
+	public static final int START_WIDTH = 600;  // until dragged
+	public static final int MIN_WIDTH = 300;
 
 	private static final String NO_PARTY = "No party";
 	private static final int ICON = 14;
@@ -70,6 +75,8 @@ public class SeatingPanel extends JPanel
 	private final GuestModel guestModel = new GuestModel();
 	private final JTable guestTable = new JTable(guestModel);
 	private final JCheckBox unseatedOnly = new JCheckBox("Not seated");
+	private final JLabel guestsTitle = new JLabel();
+	private final JButton showAll = new JButton("Show all");
 	private final JComboBox<Object> seatPartyCombo = new JComboBox<>();
 	private final JComboBox<Object> guestPartyCombo = new JComboBox<>();
 
@@ -82,7 +89,8 @@ public class SeatingPanel extends JPanel
 		this.event = event;
 		this.seating = event.getSeating();
 		this.listener = listener;
-		setPreferredSize(new Dimension(380, 0));
+		setPreferredSize(new Dimension(START_WIDTH, 0));
+		setMinimumSize(new Dimension(MIN_WIDTH, 0));
 		setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, Theme.GRID));
 		tabs.addTab("Table", tableTab());
 		tabs.addTab("Guests", guestsTab());
@@ -118,7 +126,10 @@ public class SeatingPanel extends JPanel
 		seatModel.fireTableDataChanged();
 		if (seatRow >= 0 && seatRow < seatModel.getRowCount())
 			seatTable.getSelectionModel().setSelectionInterval(seatRow, seatRow);
+		Party chosen = selectedParty();
 		partyModel.fireTableDataChanged();
+		int partyRow = guests.parties().indexOf(chosen);  // still chosen, so the list stays narrowed
+		if (partyRow >= 0) partyTable.setRowSelectionInterval(partyRow, partyRow);
 		guestModel.reload();
 		updateTitle();
 	}
@@ -171,7 +182,8 @@ public class SeatingPanel extends JPanel
 		p.add(tableTitle, BorderLayout.NORTH);
 		setUp(seatTable, seatModel::guestAt, this::notForGuests, 1);
 		seatTable.getColumnModel().getColumn(0).setMaxWidth(60);
-		seatTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
+		seatTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(genderChooser()));
+		narrow(seatTable.getColumnModel().getColumn(2));
 		seatTable.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(seatPartyCombo));
 		seatTable.getSelectionModel().addListSelectionListener(e ->
 		{
@@ -259,7 +271,7 @@ public class SeatingPanel extends JPanel
 	// the seats of the shown table, seat 1 first
 	private class SeatModel extends AbstractTableModel
 	{
-		private final String[] columns = { "Seat", "Guest", "Gender", "Party" };
+		private final String[] columns = { "Seat", "Guest", "M/F", "Party" };
 
 		public int getRowCount() { return table == null ? 0 : table.places(); }
 
@@ -377,6 +389,16 @@ public class SeatingPanel extends JPanel
 		partyTable.getColumnModel().getColumn(3).setMaxWidth(60);
 		partyTable.getColumnModel().getColumn(4).setMaxWidth(60);
 		partyTable.setDefaultRenderer(Object.class, new CellRenderer(row -> null, row -> null, -1));
+		partyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		partyTable.getSelectionModel().addListSelectionListener(e ->
+		{
+			if (!e.getValueIsAdjusting()) guestModel.reload();
+		});
+		partyTable.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("ESCAPE"), "showAll");
+		partyTable.getActionMap().put("showAll", new AbstractAction()
+		{
+			public void actionPerformed(java.awt.event.ActionEvent e) { partyTable.clearSelection(); }
+		});
 		partyTable.addMouseListener(new MouseAdapter()
 		{
 			public void mouseClicked(MouseEvent e)
@@ -395,13 +417,17 @@ public class SeatingPanel extends JPanel
 		parties.add(partyButtons);
 
 		JPanel people = new JPanel(new MigLayout("insets 8, fill, wrap 1", "[grow]", "[][grow][][]"));
-		people.add(new JLabel("<html><b>Guests</b></html>"), "split 2");
+		people.add(guestsTitle, "split 3");
+		showAll.setToolTipText("List the guests of every party again (or Esc in the parties)");
+		showAll.addActionListener(e -> partyTable.clearSelection());
+		people.add(showAll, "gapleft 8");
 		unseatedOnly.addActionListener(e -> guestModel.reload());
 		people.add(unseatedOnly, "gapleft push");
 		setUp(guestTable, row -> guestModel.rows.get(guestTable.convertRowIndexToModel(row)), row -> null, 0);
 		guestTable.setDefaultRenderer(org.lerot.myreceptionplanner.model.Invitation.class, InvitationMarks.renderer(false));
 		guestTable.setAutoCreateRowSorter(true);
-		guestTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
+		guestTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(genderChooser()));
+		narrow(guestTable.getColumnModel().getColumn(1));
 		guestTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(guestPartyCombo));
 		guestTable.addMouseListener(new MouseAdapter()
 		{
@@ -574,14 +600,18 @@ public class SeatingPanel extends JPanel
 
 	private class GuestModel extends AbstractTableModel
 	{
-		private final String[] columns = { "Name", "Gender", "Party", "Invited", "Diet", "Seat" };
+		private final String[] columns = { "Name", "M/F", "Party", "Invited", "Diet", "Seat" };
 		private List<Guest> rows = List.of();
 
 		void reload()
 		{
-			rows = unseatedOnly.isSelected() ? invitedNotSeated()
-					: guests.guests().stream().filter(g -> event.invitation(g) != org.lerot.myreceptionplanner.model.Invitation.NONE).toList();
+			Party only = selectedParty();
+			rows = (unseatedOnly.isSelected() ? invitedNotSeated()
+					: guests.guests().stream().filter(g -> event.invitation(g) != org.lerot.myreceptionplanner.model.Invitation.NONE).toList())
+					.stream().filter(g -> only == null || g.getParty() == only).toList();
 			fireTableDataChanged();
+			guestsTitle.setText("<html><b>Guests</b>" + (only == null ? "" : ": " + escape(only.getName())) + "</html>");
+			showAll.setVisible(only != null);
 		}
 
 		public int getRowCount() { return rows.size(); }
@@ -650,8 +680,37 @@ public class SeatingPanel extends JPanel
 		t.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	}
 
+	// for a gender column: the marks alone, each named in its tooltip (and
+	// in the legend below)
+	private static JComboBox<Gender> genderChooser()
+	{
+		JComboBox<Gender> c = new JComboBox<>(Gender.values());
+		c.setRenderer(new DefaultListCellRenderer()
+		{
+			public Component getListCellRendererComponent(JList<?> l, Object value, int index, boolean sel, boolean focus)
+			{
+				super.getListCellRendererComponent(l, value, index, sel, focus);
+				Gender g = (Gender) value;
+				setIcon(g == null ? null : Marks.icon(g, Theme.EDGE, ICON));
+				setText("");
+				setToolTipText(g == null ? null : g.toString());
+				setHorizontalAlignment(CENTER);
+				return this;
+			}
+		});
+		return c;
+	}
+
+	// a gender column: just wide enough for its mark and "M/F"
+	private static void narrow(javax.swing.table.TableColumn c)
+	{
+		c.setMinWidth(36);
+		c.setPreferredWidth(40);
+		c.setMaxWidth(48);
+	}
+
 	/*
-	 * Genders with their shape, parties with their colour, a seat number with
+	 * Genders by their shape alone (the word in the tooltip), parties with their colour, a seat number with
 	 * the mark of whoever sits there; a guest with no name yet shows who they
 	 * are with, in grey; a disabled or open-access seat is greyed out.
 	 */
@@ -679,8 +738,14 @@ public class SeatingPanel extends JPanel
 			Guest g = guestOfRow.apply(row);
 			String offWhat = offRow.apply(row);
 			boolean off = offWhat != null;
+			setToolTipText(null);
 			if (value instanceof Gender gender)
+			{
 				setIcon(Marks.icon(gender, Theme.EDGE, ICON));
+				setText("");
+				setToolTipText(gender.toString());
+				setHorizontalAlignment(CENTER);
+			}
 			else if (value instanceof Party p)
 				setIcon(Marks.swatch(p.getColour(), ICON));
 			else if (value instanceof Color c)
