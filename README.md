@@ -94,8 +94,8 @@ The toolbar starts with:
     and *Export menu…*.
 - **Messages ▾** is there in both views.
 - **Info ▾**, at the right-hand end, → *Help…* (MyReceptionPlanner 101, a short tour from the example to printing) and
-  *About MyReceptionPlanner…* (the version, when it was built, the Java it
-  runs on, the occasion open and its folder, and where the settings are kept).
+  *About MyReceptionPlanner…* (the version, when it was built, who developed
+  it, the Java it runs on, and the occasion open and its folder).
 
 ### Layouts and menus as files
 

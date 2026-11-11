@@ -20,8 +20,7 @@ public class InfoDialogs
 			MyReceptionPlanner plans the guests, tables, seating, menus and messages
 			for an occasion of a few events: a ceremony, a wedding breakfast, a party.
 			Each occasion is a folder of its own; guests' details can be copied from
-			a contacts file exported from Google, Apple or Outlook.
-			Developed by Paul Golder, with Claude (Anthropic) as AI pair programmer.""";
+			a contacts file exported from Google, Apple or Outlook.""";
 
 	public static void about(Component parent, Occasion occasion, Path folder)
 	{
@@ -34,12 +33,12 @@ public class InfoDialogs
 		String[][] facts = {
 				{ "Version", version == null ? "development" : version },
 				{ "Built", buildDate() },
+				{ "Developed by", "Paul Golder, with Claude (Anthropic) as AI pair programmer" },
 				{ "Java", System.getProperty("java.version") + "  (" + System.getProperty("java.vendor") + ")" },
 				{ "Occasion", occasion.getName() },
 				{ "Guests", occasion.getGuests().guests().size() + " in " + occasion.getGuests().parties().size()
 						+ " parties, " + occasion.events().size() + (occasion.events().size() == 1 ? " event" : " events") },
-				{ "Folder", folder == null ? "not saved yet" : folder.toString() },
-				{ "Settings", settings() } };
+				{ "Folder", folder == null ? "not saved yet" : folder.toString() } };
 		for (String[] fact : facts)
 		{
 			c.gridx = 0;
@@ -83,15 +82,6 @@ public class InfoDialogs
 		Object[] close = { "Close" };
 		ResizableDialog.show(parent, new JOptionPane(scroll, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION,
 				null, close, close[0]), "MyReceptionPlanner Help", "helpDialog");
-	}
-
-	// where Java keeps the planner's preferences: the registry on Windows, a file elsewhere
-	private static String settings()
-	{
-		if (System.getProperty("os.name").startsWith("Windows"))
-			return "Registry: HKEY_CURRENT_USER\\Software\\JavaSoft\\Prefs\\org\\lerot\\myreceptionplanner";
-		return Path.of(System.getProperty("user.home"), ".java", ".userPrefs", "org", "lerot", "myreceptionplanner",
-				"prefs.xml").toString();
 	}
 
 	// when the jar (or, run from the class folders, this class) was made
