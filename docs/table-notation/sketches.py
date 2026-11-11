@@ -90,53 +90,101 @@ def polygon(sides, perside):
     return seats, [corners]
 
 
-# ---- joined tables: runs walked round the outside edge, turning right ----
+# ---- joined tables: built of seat-unit squares ----
+#
+# Each run is a strip of squares to the right of its outside edge, walked
+# clockwise; each branch a strip off a run's inside edge. The table's
+# outline is then walked clockwise (holes after), a seat on each unit of
+# seated edge, and where two seated edges meet at an inside corner the
+# later seat (counting clockwise) is left out: the two would collide.
 
-def joined(runs, closed=False):
-    """runs: (length, seated) with seated a subset of {"outside", "inside"};
-    each run turns 90 degrees right into the next."""
-    heading, at = (0.0, -1.0), (0.0, 0.0)        # starting up the page
-    outside = [at]
-    for length, _ in runs:
-        at = (at[0] + heading[0] * length, at[1] + heading[1] * length)
-        outside.append(at)
-        heading = (-heading[1], heading[0])      # right turn (y down the page)
-    if closed:
-        outside = outside[:-1]
-    m = len(runs)
-    corners_before = [(closed or i > 0) for i in range(m)]
-    corners_after = [(closed or i < m - 1) for i in range(m)]
+SIDE = {(0, -1): "N", (1, 0): "E", (0, 1): "S", (-1, 0): "W"}
 
-    def inward(i):                               # to the right of run i
-        (ax, ay), (bx, by) = outside[i], outside[(i + 1) % len(outside)]
-        ln = math.dist((ax, ay), (bx, by))
-        return (ax, ay), ((bx - ax) / ln, (by - ay) / ln), (-(by - ay) / ln, (bx - ax) / ln)
 
-    out_seats, in_seats = [], []
-    inner = []
-    for i, (length, seated) in enumerate(runs):
-        a, d, n = inward(i)
-        lose_before = DEPTH if corners_before[i] else 0
-        lose_after = DEPTH if corners_after[i] else 0
-        inner.append((a[0] + d[0] * lose_before + n[0] * DEPTH, a[1] + d[1] * lose_before + n[1] * DEPTH))
-        if not closed and i == m - 1:
-            e = (a[0] + d[0] * length + n[0] * DEPTH, a[1] + d[1] * length + n[1] * DEPTH)
-            inner.append(e)
-        if "outside" in seated:
-            out_seats += [(a[0] + d[0] * (k + 0.5) - n[0] * OFF, a[1] + d[1] * (k + 0.5) - n[1] * OFF)
-                          for k in range(math.floor(length))]
-        if "inside" in seated:
-            free = length - lose_before - lose_after
-            run = [(a[0] + d[0] * (lose_before + k + 0.5) + n[0] * (DEPTH + OFF),
-                    a[1] + d[1] * (lose_before + k + 0.5) + n[1] * (DEPTH + OFF))
-                   for k in range(math.floor(free))]
-            in_seats.append(run)
-    # the inside seats counted on round, back along the runs
-    seats = out_seats + [s for run in reversed(in_seats) for s in reversed(run)]
-    if not closed:
-        inner[0] = (outside[0][0] + inward(0)[2][0] * DEPTH, outside[0][1] + inward(0)[2][1] * DEPTH)
-        return seats, [outside + list(reversed(inner))]
-    return seats, [outside, inner]
+def turned(d, degrees):
+    for _ in range((degrees // 90) % 4):
+        d = (-d[1], d[0])                          # a right turn, y down the page
+    return d
+
+
+def joined(runs, branches=(), closed=False):
+    """runs: (length, seated[, turn]) with seated from outside, inside, start,
+    end; branches: (run, at, length, seated) off that run's inside edge, at
+    seat units from its start, seated from left, right, end (walking out)."""
+    cells, labels, starts = set(), {}, []
+
+    def label(cell, d, seated, priority):
+        key = (cell, SIDE[d])
+        if key not in labels or labels[key][0] < priority:
+            labels[key] = (priority, seated)
+
+    def square(origin, along, across, k, j):
+        xs = [origin[0] + along[0] * (k + a) + across[0] * (j + b) for a in (0, 1) for b in (0, 1)]
+        ys = [origin[1] + along[1] * (k + a) + across[1] * (j + b) for a in (0, 1) for b in (0, 1)]
+        return (min(xs), min(ys))
+
+    d, at = (0, -1), (0, 0)
+    for i, run in enumerate(runs):
+        length, seated = run[0], run[1]
+        # the first run goes up the page unless turned; each after turns right
+        d = turned(d, run[2] if len(run) > 2 else (90 if i > 0 else 0))
+        n = (-d[1], d[0])
+        starts.append((at, d, n))
+        for k in range(length):
+            for j in range(DEPTH):
+                c = square(at, d, n, k, j)
+                cells.add(c)
+                if j == 0: label(c, (-n[0], -n[1]), "outside" in seated, 2)
+                if j == DEPTH - 1: label(c, n, "inside" in seated, 2)
+                if k == 0: label(c, (-d[0], -d[1]), "start" in seated, 1)
+                if k == length - 1: label(c, d, "end" in seated, 1)
+        at = (at[0] + d[0] * length, at[1] + d[1] * length)
+
+    for run, offset, length, seated in branches:
+        p, d, n = starts[run]
+        q = (p[0] + d[0] * offset + n[0] * DEPTH, p[1] + d[1] * offset + n[1] * DEPTH)
+        left = (n[1], -n[0])                        # walking out along n
+        for k in range(length):
+            for j in range(DEPTH):
+                c = square(q, n, d, k, j)
+                cells.add(c)
+                if j == 0: label(c, (-d[0], -d[1]), ("left" if left == (-d[0], -d[1]) else "right") in seated, 2)
+                if j == DEPTH - 1: label(c, d, ("left" if left == d else "right") in seated, 2)
+                if k == length - 1: label(c, n, "end" in seated, 1)
+
+    # the outline's unit edges, the table on the right of each
+    edges = {}
+    for (cx, cy) in cells:
+        for d, a, b in (((0, -1), (cx, cy), (cx + 1, cy)), ((1, 0), (cx + 1, cy), (cx + 1, cy + 1)),
+                        ((0, 1), (cx + 1, cy + 1), (cx, cy + 1)), ((-1, 0), (cx, cy + 1), (cx, cy))):
+            if (cx + d[0], cy + d[1]) not in cells:
+                edges[a] = (a, b, labels.get(((cx, cy), SIDE[d]), (0, False))[1])
+    p0, d0, n0 = starts[0]
+    first = square(p0, d0, n0, 0, 0)
+    first_edge = {(0, -1): (first[0], first[1]), (1, 0): (first[0] + 1, first[1]),
+                  (0, 1): (first[0] + 1, first[1] + 1), (-1, 0): (first[0], first[1] + 1)}[(-n0[0], -n0[1])]
+    loops = []
+    while edges:
+        a = first_edge if first_edge in edges else min(edges, key=lambda v: (v[1], v[0]))
+        loop = []
+        while a in edges:
+            e = edges.pop(a)
+            loop.append(e)
+            a = e[1]
+        loops.append(loop)
+
+    seats, outlines = [], []
+    for loop in loops:
+        heading = [(e[1][0] - e[0][0], e[1][1] - e[0][1]) for e in loop]
+        for i, (a, b, seated) in enumerate(loop):
+            h, before = heading[i], heading[i - 1]
+            inside_corner = before[0] * h[1] - before[1] * h[0] < 0
+            if not seated or (inside_corner and loop[i - 1][2]):
+                continue
+            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+            seats.append((mx + h[1] * OFF, my - h[0] * OFF))
+        outlines.append([e[0] for i, e in enumerate(loop) if heading[i] != heading[i - 1]])
+    return seats, outlines
 
 
 # ---- drawing ----
@@ -186,6 +234,17 @@ if __name__ == "__main__":
                                  *joined([(8, {"outside"}), (10, {"outside"}), (8, {"outside"})])),
         "hollow-square": svg("hollow-square", "hollow square 8 + 8 + 8 + 8, outside only",
                              *joined([(8, {"outside"})] * 4, closed=True)),
+        "hollow-square-inside": svg("hollow-square-inside", "hollow square 8 + 8 + 8 + 8, inside too",
+                                    *joined([(8, {"outside", "inside"})] * 4, closed=True)),
+        "t": svg("t", "T: top 11, a stem of 8 from its middle",
+                 *joined([(11, {"outside"}, 90)], [(0, 5, 8, {"left", "right"})])),
+        "e": svg("e", "E: top 13, three prongs of 8",
+                 *joined([(13, {"outside"}, 90)], [(0, 0, 8, {"left", "right"}), (0, 6, 8, {"left", "right"}),
+                                                      (0, 12, 8, {"left", "right"})])),
+        "e-inside": svg("e-inside", "E with the top's inside seated too",
+                        *joined([(13, {"outside", "inside"}, 90)], [(0, 0, 8, {"left", "right"}),
+                                                                   (0, 6, 8, {"left", "right"}),
+                                                                   (0, 12, 8, {"left", "right"})])),
     }
     for k, v in counts.items():
         print(f"{k:18} {v}")

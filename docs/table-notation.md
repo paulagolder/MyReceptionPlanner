@@ -136,16 +136,24 @@ the runs of its outside edge, walked clockwise, each turning into the next.
 
 - `length` is the run's **outside** edge, in seat units; it holds that many
   outside seats.
-- Each run after the first starts with a `turn`, in degrees clockwise
-  (90, a right angle, if left out; a negative turn is to the left).
+- The first run goes up the page, unless it has a `turn` of its own
+  (`turn="90"` sets it off left to right). Each run after it starts with a
+  `turn`, in degrees clockwise (90, a right angle, if left out; a negative
+  turn is to the left).
 - `depth` is how deep the table is, in seat units (1 if left out).
-- `seated` says which edges of the run have seats: `outside`, `inside`, both,
-  or neither (`seated=""`).
+- `seated` says which edges of the run have seats: `outside`, `inside`,
+  `start` and `end` (the ends of an open path, such as the foot of an arm),
+  or none (`seated=""`).
 - The **inside** edge is shorter: a right-angled corner takes `depth` off
   each run it joins, so an arm of 8 has 7 inside seats.
+- **An inside corner costs a seat** where both its edges are seated: the
+  two chairs would want the same place, so the later one, counting
+  clockwise, is left out.
 - `closed="yes"` joins the last run back to the first.
-- The seats are counted along the outside first, in the order of the runs,
-  then back along the inside: clockwise round the table's edge.
+- The seats are counted **clockwise round the table's outline**, from the
+  first outside seat of the first run: along the outside, then back along
+  the inside; with a hole in the middle (a hollow square), round the outside
+  first, then round the hole.
 
 ### Horseshoe
 
@@ -178,6 +186,68 @@ The same with the inside of the arms bare (`seated="outside"` on every run):
 
 ![hollow square 8 + 8 + 8 + 8, outside only: 32 seats](table-notation/hollow-square.svg)
 
+Seated inside too (`seated="outside inside"`), each side of the hole is 6
+long, and each of its four corners costs a seat: 24 − 4 = 20 inside.
+
+![hollow square 8 + 8 + 8 + 8, inside too: 52 seats](table-notation/hollow-square-inside.svg)
+
+### Branches: T and E
+
+A **branch** is a piece that comes off a run part-way along, from its
+inside edge, at a right angle:
+
+```xml
+<branch from="1" at="5" length="8" seated="left right"/>
+```
+
+- `from` is the run it comes off (counting the runs from 1), and `at` how
+  far along that run it starts, in seat units from the run's start.
+- `length` is how far it reaches from the run's inside edge, in seat units;
+  it is as wide as the table is deep.
+- `seated` names its edges as you walk out along it: `left`, `right` and
+  `end`.
+- Where it meets the run, the run's inside edge stops and starts again
+  round it, and the inside-corner rule applies to both corners.
+- Its seats are counted in their place round the outline: down one side,
+  across the end, back up the other.
+
+A **T**: a top table of 11, a stem of 8 from its middle (5 seat units of
+top table before it, 1 for the stem, 5 after):
+
+```xml
+<table shape="joined" name="Top table" head="true" ...>
+  <run turn="90" length="11" seated="outside"/>             <!-- the top table, left to right -->
+  <branch from="1" at="5" length="8" seated="left right"/>  <!-- the stem, down the room -->
+</table>
+```
+
+![T: top 11, a stem of 8 from its middle: 27 seats](table-notation/t.svg)
+
+An **E** (or a top table with sprigs): a top table of 13 and three prongs
+of 8, two of them flush with its ends:
+
+```xml
+<table shape="joined" name="Top table" head="true" ...>
+  <run turn="90" length="13" seated="outside"/>
+  <branch from="1" at="0" length="8" seated="left right"/>
+  <branch from="1" at="6" length="8" seated="left right"/>
+  <branch from="1" at="12" length="8" seated="left right"/>
+</table>
+```
+
+A prong flush with the end of the top table carries its outside edge
+straight on, as the arms of a horseshoe do; so this E is a horseshoe with
+a third arm in the middle.
+
+![E: top 13, three prongs of 8: 61 seats](table-notation/e.svg)
+
+With the inside of the top table seated too (`seated="outside inside"` on
+the run), each of the two gaps between prongs is 5 long and has an inside
+corner at each end: 3 more seats in each, and a seat fewer at the top of
+the four sides that face into the gaps (61 + 10 − 4 = 67).
+
+![E with the top's inside seated too: 67 seats](table-notation/e-inside.svg)
+
 ### Curves
 
 An `<arc>` is a run that bends as it goes, for a curved top table or a
@@ -193,9 +263,8 @@ the same as `shape="stadium"`.
 
 ## Still to settle
 
-- **Branches.** A T, or an E (a top table with sprigs), needs a run that
-  starts part-way along another. Perhaps `<run from="2" at="5" ...>`: off run
-  2, after its 5th seat.
+- **Branches off the outside** (a cross, `side="outside"`) and **branches
+  off branches**, if they are ever wanted.
 - **Named shorthands**, such as `<horseshoe top="10" arms="8" inside="yes"/>`,
   if the paths prove too long-winded for the usual shapes.
 - **Seat units for the gaps**: whether a joined table's corner and an
