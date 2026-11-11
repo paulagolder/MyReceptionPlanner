@@ -1,250 +1,333 @@
 #!/usr/bin/env python3
 """
-Draws the sketches for docs/table-notation.md, working out each table's
-seats by the rules there (sizes in seat units; the seats an edge holds
-rounded down). Run from anywhere:  python3 docs/table-notation/sketches.py
+Draws the sketches for docs/table-notation.md. Every table is turned into a
+walk round its edge (steps, turns and arcs, and a walk round each hole),
+and drawn and counted from that walk alone: the shapes and the composed
+tables by the rules in the notes, as a test that they come out right.
+Sizes are in seat units (60 cm). Run from anywhere:
+
+    python3 docs/table-notation/sketches.py
 """
 import math
 import os
+from collections import Counter
 
 OUT = os.path.dirname(os.path.abspath(__file__))
-PX = 32           # pixels to a seat unit (60 cm)
-OFF = 0.45        # a seat's centre outside the table's edge, in units
+PX = 32           # pixels to a seat unit
+OFF = 0.45        # a seat's centre beyond the table's edge, in units
 R = 0.32          # a seat's radius, in units
-DEPTH = 1         # a joined table's depth, in units
 
 
-# ---- the simple shapes: seat positions, clockwise, and the outline ----
+# ---- the walk ----
+#
+# A walk starts at its own (0, 0) heading right, and goes clockwise: the
+# table on the right, the seats on the left. A hole's walk starts at its
+# "at" point heading right and also goes clockwise, so there the table is
+# on the left and the seats on the right, facing into the hole.
+#   ("step", length, seats)     straight on; seats spread evenly along it
+#   ("turn", degrees)           on the spot, clockwise (negative: anticlockwise)
+#   ("arc", degrees, seats, radius)   bending clockwise as it goes
+
+def rotate(h, degrees):
+    t = math.radians(degrees)
+    return (h[0] * math.cos(t) - h[1] * math.sin(t), h[0] * math.sin(t) + h[1] * math.cos(t))
+
+
+def trace(start, steps, hole):
+    side = -1 if hole else 1                      # +1: seats on the left of the way
+    p, h = start, (1.0, 0.0)
+    outline, seats = [p], []
+    for s in steps:
+        if s[0] == "turn":
+            h = rotate(h, s[1])
+        elif s[0] == "step":
+            _, length, n = s
+            left = (h[1], -h[0])
+            for k in range(n):
+                f = (k + 0.5) * length / n
+                seats.append((p[0] + h[0] * f + side * left[0] * OFF, p[1] + h[1] * f + side * left[1] * OFF))
+            p = (p[0] + h[0] * length, p[1] + h[1] * length)
+            outline.append(p)
+        elif s[0] == "arc":
+            _, degrees, n, radius = s
+            right = (-h[1], h[0])
+            c = (p[0] + right[0] * radius, p[1] + right[1] * radius)
+            a0 = math.atan2(p[1] - c[1], p[0] - c[0])
+            sweep = math.radians(degrees)
+            for k in range(n):
+                a = a0 + sweep * (k + 0.5) / n
+                rr = radius + side * OFF
+                seats.append((c[0] + rr * math.cos(a), c[1] + rr * math.sin(a)))
+            parts = max(8, int(abs(degrees) / 4))
+            for k in range(1, parts + 1):
+                a = a0 + sweep * k / parts
+                outline.append((c[0] + radius * math.cos(a), c[1] + radius * math.sin(a)))
+            p = outline[-1]
+            h = rotate(h, degrees)
+    if math.dist(p, start) > 1e-6 or math.dist(h, (1.0, 0.0)) > 1e-6:
+        raise ValueError(f"the walk does not come back to its start: it ends at {p}, heading {h}")
+    return outline[:-1], seats
+
+
+def walk(steps, holes=()):
+    """The table's outlines and its seats, in walking order: round the
+    outside, then round each hole."""
+    outline, seats = trace((0.0, 0.0), steps, False)
+    outlines = [outline]
+    for (hx, hy), hsteps in holes:
+        o, s = trace((hx, hy), hsteps, True)
+        outlines.append(o)
+        seats += s
+    crowded = [(i + 1, j + 1) for i in range(len(seats)) for j in range(i + 1, len(seats))
+               if math.dist(seats[i], seats[j]) < 2 * R + 0.02]
+    if crowded:
+        raise ValueError(f"seats too close together: {crowded}")
+    return outlines, seats
+
+
+def written(steps, holes=()):
+    """The walk in words, as the notes write it."""
+    def words(ss):
+        out = []
+        for s in ss:
+            if s[0] == "turn":
+                out.append(f"turn {s[1]:g}")
+            elif s[0] == "step":
+                out.append(f"step {s[1]:g}" + (f" ({s[2]} seat{'s' * (s[2] != 1)})" if s[2] else ""))
+            else:
+                out.append(f"arc {s[1]:g}, radius {s[3]:.2f}" + (f" ({s[2]} seat{'s' * (s[2] != 1)})" if s[2] else ""))
+        return " · ".join(out)
+    text = words(steps)
+    for (hx, hy), hs in holes:
+        text += f"; hole at {hx:g} {hy:g}: " + words(hs)
+    return text
+
+
+# ---- the shapes, as walks; each also gives its box, from the walk's start ----
 
 def rectangle(x, y, seated=("far", "right", "near", "left")):
-    seats = []
-    if "far" in seated:
-        seats += [(-x / 2 + i + 0.5, -y / 2 - OFF) for i in range(x)]
-    if "right" in seated:
-        seats += [(x / 2 + OFF, -y / 2 + i + 0.5) for i in range(y)]
-    if "near" in seated:
-        seats += [(x / 2 - i - 0.5, y / 2 + OFF) for i in range(x)]
-    if "left" in seated:
-        seats += [(-x / 2 - OFF, y / 2 - i - 0.5) for i in range(y)]
-    outline = [(-x / 2, -y / 2), (x / 2, -y / 2), (x / 2, y / 2), (-x / 2, y / 2)]
-    return seats, [outline]
+    s = lambda edge, n: n if edge in seated else 0
+    steps = [("step", x, s("far", x)), ("turn", 90), ("step", y, s("right", y)), ("turn", 90),
+             ("step", x, s("near", x)), ("turn", 90), ("step", y, s("left", y)), ("turn", 90)]
+    return steps, (), None
 
 
-def ellipse(x, y):
-    a, b = x / 2, y / 2
-    # the edge finely, from the top, clockwise, and how far along it each point is
-    n = 4000
-    pts = [(a * math.sin(2 * math.pi * k / n), -b * math.cos(2 * math.pi * k / n)) for k in range(n + 1)]
-    along = [0.0]
-    for p, q in zip(pts, pts[1:]):
-        along.append(along[-1] + math.dist(p, q))
-    perimeter = along[-1]
-    count = math.floor(perimeter + 1e-9)
-    seats, k = [], 0
-    for s in range(count):
-        want = s * perimeter / count
-        while along[k + 1] < want:
-            k += 1
-        t = 2 * math.pi * k / n
-        px, py = a * math.sin(t), -b * math.cos(t)
-        nx, ny = b * math.sin(t), -a * math.cos(t)   # the outward normal
-        ln = math.hypot(nx, ny)
-        seats.append((px + OFF * nx / ln, py + OFF * ny / ln))
-    return seats, [pts[:-1]]
+def round_table(diameter=None, places=None):
+    if places is None:
+        places = math.floor(math.pi * diameter + 1e-9)
+    else:
+        diameter = places / math.pi
+    r = diameter / 2
+    return [("arc", 360, places, r)], (), (-r, 0, diameter, diameter)
 
 
 def stadium(x, y):
-    r, straight = y / 2, x - y
-    seats = [(-straight / 2 + i + 0.5, -r - OFF) for i in range(straight)]
+    r = y / 2
     ends = math.floor(math.pi * r + 1e-9)
-    for i in range(ends):                        # the right end, top to bottom
-        t = -math.pi / 2 + math.pi * (i + 0.5) / ends
-        seats.append((straight / 2 + (r + OFF) * math.cos(t), (r + OFF) * math.sin(t)))
-    seats += [(straight / 2 - i - 0.5, r + OFF) for i in range(straight)]
-    for i in range(ends):                        # the left end, bottom to top
-        t = math.pi / 2 + math.pi * (i + 0.5) / ends
-        seats.append((-straight / 2 + (r + OFF) * math.cos(t), (r + OFF) * math.sin(t)))
-    outline = []
-    for i in range(41):
-        t = -math.pi / 2 + math.pi * i / 40
-        outline.append((straight / 2 + r * math.cos(t), r * math.sin(t)))
-    for i in range(41):
-        t = math.pi / 2 + math.pi * i / 40
-        outline.append((-straight / 2 + r * math.cos(t), r * math.sin(t)))
-    return seats, [outline]
+    steps = [("step", x - y, x - y), ("arc", 180, ends, r), ("step", x - y, x - y), ("arc", 180, ends, r)]
+    return steps, (), (-r, 0, x, y)
+
+
+def oval(x, y):
+    """Four arcs fitting the box: flat ones along the sides, tight ones at the
+    ends, each holding as many seats as its length."""
+    a, b = x / 2, y / 2
+    r2 = (b * b / a + b) / 2                      # the ends
+    r1 = ((a - r2) ** 2 + b * b - r2 * r2) / (2 * (b - r2))   # the sides
+    phi = math.degrees(math.atan2(r1 - b, a - r2))           # half an end's turn
+    side = 180 - 2 * phi
+    n_side = math.floor(r1 * math.radians(side) + 1e-9)
+    n_end = math.floor(r2 * math.radians(2 * phi) + 1e-9)
+    steps = [("turn", -side / 2), ("arc", side, n_side, r1), ("arc", 2 * phi, n_end, r2),
+             ("arc", side, n_side, r1), ("arc", 2 * phi, n_end, r2), ("turn", side / 2)]
+    # the start, where the left end meets the top side
+    cx, cy = a, r1
+    ux, uy = (r2 - a), (b - r1)
+    ln = math.hypot(ux, uy)
+    sx, sy = cx + r1 * ux / ln, cy + r1 * uy / ln
+    return steps, (), (-sx, -sy, x, y)
 
 
 def polygon(sides, perside):
-    # side 1 flat along the top; corners clockwise from its left end
-    radius = perside / (2 * math.sin(math.pi / sides))
-    start = -math.pi / 2 - math.pi / sides
-    corners = [(radius * math.cos(start + 2 * math.pi * k / sides),
-                radius * math.sin(start + 2 * math.pi * k / sides)) for k in range(sides)]
-    seats = []
-    for k in range(sides):
-        (ax, ay), (bx, by) = corners[k], corners[(k + 1) % sides]
-        dx, dy = (bx - ax) / perside, (by - ay) / perside
-        nx, ny = dy, -dx                         # outward, going clockwise
-        for i in range(perside):
-            seats.append((ax + dx * (i + 0.5) + OFF * nx, ay + dy * (i + 0.5) + OFF * ny))
-    return seats, [corners]
+    steps = []
+    for _ in range(sides):
+        steps += [("step", perside, perside), ("turn", 360 / sides)]
+    return steps, (), None
 
 
-# ---- joined tables: built of seat-unit squares ----
+def ring(places, hole):
+    """A round table with a round hole: two walks."""
+    r = places / (2 * math.pi)
+    return [("arc", 360, places, r)], [((0, r - hole / 2), [("arc", 360, 0, hole / 2)])], (-r, 0, 2 * r, 2 * r)
+
+
+# ---- composed tables: the venue's tables pushed together ----
 #
-# Each run is a strip of squares to the right of its outside edge, walked
-# clockwise; each branch a strip off a run's inside edge. The table's
-# outline is then walked clockwise (holes after), a seat on each unit of
-# seated edge, and where two seated edges meet at an inside corner the
-# later seat (counting clockwise) is left out: the two would collide.
+# rows: (size "w h" as placed, count, at (x, y), going "right"/"down", bare
+# sides from far, near, left, right). The squares they cover give the
+# outline; every unit of it is seated unless its table says that side is
+# bare, holes only if seat_holes; at an inside corner where both edges are
+# seated, the later seat (walking) is left out. The outline is then written
+# as a walk.
 
-SIDE = {(0, -1): "N", (1, 0): "E", (0, 1): "S", (-1, 0): "W"}
-
-
-def turned(d, degrees):
-    for _ in range((degrees // 90) % 4):
-        d = (-d[1], d[0])                          # a right turn, y down the page
-    return d
+SIDES = {(0, -1): "far", (1, 0): "right", (0, 1): "near", (-1, 0): "left"}
 
 
-def joined(runs, branches=(), closed=False):
-    """runs: (length, seated[, turn]) with seated from outside, inside, start,
-    end; branches: (run, at, length, seated) off that run's inside edge, at
-    seat units from its start, seated from left, right, end (walking out)."""
-    cells, labels, starts = set(), {}, []
-
-    def label(cell, d, seated, priority):
-        key = (cell, SIDE[d])
-        if key not in labels or labels[key][0] < priority:
-            labels[key] = (priority, seated)
-
-    def square(origin, along, across, k, j):
-        xs = [origin[0] + along[0] * (k + a) + across[0] * (j + b) for a in (0, 1) for b in (0, 1)]
-        ys = [origin[1] + along[1] * (k + a) + across[1] * (j + b) for a in (0, 1) for b in (0, 1)]
-        return (min(xs), min(ys))
-
-    d, at = (0, -1), (0, 0)
-    for i, run in enumerate(runs):
-        length, seated = run[0], run[1]
-        # the first run goes up the page unless turned; each after turns right
-        d = turned(d, run[2] if len(run) > 2 else (90 if i > 0 else 0))
-        n = (-d[1], d[0])
-        starts.append((at, d, n))
-        for k in range(length):
-            for j in range(DEPTH):
-                c = square(at, d, n, k, j)
-                cells.add(c)
-                if j == 0: label(c, (-n[0], -n[1]), "outside" in seated, 2)
-                if j == DEPTH - 1: label(c, n, "inside" in seated, 2)
-                if k == 0: label(c, (-d[0], -d[1]), "start" in seated, 1)
-                if k == length - 1: label(c, d, "end" in seated, 1)
-        at = (at[0] + d[0] * length, at[1] + d[1] * length)
-
-    for run, offset, length, seated in branches:
-        p, d, n = starts[run]
-        q = (p[0] + d[0] * offset + n[0] * DEPTH, p[1] + d[1] * offset + n[1] * DEPTH)
-        left = (n[1], -n[0])                        # walking out along n
-        for k in range(length):
-            for j in range(DEPTH):
-                c = square(q, n, d, k, j)
-                cells.add(c)
-                if j == 0: label(c, (-d[0], -d[1]), ("left" if left == (-d[0], -d[1]) else "right") in seated, 2)
-                if j == DEPTH - 1: label(c, d, ("left" if left == d else "right") in seated, 2)
-                if k == length - 1: label(c, n, "end" in seated, 1)
-
-    # the outline's unit edges, the table on the right of each
+def composed(rows, seat_holes=False):
+    cells, bare, stock = set(), set(), Counter()
+    for (w, h), count, (x, y), going, bare_sides in rows:
+        for i in range(count):
+            ox, oy = (x + i * w, y) if going == "right" else (x, y + i * h)
+            stock[tuple(sorted((w, h), reverse=True))] += 1
+            for cx in range(ox, ox + w):
+                for cy in range(oy, oy + h):
+                    if (cx, cy) in cells:
+                        raise ValueError(f"two tables on the same square {cx} {cy}")
+                    cells.add((cx, cy))
+                    for d, name in SIDES.items():
+                        inside_table = ox <= cx + d[0] < ox + w and oy <= cy + d[1] < oy + h
+                        if not inside_table and name in bare_sides:
+                            bare.add(((cx, cy), d))
+    # unit edges of the outline, the table on the right
     edges = {}
     for (cx, cy) in cells:
         for d, a, b in (((0, -1), (cx, cy), (cx + 1, cy)), ((1, 0), (cx + 1, cy), (cx + 1, cy + 1)),
                         ((0, 1), (cx + 1, cy + 1), (cx, cy + 1)), ((-1, 0), (cx, cy + 1), (cx, cy))):
             if (cx + d[0], cy + d[1]) not in cells:
-                edges[a] = (a, b, labels.get(((cx, cy), SIDE[d]), (0, False))[1])
-    p0, d0, n0 = starts[0]
-    first = square(p0, d0, n0, 0, 0)
-    first_edge = {(0, -1): (first[0], first[1]), (1, 0): (first[0] + 1, first[1]),
-                  (0, 1): (first[0] + 1, first[1] + 1), (-1, 0): (first[0], first[1] + 1)}[(-n0[0], -n0[1])]
+                edges.setdefault(a, []).append((a, b, ((cx, cy), d) not in bare))
     loops = []
     while edges:
-        a = first_edge if first_edge in edges else min(edges, key=lambda v: (v[1], v[0]))
+        a = min(edges, key=lambda v: (v[1], v[0]))
         loop = []
         while a in edges:
-            e = edges.pop(a)
+            e = edges[a].pop()
+            if not edges[a]:
+                del edges[a]
             loop.append(e)
             a = e[1]
         loops.append(loop)
 
-    seats, outlines = [], []
-    for loop in loops:
-        heading = [(e[1][0] - e[0][0], e[1][1] - e[0][1]) for e in loop]
-        for i, (a, b, seated) in enumerate(loop):
-            h, before = heading[i], heading[i - 1]
-            inside_corner = before[0] * h[1] - before[1] * h[0] < 0
-            if not seated or (inside_corner and loop[i - 1][2]):
-                continue
-            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
-            seats.append((mx + h[1] * OFF, my - h[0] * OFF))
-        outlines.append([e[0] for i, e in enumerate(loop) if heading[i] != heading[i - 1]])
-    return seats, outlines
+    def area(loop):
+        return sum(a[0] * b[1] - b[0] * a[1] for a, b, _ in loop)
+
+    outer = [l for l in loops if area(l) > 0]
+    holes = [l for l in loops if area(l) < 0]
+    if len(outer) != 1:
+        raise ValueError("the tables are not all joined together")
+
+    def as_walk(loop, hole):
+        if hole:   # walk it clockwise too, the table on the left
+            loop = [(b, a, s and seat_holes) for a, b, s in reversed(loop)]
+        # start at the top left, heading right
+        i0 = min(range(len(loop)), key=lambda i: (loop[i][0][1], loop[i][0][0], loop[i][1][0] <= loop[i][0][0]))
+        loop = loop[i0:] + loop[:i0]
+        heading = [(b[0] - a[0], b[1] - a[1]) for a, b, _ in loop]
+        seated = [s for _, _, s in loop]
+        for i in list(range(1, len(loop))) + [0]:   # round to the start again
+            cross = heading[i - 1][0] * heading[i][1] - heading[i - 1][1] * heading[i][0]
+            inside_corner = cross > 0 if hole else cross < 0
+            if inside_corner and seated[i - 1] and seated[i]:
+                seated[i] = False
+        steps, i = [], 0
+        while i < len(loop):
+            j = i
+            while j + 1 < len(loop) and heading[j + 1] == heading[i] and seated[j + 1] == seated[i]:
+                j += 1
+            n = j - i + 1
+            steps.append(("step", n, n if seated[i] else 0))
+            nxt = heading[(j + 1) % len(loop)]
+            if nxt != heading[i]:
+                cross = heading[i][0] * nxt[1] - heading[i][1] * nxt[0]
+                steps.append(("turn", 90 if cross > 0 else -90))
+            i = j + 1
+        return loop[0][0], steps
+
+    start, steps = as_walk(outer[0], False)
+    hole_walks = []
+    for l in holes:
+        (hx, hy), hs = as_walk(l, True)
+        hole_walks.append(((hx - start[0], hy - start[1]), hs))
+    return steps, hole_walks, None, stock
 
 
 # ---- drawing ----
 
-def svg(name, title, seats, outlines, box=None):
+def svg(name, title, shape):
+    steps, holes, box = shape[:3]
+    stock = shape[3] if len(shape) > 3 else None
+    outlines, seats = walk(steps, holes)
     pts = [p for o in outlines for p in o] + seats
     minx = min(p[0] for p in pts) - 1.2
     maxx = max(p[0] for p in pts) + 1.2
     miny = min(p[1] for p in pts) - 1.2
     maxy = max(p[1] for p in pts) + 1.0
-    w, h = (maxx - minx) * PX, (maxy - miny) * PX + 34
-    X = lambda v: (v - minx) * PX
+    lines = [f"{title}: {len(seats)} seats"]
+    if stock:
+        lines.append("tables: " + ", ".join(f"{n} × {w}×{h}" for (w, h), n in sorted(stock.items(), reverse=True)))
+    w = max((maxx - minx) * PX, 7.5 * max(len(l) for l in lines) + 20)
+    h = (maxy - miny) * PX + 20 + 18 * len(lines)
+    X = lambda v: (v - minx) * PX + (w - (maxx - minx) * PX) / 2
     Y = lambda v: (v - miny) * PX
     o = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{w:.0f}" height="{h:.0f}" '
          f'viewBox="0 0 {w:.0f} {h:.0f}" font-family="sans-serif">',
-         f'<rect width="100%" height="100%" fill="#ffffff"/>']
+         '<rect width="100%" height="100%" fill="#ffffff"/>']
     if box:
-        bx, by = box
-        o.append(f'<rect x="{X(-bx / 2):.1f}" y="{Y(-by / 2):.1f}" width="{bx * PX}" height="{by * PX}" '
-                 f'fill="none" stroke="#9aa5b1" stroke-dasharray="4 3"/>')
+        bx, by, bw, bh = box
+        o.append(f'<rect x="{X(bx):.1f}" y="{Y(by):.1f}" width="{bw * PX:.1f}" height="{bh * PX:.1f}" '
+                 'fill="none" stroke="#9aa5b1" stroke-dasharray="4 3"/>')
     path = " ".join("M " + " L ".join(f"{X(x):.1f} {Y(y):.1f}" for x, y in ol) + " Z" for ol in outlines)
     o.append(f'<path d="{path}" fill="#e8dcc4" stroke="#7a5c2e" stroke-width="1.5" fill-rule="evenodd"/>')
     for i, (x, y) in enumerate(seats, 1):
         o.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="{R * PX:.1f}" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>')
         o.append(f'<text x="{X(x):.1f}" y="{Y(y) + 3.5:.1f}" font-size="10" text-anchor="middle" fill="#1d3557">{i}</text>')
-    o.append(f'<text x="{w / 2:.0f}" y="{h - 12:.0f}" font-size="13" text-anchor="middle" fill="#222">'
-             f'{title}: {len(seats)} seats</text>')
+    for k, line in enumerate(lines):
+        o.append(f'<text x="{w / 2:.0f}" y="{(maxy - miny) * PX + 18 + 18 * k:.0f}" font-size="13" '
+                 f'text-anchor="middle" fill="#222">{line}</text>')
     o.append('</svg>')
     with open(os.path.join(OUT, name + ".svg"), "w") as f:
         f.write("\n".join(o) + "\n")
-    return len(seats)
+    return len(seats), written(steps, holes), stock
+
+
+def row(size, count, at, going="right", bare=""):
+    return (size, count, at, going, set(bare.split()))
 
 
 if __name__ == "__main__":
-    counts = {
-        "rectangle": svg("rectangle", "rectangle 6 × 2", *rectangle(6, 2), box=None),
-        "top-table": svg("top-table", "rectangle 10 × 1, seated far", *rectangle(10, 1, ("far",))),
-        "banqueting": svg("banqueting", "rectangle 14 × 1, seated sides", *rectangle(14, 1, ("far", "near"))),
-        "round": svg("round", "round 4 × 4", *ellipse(4, 4), box=(4, 4)),
-        "ellipse": svg("ellipse", "ellipse 8 × 4", *ellipse(8, 4), box=(8, 4)),
-        "stadium": svg("stadium", "stadium 8 × 4", *stadium(8, 4), box=(8, 4)),
-        "hexagon": svg("hexagon", "polygon, 6 sides × 2", *polygon(6, 2)),
-        "heptagon": svg("heptagon", "polygon, 7 sides × 1", *polygon(7, 1)),
-        "horseshoe": svg("horseshoe", "horseshoe 8 + 10 + 8, inside seats on the arms",
-                         *joined([(8, {"outside", "inside"}), (10, {"outside"}), (8, {"outside", "inside"})])),
-        "horseshoe-outside": svg("horseshoe-outside", "horseshoe 8 + 10 + 8, outside only",
-                                 *joined([(8, {"outside"}), (10, {"outside"}), (8, {"outside"})])),
-        "hollow-square": svg("hollow-square", "hollow square 8 + 8 + 8 + 8, outside only",
-                             *joined([(8, {"outside"})] * 4, closed=True)),
-        "hollow-square-inside": svg("hollow-square-inside", "hollow square 8 + 8 + 8 + 8, inside too",
-                                    *joined([(8, {"outside", "inside"})] * 4, closed=True)),
-        "t": svg("t", "T: top 11, a stem of 8 from its middle",
-                 *joined([(11, {"outside"}, 90)], [(0, 5, 8, {"left", "right"})])),
-        "e": svg("e", "E: top 13, three prongs of 8",
-                 *joined([(13, {"outside"}, 90)], [(0, 0, 8, {"left", "right"}), (0, 6, 8, {"left", "right"}),
-                                                      (0, 12, 8, {"left", "right"})])),
-        "e-inside": svg("e-inside", "E with the top's inside seated too",
-                        *joined([(13, {"outside", "inside"}, 90)], [(0, 0, 8, {"left", "right"}),
-                                                                   (0, 6, 8, {"left", "right"}),
-                                                                   (0, 12, 8, {"left", "right"})])),
-    }
-    for k, v in counts.items():
-        print(f"{k:18} {v}")
+    horseshoe = [row((2, 1), 5, (0, 0), bare="near"),
+                 row((1, 2), 3, (0, 1), "down"), row((1, 1), 1, (0, 7), bare="near"),
+                 row((1, 2), 3, (9, 1), "down"), row((1, 1), 1, (9, 7), bare="near")]
+    horseshoe_out = [row((2, 1), 5, (0, 0), bare="near"),
+                     row((1, 2), 3, (0, 1), "down", bare="right"), row((1, 1), 1, (0, 7), bare="right near"),
+                     row((1, 2), 3, (9, 1), "down", bare="left"), row((1, 1), 1, (9, 7), bare="left near")]
+    square = [row((2, 1), 4, (0, 0)), row((1, 2), 3, (7, 1), "down"),
+              row((2, 1), 4, (0, 7)), row((1, 2), 3, (0, 1), "down")]
+    tee = [row((2, 1), 5, (0, 0), bare="near left"), row((1, 1), 1, (10, 0), bare="near right"),
+           row((1, 2), 4, (5, 1), "down", bare="near")]
+    e_top = lambda bare_l, bare_m, bare_r: [row((2, 1), 3, (0, 0), bare=bare_l), row((1, 1), 1, (6, 0), bare=bare_m),
+                                           row((2, 1), 3, (7, 0), bare=bare_r)]
+    prongs = [row((1, 2), 4, (x, 1), "down", bare="near") for x in (0, 6, 12)]
+    sketches = [
+        ("walk-top-table", "step 20, turn, step 2, turn, step 20, turn, step 2",
+         ([("step", 20, 20), ("turn", 90), ("step", 2, 0), ("turn", 90), ("step", 20, 0), ("turn", 90),
+           ("step", 2, 0), ("turn", 90)], (), None)),
+        ("ring", "a ring table for 20, with a hole 3 across", ring(20, 3)),
+        ("rectangle", "rectangle 6 × 2", rectangle(6, 2)),
+        ("top-table", "rectangle 10 × 1, seated far", rectangle(10, 1, ("far",))),
+        ("banqueting", "rectangle 14 × 1, seated sides", rectangle(14, 1, ("far", "near"))),
+        ("round", "round, 4 across", round_table(4)),
+        ("oval", "oval 8 × 4", oval(8, 4)),
+        ("stadium", "stadium 8 × 4", stadium(8, 4)),
+        ("hexagon", "polygon, 6 sides × 2", polygon(6, 2)),
+        ("heptagon", "polygon, 7 sides × 1", polygon(7, 1)),
+        ("horseshoe", "horseshoe, inside seats on the arms", composed(horseshoe)),
+        ("horseshoe-outside", "horseshoe, outside only", composed(horseshoe_out)),
+        ("hollow-square", "hollow square, outside only", composed(square)),
+        ("hollow-square-inside", "hollow square, the hole seated too", composed(square, seat_holes=True)),
+        ("t", "T: top 11, a stem of 8", composed(tee)),
+        ("e", "E: top 13, three prongs of 8", composed(e_top("near left", "near", "near right") + prongs)),
+        ("e-inside", "E, the top's inside seated too", composed(e_top("left", "", "right") + prongs)),
+    ]
+    for name, title, shape in sketches:
+        n, words, stock = svg(name, title, shape)
+        print(f"{name:21} {n:3}  {words}")

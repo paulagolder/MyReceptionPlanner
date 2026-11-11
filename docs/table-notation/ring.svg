@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="402" height="338" viewBox="0 0 402 338" font-family="sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<rect x="99.4" y="51.4" width="203.7" height="203.7" fill="none" stroke="#9aa5b1" stroke-dasharray="4 3"/>
+<path d="M 201.2 51.4 L 208.4 51.6 L 215.4 52.4 L 222.4 53.6 L 229.3 55.3 L 236.1 57.5 L 242.7 60.2 L 249.1 63.3 L 255.2 66.8 L 261.1 70.8 L 266.7 75.2 L 272.0 80.0 L 276.9 85.1 L 281.5 90.5 L 285.7 96.3 L 289.5 102.3 L 292.8 108.6 L 295.7 115.1 L 298.1 121.8 L 300.1 128.6 L 301.6 135.5 L 302.6 142.6 L 303.0 149.7 L 303.0 156.8 L 302.6 163.9 L 301.6 170.9 L 300.1 177.9 L 298.1 184.7 L 295.7 191.4 L 292.8 197.9 L 289.5 204.2 L 285.7 210.2 L 281.5 215.9 L 276.9 221.4 L 272.0 226.5 L 266.7 231.3 L 261.1 235.6 L 255.2 239.6 L 249.1 243.2 L 242.7 246.3 L 236.1 248.9 L 229.3 251.1 L 222.4 252.9 L 215.4 254.1 L 208.4 254.8 L 201.2 255.1 L 194.1 254.8 L 187.1 254.1 L 180.1 252.9 L 173.2 251.1 L 166.4 248.9 L 159.8 246.3 L 153.4 243.2 L 147.3 239.6 L 141.4 235.6 L 135.8 231.3 L 130.5 226.5 L 125.6 221.4 L 121.0 215.9 L 116.8 210.2 L 113.0 204.2 L 109.7 197.9 L 106.8 191.4 L 104.4 184.7 L 102.4 177.9 L 100.9 170.9 L 99.9 163.9 L 99.5 156.8 L 99.5 149.7 L 99.9 142.6 L 100.9 135.5 L 102.4 128.6 L 104.4 121.8 L 106.8 115.1 L 109.7 108.6 L 113.0 102.3 L 116.8 96.3 L 121.0 90.5 L 125.6 85.1 L 130.5 80.0 L 135.8 75.2 L 141.4 70.8 L 147.3 66.8 L 153.4 63.3 L 159.8 60.2 L 166.4 57.5 L 173.2 55.3 L 180.1 53.6 L 187.1 52.4 L 194.1 51.6 Z M 201.2 105.2 L 204.6 105.3 L 207.9 105.7 L 211.2 106.3 L 214.5 107.1 L 217.7 108.1 L 220.8 109.4 L 223.8 110.8 L 226.7 112.5 L 229.5 114.4 L 232.1 116.5 L 234.6 118.7 L 236.9 121.1 L 239.1 123.7 L 241.0 126.4 L 242.8 129.2 L 244.4 132.2 L 245.8 135.2 L 246.9 138.4 L 247.8 141.6 L 248.5 144.9 L 249.0 148.2 L 249.2 151.6 L 249.2 154.9 L 249.0 158.2 L 248.5 161.6 L 247.8 164.8 L 246.9 168.1 L 245.8 171.2 L 244.4 174.3 L 242.8 177.2 L 241.0 180.1 L 239.1 182.8 L 236.9 185.3 L 234.6 187.8 L 232.1 190.0 L 229.5 192.1 L 226.7 193.9 L 223.8 195.6 L 220.8 197.1 L 217.7 198.3 L 214.5 199.4 L 211.2 200.2 L 207.9 200.8 L 204.6 201.1 L 201.2 201.2 L 197.9 201.1 L 194.6 200.8 L 191.3 200.2 L 188.0 199.4 L 184.8 198.3 L 181.7 197.1 L 178.7 195.6 L 175.8 193.9 L 173.0 192.1 L 170.4 190.0 L 167.9 187.8 L 165.6 185.3 L 163.4 182.8 L 161.5 180.1 L 159.7 177.2 L 158.1 174.3 L 156.7 171.2 L 155.6 168.1 L 154.7 164.8 L 154.0 161.6 L 153.5 158.2 L 153.3 154.9 L 153.3 151.6 L 153.5 148.2 L 154.0 144.9 L 154.7 141.6 L 155.6 138.4 L 156.7 135.2 L 158.1 132.2 L 159.7 129.2 L 161.5 126.4 L 163.4 123.7 L 165.6 121.1 L 167.9 118.7 L 170.4 116.5 L 173.0 114.4 L 175.8 112.5 L 178.7 110.8 L 181.7 109.4 L 184.8 108.1 L 188.0 107.1 L 191.3 106.3 L 194.6 105.7 L 197.9 105.3 Z" fill="#e8dcc4" stroke="#7a5c2e" stroke-width="1.5" fill-rule="evenodd"/>
+<circle cx="219.4" cy="38.4" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="219.4" y="41.9" font-size="10" text-anchor="middle" fill="#1d3557">1</text>
+<circle cx="254.0" cy="49.6" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="254.0" y="53.1" font-size="10" text-anchor="middle" fill="#1d3557">2</text>
+<circle cx="283.5" cy="71.0" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="283.5" y="74.5" font-size="10" text-anchor="middle" fill="#1d3557">3</text>
+<circle cx="304.8" cy="100.4" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="304.8" y="103.9" font-size="10" text-anchor="middle" fill="#1d3557">4</text>
+<circle cx="316.1" cy="135.0" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="316.1" y="138.5" font-size="10" text-anchor="middle" fill="#1d3557">5</text>
+<circle cx="316.1" cy="171.4" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="316.1" y="174.9" font-size="10" text-anchor="middle" fill="#1d3557">6</text>
+<circle cx="304.8" cy="206.0" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="304.8" y="209.5" font-size="10" text-anchor="middle" fill="#1d3557">7</text>
+<circle cx="283.5" cy="235.4" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="283.5" y="238.9" font-size="10" text-anchor="middle" fill="#1d3557">8</text>
+<circle cx="254.0" cy="256.8" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="254.0" y="260.3" font-size="10" text-anchor="middle" fill="#1d3557">9</text>
+<circle cx="219.4" cy="268.1" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="219.4" y="271.6" font-size="10" text-anchor="middle" fill="#1d3557">10</text>
+<circle cx="183.1" cy="268.1" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="183.1" y="271.6" font-size="10" text-anchor="middle" fill="#1d3557">11</text>
+<circle cx="148.5" cy="256.8" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="148.5" y="260.3" font-size="10" text-anchor="middle" fill="#1d3557">12</text>
+<circle cx="119.0" cy="235.4" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="119.0" y="238.9" font-size="10" text-anchor="middle" fill="#1d3557">13</text>
+<circle cx="97.7" cy="206.0" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="97.7" y="209.5" font-size="10" text-anchor="middle" fill="#1d3557">14</text>
+<circle cx="86.4" cy="171.4" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="86.4" y="174.9" font-size="10" text-anchor="middle" fill="#1d3557">15</text>
+<circle cx="86.4" cy="135.0" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="86.4" y="138.5" font-size="10" text-anchor="middle" fill="#1d3557">16</text>
+<circle cx="97.7" cy="100.4" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="97.7" y="103.9" font-size="10" text-anchor="middle" fill="#1d3557">17</text>
+<circle cx="119.0" cy="71.0" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="119.0" y="74.5" font-size="10" text-anchor="middle" fill="#1d3557">18</text>
+<circle cx="148.5" cy="49.6" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="148.5" y="53.1" font-size="10" text-anchor="middle" fill="#1d3557">19</text>
+<circle cx="183.1" cy="38.4" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="183.1" y="41.9" font-size="10" text-anchor="middle" fill="#1d3557">20</text>
+<text x="201" y="318" font-size="13" text-anchor="middle" fill="#222">a ring table for 20, with a hole 3 across: 20 seats</text>
+</svg>

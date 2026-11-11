@@ -10,44 +10,114 @@ who sits next to whom. The plan does not have to be the hired furniture to
 the centimetre, only close enough to plan with. So:
 
 - Tables are measured in **seat units**: the length of table edge one guest
-  needs, 60 cm on the plan.
-- Every shape has a **gross size**, in whole seat units: its enclosing box,
-  *x* along and *y* across, or for a polygon its sides and seats per side.
-- The **seats** are what the shape's edge holds, by its own geometry, each
-  edge rounded down (there are no half guests). A shape can say which of its
-  edges are not seated at all (the back of a top table).
-- Anything else that takes a seat away (a pillar, a doorway, a wheelchair
-  space) is done as now, by **disabling** that seat. The table keeps its
-  gross size and seat numbers.
+  needs, 60 cm on the plan. Every length is in seat units, along the table
+  and across it.
+- A table is described by **a walk round its edge**, like a waiter going
+  round serving each place: so far along, a turn, so far along. Each stretch
+  of the walk says how many seats it has, if any. **The order of the walk is
+  the order of the seats.**
+- Most tables are not written as walks but as **shapes** (a rectangle, a
+  round, a hexagon) or **composed** from the venue's own tables pushed
+  together. Either way, the planner turns them into a walk, and everything
+  else (drawing, counting, numbering, seating) works from the walk.
+- Sizes are **gross**: the seats an edge can hold, each stretch rounded down
+  (there are no half guests). Anything else that takes a seat away (a
+  pillar, a doorway, a wheelchair space) is done as now, by **disabling**
+  that seat. The table keeps its walk and its seat numbers.
 
-Every shape can be moved and turned, as tables are now: `x` and `y`, in
-centimetres on the plan, are the centre of its enclosing box (for a polygon
-or a joined table, the box round its outline), and `rotation`, in degrees,
-turns it clockwise about that centre. The shapes are described, and
-sketched here, unturned; a horseshoe turned 90 has its top table along the
-right-hand side, its arms reaching left. Turning a table does not renumber its seats. Seats are counted **clockwise**
-from 1, and `firstseat`, `disabled` and `open` (open-access seats) name
-them by those numbers, as now.
+Every table can be moved and turned, as tables are now: `x` and `y`, in
+centimetres on the plan, are the centre of the box round its outline, and
+`rotation`, in degrees, turns it clockwise about that centre. The tables
+here are described, and sketched, unturned; a horseshoe turned 90 has its
+top table along the right-hand side, its arms reaching left. Turning a table
+does not renumber its seats. `firstseat`, `disabled` and `open` (open-access
+seats) name seats by their numbers, as now.
 
-## Simple shapes
+The sketches are all drawn by `table-notation/sketches.py`, which turns
+each example into its walk and draws and counts it from the walk alone: a
+first test that the rules add up.
 
-One element, its seats all round the edge unless `seated` says otherwise.
+## The walk
+
+```xml
+<table shape="walk" x="600" y="200" rotation="0">
+  <step length="20" seats="20"/>
+  <turn by="90"/>
+  <step length="2"/>
+  <turn by="90"/>
+  <step length="20"/>
+  <turn by="90"/>
+  <step length="2"/>
+</table>
+```
+
+![step 20, turn, step 2, turn, step 20, turn, step 2: 20 seats](table-notation/walk-top-table.svg)
+
+- The walk starts heading right (as the table is drawn, unturned) and goes
+  **clockwise**: the table on the right, the seats on the left.
+- `<step length="20" seats="20"/>` goes straight on 20 seat units, with 20
+  seats spread evenly along it. `seats` is 0 if left out (a bare stretch);
+  `length` is the same as `seats` if left out. A step can hold fewer seats
+  than its length (`length="3" seats="2"`), never more.
+- `<turn by="90"/>` turns on the spot, in degrees clockwise; a negative turn
+  is anticlockwise (an inside corner, as in a T or a horseshoe).
+- `<arc by="180" radius="2" seats="6"/>` bends clockwise as it goes, about
+  a centre `radius` units to the right. Its length is the radius × the turn
+  in radians (here 2 × π, 6.28), and it holds as many seats as that, rounded
+  down. If `radius` is left out, the arc is as long as its seats.
+- The walk must **come back to where it started**; the planner refuses one
+  that does not, saying how far out it ends. The last turn, back to the
+  starting direction, can be left out.
+- The walk encloses the table, which is **filled**: a round table for 10 is
+  one walk, and its middle is table.
+- The planner warns of two seats so close that their chairs would collide
+  (at an inside corner, say), rather than quietly moving or dropping one.
+
+### Holes
+
+A table with a hole in the middle (a ring, a hollow square) has **a walk
+for the hole** as well: `<hole at="x y">`, starting at that point (in seat
+units from the start of the main walk) heading right, and also walking
+clockwise. Round a hole the table is on the left, so its seats are on the
+right, facing into the hole. The hole is left unfilled, whether anyone sits
+in it or not: it is there to show the room as it will be.
+
+```xml
+<table shape="walk">
+  <arc by="360" radius="3.18" seats="20"/>
+  <hole at="0 1.68">
+    <arc by="360" radius="1.5"/>
+  </hole>
+</table>
+```
+
+![a ring table for 20, with a hole 3 across: 20 seats](table-notation/ring.svg)
+
+Seats are numbered round the main walk first, then round each hole.
+
+## Shapes
+
+One element for the common tables. Each is written here with the walk it
+makes; the planner makes the walk, and you need never write it.
 
 ### Rectangle
 
-*x* seats along each long side, *y* at each end: **2x + 2y** seats, the
+*x* seats along each long side, *y* at each end, so **2x + 2y** seats, the
 most any shape in an *x* × *y* box can hold. Seat 1 is at the left end of
 the far side.
 
 ```xml
-<table shape="rectangle" box="6 2" x="600" y="400" rotation="0"/>
+<table shape="rectangle" box="6 2" .../>
 ```
+
+*Walk:* step 6 (6 seats) · turn 90 · step 2 (2 seats) · turn 90 · step 6
+(6 seats) · turn 90 · step 2 (2 seats)
 
 ![rectangle 6 × 2: 16 seats](table-notation/rectangle.svg)
 
 `seated` names the edges that have seats, from `far`, `near`, `left` and
-`right`, or `sides` (far and near) and `ends` (left and right). A top table,
-everyone facing the room:
+`right`, or `sides` (far and near) and `ends` (left and right); the others
+become bare steps. A top table, everyone facing the room:
 
 ```xml
 <table shape="rectangle" box="10 1" seated="far" head="true" .../>
@@ -66,210 +136,217 @@ A long banqueting table, no one at the ends:
 *(Today's `sideplaces="6" endplaces="2"` is the same as `box="6 2"`, and
 `endplaces="0"` the same as `seated="sides"`.)*
 
-### Ellipse and round
+### Round
 
-The seats are spaced evenly round the edge, as many as its length holds.
-For a box *x* × *y*, with *a* = *x*/2 and *b* = *y*/2, the edge is
-(Ramanujan) π[3(*a*+*b*) − √((3*a*+*b*)(*a*+3*b*))], about 80% of the
-rectangle's 2x + 2y. Seat 1 is at the top.
-
-```xml
-<table shape="ellipse" box="8 4" .../>
-```
-
-![ellipse 8 × 4: 19 seats](table-notation/ellipse.svg)
-
-A round table is an ellipse in a square box, π*x* seats:
+A circle *x* across holds π*x* seats, rounded down:
 
 ```xml
 <table shape="round" box="4" .../>
 ```
 
-![round 4 × 4: 12 seats](table-notation/round.svg)
+*Walk:* arc 360, radius 2 (12 seats)
+
+![round, 4 across: 12 seats](table-notation/round.svg)
 
 *(Today's `places="10"`, the size following from the seats, stays for a
-round table with an exact number of places.)*
+round table with an exact number of places: arc 360 with 10 seats.)*
 
 ### Stadium
 
-Straight sides with semicircular ends, the shape of most hired "ovals": two
-straight sides of *x* − *y* seats, and two ends of ⌊π*y*/2⌋. Seat 1 is at
-the left end of the far side.
+Straight sides with semicircular ends: in an *x* × *y* box, two straight
+steps of *x* − *y* seats, and two half-circle arcs of radius *y*/2, each
+holding ⌊π*y*/2⌋. Seat 1 is at the left end of the far side.
 
 ```xml
 <table shape="stadium" box="8 4" .../>
 ```
 
+*Walk:* step 4 (4 seats) · arc 180, radius 2 (6 seats) · step 4 (4 seats) ·
+arc 180, radius 2 (6 seats)
+
 ![stadium 8 × 4: 20 seats](table-notation/stadium.svg)
 
 `seated="sides"` or `seated="ends"` leave the ends or the sides bare.
 
+### Oval
+
+A true ellipse cannot be walked in steps and arcs, but an oval can, as
+joiners and draughtsmen make them: **four arcs** fitting the box, two flat
+ones along the sides and two tight ones at the ends, each holding the seats
+its length allows.
+
+```xml
+<table shape="oval" box="8 4" .../>
+```
+
+*Walk:* arc 45°, radius 8 (6 seats) · arc 135°, radius 1.5 (3 seats) · arc
+45°, radius 8 (6 seats) · arc 135°, radius 1.5 (3 seats), starting where
+the left end meets the far side
+
+![oval 8 × 4: 18 seats](table-notation/oval.svg)
+
+*(For the record: the end arcs' radius is the mean of b²/a and b, for half
+the box's length a and half its depth b; the side arcs' radius is what
+makes the four meet smoothly. A true ellipse in the same box would have
+an edge of 19.4 seat units; the oval's four arcs hold 18 between them.)*
+
 ### Polygon
 
-Given by its sides and the seats on each, *sides* × *perside* seats; its
-size follows (each side *perside* seat units long). Side 1 is flat along the
-top, seat 1 at its left end, and the sides are numbered clockwise.
+Given by its sides and the seats on each, *sides* × *perside* seats; each
+side is *perside* units long. Side 1 is flat along the far edge, seat 1 at
+its left end, and the sides are numbered clockwise.
 
 ```xml
 <table shape="polygon" sides="6" perside="2" .../>
 <table shape="polygon" sides="7" perside="1" .../>
 ```
 
+*Walk:* (step 2 (2 seats) · turn 60) six times
+
 ![polygon, 6 sides × 2: 12 seats](table-notation/hexagon.svg)
 ![polygon, 7 sides × 1: 7 seats](table-notation/heptagon.svg)
 
 `seated` lists the sides that have seats, by number (`seated="1 2 3 5 6"`).
 
-## Joined tables
+### A ring
 
-A table made of straight pieces, each with seats of its own (a horseshoe, an
-L, a hollow square), is one table, with one number, drawn as a **path**:
-the runs of its outside edge, walked clockwise, each turning into the next.
+A round table with a round hole, as in the walk above:
 
 ```xml
-<table shape="joined" depth="1" closed="no" ...>
-  <run length="8" seated="outside inside"/>
-  <run turn="90" length="10" seated="outside"/>
-  <run turn="90" length="8" seated="outside inside"/>
+<table shape="ring" places="20" hole="3" .../>
+```
+
+## Composed tables
+
+Venues mostly keep a stack of a few sizes of table (6 ft trestles, 4 ft
+squares) and push them together, a cloth over the top. A **composed** table
+says just that: which of the venue's tables go where. The planner fits them
+together, finds the outline and any holes, and walks them.
+
+```xml
+<table shape="composed" name="Top table" head="true" ...>
+  <tables size="2 1" count="5" at="0 0" going="right" bare="near"/>
+  <tables size="1 2" count="3" at="0 1" going="down"/>
+  <tables size="1 1" at="0 7" bare="near"/>
+  ...
 </table>
 ```
 
-- `length` is the run's **outside** edge, in seat units; it holds that many
-  outside seats.
-- The first run goes up the page, unless it has a `turn` of its own
-  (`turn="90"` sets it off left to right). Each run after it starts with a
-  `turn`, in degrees clockwise (90, a right angle, if left out; a negative
-  turn is to the left).
-- `depth` is how deep the table is, in seat units (1 if left out).
-- `seated` says which edges of the run have seats: `outside`, `inside`,
-  `start` and `end` (the ends of an open path, such as the foot of an arm),
-  or none (`seated=""`).
-- The **inside** edge is shorter: a right-angled corner takes `depth` off
-  each run it joins, so an arm of 8 has 7 inside seats.
+- `size` is each table as placed, in seat units, along and across (`2 1`
+  lying left to right, `1 2` running down the page). A venue's tables in
+  gross seat units: a 6 ft trestle is about 3 × 1, a 4 ft square about
+  2 × 2, a 2 × 1 about 4 ft by 2 ft.
+- `count` tables in a line from `at` (in seat units, from the top left of
+  the composed table), each `going` right or down from the one before
+  (one table, going right, if left out).
+- Every unit of the outline is seated, unless its table says that side is
+  **bare**: `bare` lists `far`, `near`, `left` and `right`, as the table is
+  placed. A side that is pushed against another table is not on the outline
+  anyway, so `bare="near"` on a row of five only bares the near sides.
+- The edges round a hole are bare unless the table says `seated="holes"`.
 - **An inside corner costs a seat** where both its edges are seated: the
-  two chairs would want the same place, so the later one, counting
-  clockwise, is left out.
-- `closed="yes"` joins the last run back to the first.
-- The seats are counted **clockwise round the table's outline**, from the
-  first outside seat of the first run: along the outside, then back along
-  the inside; with a hole in the middle (a hollow square), round the outside
-  first, then round the hole.
+  two chairs would want the same place, so the later one round the walk is
+  left out.
+- The walk starts at the top left, heading right, and goes round the
+  outline clockwise, then round each hole: that is the seat numbering.
+- The planner also gives the **pick list**: how many of each size of table
+  the layout takes, to check against what the venue has.
 
 ### Horseshoe
 
-A top table of 10, arms of 8, with guests inside the arms too:
+A top table of five 2 × 1s, with arms of three 1 × 2s and a 1 × 1 down
+each side, seated on both sides of the arms:
 
 ```xml
-<table shape="joined" name="Top table" head="true" x="600" y="300" rotation="0">
-  <run length="8" seated="outside inside"/>     <!-- the left arm, from its foot up -->
-  <run length="10" seated="outside"/>           <!-- the top table, facing down the room -->
-  <run length="8" seated="outside inside"/>     <!-- the right arm, down to its foot -->
+<table shape="composed" name="Top table" head="true" ...>
+  <tables size="2 1" count="5" at="0 0" bare="near"/>
+  <tables size="1 2" count="3" at="0 1" going="down"/>
+  <tables size="1 1" at="0 7" bare="near"/>
+  <tables size="1 2" count="3" at="9 1" going="down"/>
+  <tables size="1 1" at="9 7" bare="near"/>
 </table>
 ```
 
-![horseshoe 8 + 10 + 8, inside seats on the arms: 40 seats](table-notation/horseshoe.svg)
+*Walk:* step 10 (10 seats) · turn 90 · step 8 (8 seats) · turn 90 · step 1 ·
+turn 90 · step 7 (7 seats) · turn −90 · step 8 · turn −90 · step 7 (7 seats)
+· turn 90 · step 1 · turn 90 · step 8 (8 seats)
 
-The same with the inside of the arms bare (`seated="outside"` on every run):
+![horseshoe, inside seats on the arms: 40 seats](table-notation/horseshoe.svg)
 
-![horseshoe 8 + 10 + 8, outside only: 26 seats](table-notation/horseshoe-outside.svg)
+The arms' inside edges are bare in this one (`bare="right"` on the left
+arm, `bare="left"` on the right):
+
+![horseshoe, outside only: 26 seats](table-notation/horseshoe-outside.svg)
 
 ### Hollow square
 
+Fourteen 2 × 1s round an 8 × 8 square, the middle open:
+
 ```xml
-<table shape="joined" closed="yes" ...>
-  <run length="8" seated="outside"/>
-  <run length="8" seated="outside"/>
-  <run length="8" seated="outside"/>
-  <run length="8" seated="outside"/>
+<table shape="composed" ...>
+  <tables size="2 1" count="4" at="0 0"/>
+  <tables size="1 2" count="3" at="7 1" going="down"/>
+  <tables size="2 1" count="4" at="0 7"/>
+  <tables size="1 2" count="3" at="0 1" going="down"/>
 </table>
 ```
 
-![hollow square 8 + 8 + 8 + 8, outside only: 32 seats](table-notation/hollow-square.svg)
+![hollow square, outside only: 32 seats](table-notation/hollow-square.svg)
 
-Seated inside too (`seated="outside inside"`), each side of the hole is 6
-long, and each of its four corners costs a seat: 24 − 4 = 20 inside.
+With `seated="holes"`, the hole's four sides are 6 long, and each of its
+four corners costs a seat: 24 − 4 = 20 more.
 
-![hollow square 8 + 8 + 8 + 8, inside too: 52 seats](table-notation/hollow-square-inside.svg)
+![hollow square, the hole seated too: 52 seats](table-notation/hollow-square-inside.svg)
 
-### Branches: T and E
+### T and E
 
-A **branch** is a piece that comes off a run part-way along, from its
-inside edge, at a right angle:
-
-```xml
-<branch from="1" at="5" length="8" seated="left right"/>
-```
-
-- `from` is the run it comes off (counting the runs from 1), and `at` how
-  far along that run it starts, in seat units from the run's start.
-- `length` is how far it reaches from the run's inside edge, in seat units;
-  it is as wide as the table is deep.
-- `seated` names its edges as you walk out along it: `left`, `right` and
-  `end`.
-- Where it meets the run, the run's inside edge stops and starts again
-  round it, and the inside-corner rule applies to both corners.
-- Its seats are counted in their place round the outline: down one side,
-  across the end, back up the other.
-
-A **T**: a top table of 11, a stem of 8 from its middle (5 seat units of
-top table before it, 1 for the stem, 5 after):
+A **T**: a top table of 11 (five 2 × 1s and a 1 × 1), a stem of four 1 × 2s
+from its middle. The stem need not meet the top table at a join.
 
 ```xml
-<table shape="joined" name="Top table" head="true" ...>
-  <run turn="90" length="11" seated="outside"/>             <!-- the top table, left to right -->
-  <branch from="1" at="5" length="8" seated="left right"/>  <!-- the stem, down the room -->
+<table shape="composed" name="Top table" head="true" ...>
+  <tables size="2 1" count="5" at="0 0" bare="near left"/>
+  <tables size="1 1" at="10 0" bare="near right"/>
+  <tables size="1 2" count="4" at="5 1" going="down" bare="near"/>
 </table>
 ```
 
-![T: top 11, a stem of 8 from its middle: 27 seats](table-notation/t.svg)
+*Walk:* step 11 (11 seats) · turn 90 · step 1 · turn 90 · step 5 · turn −90 ·
+step 8 (8 seats) · turn 90 · step 1 · turn 90 · step 8 (8 seats) · turn −90 ·
+step 5 · turn 90 · step 1
+
+![T: top 11, a stem of 8: 27 seats](table-notation/t.svg)
 
 An **E** (or a top table with sprigs): a top table of 13 and three prongs
-of 8, two of them flush with its ends:
+of 8, two of them flush with its ends, so their outside edges carry
+straight on from the top table's ends:
 
 ```xml
-<table shape="joined" name="Top table" head="true" ...>
-  <run turn="90" length="13" seated="outside"/>
-  <branch from="1" at="0" length="8" seated="left right"/>
-  <branch from="1" at="6" length="8" seated="left right"/>
-  <branch from="1" at="12" length="8" seated="left right"/>
+<table shape="composed" name="Top table" head="true" ...>
+  <tables size="2 1" count="3" at="0 0" bare="near left"/>
+  <tables size="1 1" at="6 0" bare="near"/>
+  <tables size="2 1" count="3" at="7 0" bare="near right"/>
+  <tables size="1 2" count="4" at="0 1" going="down" bare="near"/>
+  <tables size="1 2" count="4" at="6 1" going="down" bare="near"/>
+  <tables size="1 2" count="4" at="12 1" going="down" bare="near"/>
 </table>
 ```
-
-A prong flush with the end of the top table carries its outside edge
-straight on, as the arms of a horseshoe do; so this E is a horseshoe with
-a third arm in the middle.
 
 ![E: top 13, three prongs of 8: 61 seats](table-notation/e.svg)
 
-With the inside of the top table seated too (`seated="outside inside"` on
-the run), each of the two gaps between prongs is 5 long and has an inside
+With the inside of the top table seated too (`bare` without `near` on the
+top tables), each of the two gaps between prongs is 5 long with an inside
 corner at each end: 3 more seats in each, and a seat fewer at the top of
 the four sides that face into the gaps (61 + 10 − 4 = 67).
 
-![E with the top's inside seated too: 67 seats](table-notation/e-inside.svg)
-
-### Curves
-
-An `<arc>` is a run that bends as it goes, for a curved top table or a
-stadium drawn as a path:
-
-```xml
-<arc turn="180" radius="2" seated="outside"/>
-```
-
-Its outside edge is *radius* × the turn in radians (π × 2 for this one, so 6
-seats); a stadium is then two runs and two arcs, `closed="yes"`, and draws
-the same as `shape="stadium"`.
+![E, the top's inside seated too: 67 seats](table-notation/e-inside.svg)
 
 ## Still to settle
 
-- **Branches off the outside** (a cross, `side="outside"`) and **branches
-  off branches**, if they are ever wanted.
-- **Named shorthands**, such as `<horseshoe top="10" arms="8" inside="yes"/>`,
-  if the paths prove too long-winded for the usual shapes.
-- **Seat units for the gaps**: whether a joined table's corner and an
-  ellipse's spacing ever need to be other than 60 cm.
-
-The sketches are drawn by `table-notation/sketches.py` (Python, no
-libraries), which works out each table's seats by these rules: a first test
-that they add up.
+- **Tables at an angle** in a composed table (a chevron, a herringbone):
+  composing works on the seat-unit grid, at right angles; anything else is
+  a walk, or separate tables.
+- **A pick list for the whole room**, adding up every composed table, to
+  check against the venue's stock in one go.
+- **Named shorthands** for composed shapes (`<horseshoe top="10" arms="8"
+  inside="yes"/>`), if composing them proves long-winded.
