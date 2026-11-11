@@ -1,0 +1,8 @@
+# the example occasion's files, copied by Example (a jar cannot list a folder)
+occasion.xml
+guests.xml
+ceremony.xml
+wedding-breakfast.xml
+banquet.xml
+emblem.svg
+email_templates.xml

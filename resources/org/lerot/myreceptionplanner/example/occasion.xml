@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<occasion name="Romeo and Juliette's Wedding" date="1595-07-16" from="The Houses of Capulet and Montague" reply="verona@example.com" countrycode="39" emblem="emblem.svg">
+  <event file="ceremony.xml"/>
+  <event file="wedding-breakfast.xml"/>
+  <event file="banquet.xml"/>
+  <communications/>
+</occasion>

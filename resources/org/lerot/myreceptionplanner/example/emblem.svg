@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Romeo and Juliette's Wedding: the shields of Capulet (crimson, J) and
+     Montague (blue, R) leaning together, a rose where they meet, laurel, and
+     a ribbon for Verona, 1595. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 170" width="240" height="170">
+  <defs>
+    <path id="shield" d="M0 0 H56 V34 C56 56 42 70 28 78 C14 70 0 56 0 34 Z"/>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9C46A"/>
+      <stop offset="1" stop-color="#A9781C"/>
+    </linearGradient>
+    <linearGradient id="capulet" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C0392B"/>
+      <stop offset="1" stop-color="#7B1E1E"/>
+    </linearGradient>
+    <linearGradient id="montague" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E5FA8"/>
+      <stop offset="1" stop-color="#1B3768"/>
+    </linearGradient>
+    <path id="leaf" d="M0 0 C4 -6 12 -7 16 -4 C12 1 5 3 0 0 Z"/>
+  </defs>
+
+  <!-- laurel, a sprig each side: a stem, leaves in pairs along it -->
+  <g id="sprig" fill="#7C9877">
+    <path d="M80 150 C56 140 42 118 46 82" fill="none" stroke="#6F8F6A" stroke-width="2" stroke-linecap="round"/>
+    <use href="#leaf" transform="translate(71.8 145.9) rotate(-187)"/>
+    <use href="#leaf" transform="translate(71.8 145.9) rotate(-111) scale(1 -1)"/>
+    <use href="#leaf" transform="translate(61.3 137.7) rotate(-173)"/>
+    <use href="#leaf" transform="translate(61.3 137.7) rotate(-97) scale(1 -1)"/>
+    <use href="#leaf" transform="translate(53.2 127.1) rotate(-158)"/>
+    <use href="#leaf" transform="translate(53.2 127.1) rotate(-82) scale(1 -1)"/>
+    <use href="#leaf" transform="translate(47.8 113.9) rotate(-143)"/>
+    <use href="#leaf" transform="translate(47.8 113.9) rotate(-67) scale(1 -1)"/>
+    <use href="#leaf" transform="translate(45.4 98.2) rotate(-131)"/>
+    <use href="#leaf" transform="translate(45.4 98.2) rotate(-55) scale(1 -1)"/>
+    <use href="#leaf" transform="translate(46.0 82.0) rotate(-84)"/>
+  </g>
+  <use href="#sprig" transform="translate(240 0) scale(-1 1)"/>
+
+  <!-- the shields, leaning together -->
+  <g transform="translate(62 30) rotate(-10 28 39)">
+    <use href="#shield" fill="url(#capulet)" stroke="url(#gold)" stroke-width="4" stroke-linejoin="round"/>
+    <text x="28" y="47" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="34"
+          fill="#F3D88A" text-anchor="middle">J</text>
+  </g>
+  <g transform="translate(122 30) rotate(10 28 39)">
+    <use href="#shield" fill="url(#montague)" stroke="url(#gold)" stroke-width="4" stroke-linejoin="round"/>
+    <text x="28" y="47" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="34"
+          fill="#E8EDF5" text-anchor="middle">R</text>
+  </g>
+
+  <!-- the rose where they meet -->
+  <g transform="translate(120 40)">
+    <path d="M-3 10 C-10 12 -14 18 -12 22 C-6 22 -2 17 -3 10 Z" fill="#6F8F6A"/>
+    <path d="M3 10 C10 12 14 18 12 22 C6 22 2 17 3 10 Z" fill="#6F8F6A"/>
+    <circle r="13" fill="#9B1B30"/>
+    <path d="M-12 -2 C-12 -12 -2 -15 4 -11 C-4 -10 -8 -6 -8 2 Z" fill="#C2334A"/>
+    <path d="M12 2 C12 12 2 15 -4 11 C4 10 8 6 8 -2 Z" fill="#C2334A"/>
+    <path d="M-6 -1 C-6 -7 2 -8 5 -4 C5 3 -2 6 -6 -1 Z" fill="#7A1426"/>
+    <path d="M-2 0 C-2 -3 2 -3 2 0 C2 2 -2 2 -2 0 Z" fill="#E15A6F"/>
+  </g>
+
+  <!-- the ribbon: Verona, 1595 -->
+  <path d="M58 132 L72 128 L72 150 L58 154 L64 142 Z" fill="#8C6418"/>
+  <path d="M182 132 L168 128 L168 150 L182 154 L176 142 Z" fill="#8C6418"/>
+  <path d="M72 126 C100 120 140 120 168 126 L168 148 C140 142 100 142 72 148 Z" fill="url(#gold)"/>
+  <text x="120" y="139" font-family="Georgia, 'Times New Roman', serif" font-size="10.5" letter-spacing="0.8"
+        fill="#5A3A0C" text-anchor="middle">VERONA · MDXCV</text>
+
+  <!-- sparkles -->
+  <g fill="#D9A93F">
+    <path d="M30 34 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 Z"/>
+    <path d="M210 30 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2 Z"/>
+    <path d="M24 92 l1.5 4.5 4.5 1.5 -4.5 1.5 -1.5 4.5 -1.5 -4.5 -4.5 -1.5 4.5 -1.5 Z"/>
+  </g>
+</svg>

@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<event name="Banquet" type="seated" catered="yes" place="Palazzo dei Cappelletti, Via Enrico Noris, Verona" time="20:00">
+  <invitations invited="47 48 64 67" accepted="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 65 66"/>
+  <tables>
+    <table id="1" shape="rectangle" sideplaces="13" endplaces="0" x="900" y="150" rotation="0" head="true" disabled="14 15 16 17 18 19 20 21 22 23 24 25 26"/>
+    <table id="2" number="1" shape="round" places="10" x="500" y="550" rotation="0"/>
+    <table id="3" number="2" shape="round" places="10" x="900" y="550" rotation="0"/>
+    <table id="4" number="3" shape="round" places="10" x="1300" y="550" rotation="0"/>
+    <table id="5" number="4" shape="round" places="10" x="500" y="950" rotation="0"/>
+    <table id="6" number="5" shape="round" places="10" x="900" y="950" rotation="0"/>
+    <table id="7" number="6" shape="round" places="10" x="1300" y="950" rotation="0"/>
+  </tables>
+  <seating>
+    <seat guest="16" table="1" chair="1"/>
+    <seat guest="17" table="1" chair="2"/>
+    <seat guest="5" table="1" chair="3"/>
+    <seat guest="11" table="1" chair="4"/>
+    <seat guest="2" table="1" chair="5"/>
+    <seat guest="13" table="1" chair="6"/>
+    <seat guest="3" table="1" chair="7"/>
+    <seat guest="1" table="1" chair="8"/>
+    <seat guest="12" table="1" chair="9"/>
+    <seat guest="14" table="1" chair="10"/>
+    <seat guest="20" table="1" chair="11"/>
+    <seat guest="4" table="1" chair="12"/>
+    <seat guest="6" table="1" chair="13"/>
+    <seat guest="7" table="2" chair="1"/>
+    <seat guest="8" table="2" chair="2"/>
+    <seat guest="9" table="2" chair="3"/>
+    <seat guest="10" table="2" chair="4"/>
+    <seat guest="34" table="2" chair="5"/>
+    <seat guest="15" table="2" chair="6"/>
+    <seat guest="21" table="2" chair="7"/>
+    <seat guest="29" table="2" chair="8"/>
+    <seat guest="33" table="3" chair="1"/>
+    <seat guest="18" table="3" chair="2"/>
+    <seat guest="36" table="3" chair="3"/>
+    <seat guest="35" table="3" chair="4"/>
+    <seat guest="40" table="3" chair="5"/>
+    <seat guest="38" table="3" chair="6"/>
+    <seat guest="41" table="3" chair="7"/>
+    <seat guest="39" table="3" chair="8"/>
+    <seat guest="42" table="3" chair="9"/>
+    <seat guest="19" table="3" chair="10"/>
+    <seat guest="22" table="4" chair="1"/>
+    <seat guest="23" table="4" chair="2"/>
+    <seat guest="24" table="4" chair="3"/>
+    <seat guest="25" table="4" chair="4"/>
+    <seat guest="26" table="4" chair="5"/>
+    <seat guest="27" table="4" chair="6"/>
+    <seat guest="28" table="4" chair="7"/>
+    <seat guest="30" table="4" chair="8"/>
+    <seat guest="31" table="4" chair="9"/>
+    <seat guest="32" table="4" chair="10"/>
+    <seat guest="49" table="5" chair="1"/>
+    <seat guest="50" table="5" chair="2"/>
+    <seat guest="37" table="5" chair="3"/>
+    <seat guest="47" table="5" chair="4"/>
+    <seat guest="48" table="5" chair="5"/>
+    <seat guest="51" table="5" chair="6"/>
+    <seat guest="52" table="5" chair="7"/>
+    <seat guest="53" table="5" chair="8"/>
+    <seat guest="56" table="5" chair="9"/>
+    <seat guest="58" table="5" chair="10"/>
+    <seat guest="44" table="6" chair="1"/>
+    <seat guest="45" table="6" chair="2"/>
+    <seat guest="43" table="6" chair="3"/>
+    <seat guest="46" table="6" chair="4"/>
+    <seat guest="66" table="6" chair="5"/>
+    <seat guest="57" table="6" chair="6"/>
+    <seat guest="62" table="6" chair="7"/>
+    <seat guest="61" table="6" chair="8"/>
+    <seat guest="63" table="6" chair="9"/>
+    <seat guest="59" table="6" chair="10"/>
+    <seat guest="64" table="7" chair="1"/>
+    <seat guest="67" table="7" chair="2"/>
+    <seat guest="65" table="7" chair="3"/>
+    <seat guest="60" table="7" chair="4"/>
+    <seat guest="54" table="7" chair="5"/>
+    <seat guest="55" table="7" chair="6"/>
+  </seating>
+  <menu>
+    <note>
+      <line t="A banquet for the union of two houses, after Bartolomeo Scappi, who is cooking it himself."/>
+      <line t="Four services, credenza and kitchen in turn, with music between them."/>
+      <line t="The peacock is a capon roasted and sent to table in the peacock's own skin and feathers."/>
+      <line t="Wines of Valpolicella and Soave, and Recioto with the sweets; hippocras and confetti to close."/>
+      <line t="Almonds, sugar and sweet spices dress many dishes: ask the steward if in doubt."/>
+    </note>
+    <course name="First credenza: cold dishes">
+      <dish id="1" name="Salted ox tongue with mostarda of quince" suits="gf df nf"/>
+      <dish id="2" name="Eel of Lake Garda, marinated with bay and orange" suits="gf df nf"/>
+      <dish id="3" name="Parmigiano with pears and honey" suits="v gf nf"/>
+      <dish id="4" name="Salad of rocket, purslane and pomegranate" suits="v vg gf df nf"/>
+    </course>
+    <course name="First service from the kitchen: roasts">
+      <dish id="5" name="Peacock re-dressed in its feathers, with royal sauce" suits="df nf"/>
+      <dish id="6" name="Suckling pig from the spit, with apples and fennel" suits="gf df nf"/>
+      <dish id="7" name="Venison of the Lessini hills with juniper" suits="gf df nf"/>
+      <dish id="8" name="Roast pumpkin with sage and verjuice" suits="v vg gf df nf"/>
+    </course>
+    <course name="Second service from the kitchen">
+      <dish id="9" name="Pasticcio of pigeons, sweetbreads and truffles" suits="nf"/>
+      <dish id="10" name="Sturgeon of the Po, poached, with saffron sauce" suits="gf df nf"/>
+      <dish id="11" name="Gnocchi of Verona with butter, sugar and cinnamon" suits="v nf"/>
+      <dish id="12" name="Rice of the Veronese plain with peas and herbs" suits="v vg gf df nf"/>
+    </course>
+    <course name="Second credenza: sweets and fruit">
+      <dish id="13" name="The Arena of Verona in sugar and marzipan" suits="v vg gf df"/>
+      <dish id="14" name="Nadalin, the star-shaped sweet bread of Verona" suits="v nf"/>
+      <dish id="15" name="Pears poached in Recioto with cinnamon" suits="v vg gf df nf"/>
+      <dish id="16" name="Candied citron and quince paste" suits="v vg gf df nf"/>
+    </course>
+  </menu>
+  <choices>
+    <choice guest="1" dishes="1 5 9 13"/>
+    <choice guest="2" dishes="4 5 10 14"/>
+    <choice guest="3" dishes="4 8 12 13"/>
+    <choice guest="4" dishes="4 6 9 14"/>
+    <choice guest="5" dishes="2 6 11 16"/>
+    <choice guest="6" dishes="1 6 11 14"/>
+    <choice guest="7" dishes="3 5 10 13"/>
+    <choice guest="11" dishes="2 5 9 13"/>
+    <choice guest="12" dishes="3 6 12 15"/>
+    <choice guest="13" dishes="1 5 11 13"/>
+    <choice guest="14" dishes="4 8 10 16"/>
+    <choice guest="15" dishes="2 7 9 14"/>
+    <choice guest="16" dishes="1 5 10 13"/>
+    <choice guest="19" dishes="2 5 10 14"/>
+    <choice guest="20" dishes="2 6 10 16"/>
+    <choice guest="22" dishes="3 6 11 14"/>
+    <choice guest="26" dishes="4 7 9 14"/>
+    <choice guest="29" dishes="4 5 11 14"/>
+    <choice guest="30" dishes="2 5 10 13"/>
+    <choice guest="33" dishes="3 8 10 13"/>
+    <choice guest="34" dishes="2 8 11 14"/>
+    <choice guest="35" dishes="2 6 9 14"/>
+    <choice guest="36" dishes="4 5 10 14"/>
+    <choice guest="38" dishes="1 7 10 16"/>
+    <choice guest="39" dishes="2 5 12 14"/>
+    <choice guest="40" dishes="3 5 10 14"/>
+    <choice guest="41" dishes="3 8 10 14"/>
+    <choice guest="42" dishes="2 7 10 13"/>
+    <choice guest="43" dishes="2 7 11 16"/>
+    <choice guest="44" dishes="2 8 9 14"/>
+    <choice guest="45" dishes="2 7 11 13"/>
+    <choice guest="46" dishes="3 8 9 16"/>
+    <choice guest="49" dishes="3 6 9 13"/>
+    <choice guest="50" dishes="3 6 11 14"/>
+    <choice guest="51" dishes="2 6 10 14"/>
+    <choice guest="52" dishes="1 7 9 14"/>
+    <choice guest="53" dishes="4 6 10 14"/>
+    <choice guest="54" dishes="3 6 9 14"/>
+    <choice guest="56" dishes="3 8 9 14"/>
+    <choice guest="57" dishes="4 7 11 14"/>
+    <choice guest="58" dishes="2 5 10 14"/>
+    <choice guest="59" dishes="3 7 11 15"/>
+    <choice guest="60" dishes="2 6 10 14"/>
+    <choice guest="61" dishes="1 6 11 13"/>
+    <choice guest="62" dishes="1 5 11 15"/>
+    <choice guest="63" dishes="2 6 11 14"/>
+    <choice guest="65" dishes="4 8 12 15"/>
+    <choice guest="66" dishes="3 6 11 16"/>
+  </choices>
+</event>

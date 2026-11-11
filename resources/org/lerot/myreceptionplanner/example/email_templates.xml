@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates>
+  <template name="Invitation" subject="{occasion}: an invitation">
+    <line t="Dear {leadfirst},"/>
+    <line t=""/>
+    <line t="We would love you to join us for {occasion} on {date}."/>
+    <line t=""/>
+    <line t="You are invited to:"/>
+    <line t="{events}"/>
+    <line t=""/>
+    <line t="This invitation is for {guests}."/>
+    <line t=""/>
+    <line t="Please let us know whether you can come{reply}."/>
+    <line t=""/>
+    <line t="With love,"/>
+    <line t="{from}"/>
+  </template>
+  <template name="Menu choices" subject="{occasion}: menu choices">
+    <line t="Dear {leadfirst},"/>
+    <line t=""/>
+    <line t="{menuschosen}"/>
+    <line t=""/>
+    <line t="{menustochoose}"/>
+    <line t=""/>
+    <line t="Please let us know{reply}."/>
+    <line t=""/>
+    <line t="With love,"/>
+    <line t="{from}"/>
+  </template>
+  <template name="Request for details" subject="{occasion}: a few details, please">
+    <line t="Dear {leadfirst},"/>
+    <line t=""/>
+    <line t="To help us plan {occasion}, please could you let us know:"/>
+    <line t="{missing}"/>
+    <line t=""/>
+    <line t="Thank you,"/>
+    <line t="{from}"/>
+  </template>
+  <template name="Reminder" subject="{occasion}: a reminder">
+    <line t="Dear {leadfirst},"/>
+    <line t=""/>
+    <line t="Just a reminder about {occasion} on {date}:"/>
+    <line t="{events}"/>
+    <line t=""/>
+    <line t="{missing}"/>
+    <line t=""/>
+    <line t="With love,"/>
+    <line t="{from}"/>
+  </template>
+  <template name="Table and arrangements" subject="{occasion}: {event}">
+    <line t="Dear {leadfirst},"/>
+    <line t=""/>
+    <line t="We are looking forward to seeing you at {event}, {eventplace}, {eventwhen}."/>
+    <line t=""/>
+    <line t="{seats}"/>
+    <line t=""/>
+    <line t="With love,"/>
+    <line t="{from}"/>
+  </template>
+</templates>

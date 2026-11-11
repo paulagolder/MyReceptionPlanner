@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<event name="Wedding Breakfast" type="seated" catered="yes" place="Casa Capuleti, Via Cappello" time="16:30">
+  <invitations accepted="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21"/>
+  <tables>
+    <table id="1" number="1" shape="round" places="22" x="700" y="500" rotation="0"/>
+  </tables>
+  <seating>
+    <seat guest="3" table="1" chair="1"/>
+    <seat guest="13" table="1" chair="2"/>
+    <seat guest="2" table="1" chair="3"/>
+    <seat guest="16" table="1" chair="4"/>
+    <seat guest="5" table="1" chair="5"/>
+    <seat guest="14" table="1" chair="6"/>
+    <seat guest="6" table="1" chair="7"/>
+    <seat guest="21" table="1" chair="8"/>
+    <seat guest="8" table="1" chair="9"/>
+    <seat guest="17" table="1" chair="10"/>
+    <seat guest="9" table="1" chair="11"/>
+    <seat guest="18" table="1" chair="12"/>
+    <seat guest="10" table="1" chair="13"/>
+    <seat guest="19" table="1" chair="14"/>
+    <seat guest="15" table="1" chair="16"/>
+    <seat guest="7" table="1" chair="17"/>
+    <seat guest="4" table="1" chair="18"/>
+    <seat guest="12" table="1" chair="19"/>
+    <seat guest="20" table="1" chair="20"/>
+    <seat guest="1" table="1" chair="21"/>
+    <seat guest="11" table="1" chair="22"/>
+  </seating>
+  <menu>
+    <note>
+      <line t="A wedding repast after the manner of Bartolomeo Scappi, cook to Popes (Opera, 1570),"/>
+      <line t="served in four services, turn and turn about from the cold credenza and the hot kitchen."/>
+      <line t="Wines of Valpolicella and Soave; to close, hippocras and sugared almonds (confetti)."/>
+      <line t="Almonds, verjuice and sweet spices dress many dishes: ask the steward if in doubt."/>
+    </note>
+    <course name="From the credenza">
+      <dish id="1" name="Prosciutto with fresh figs and melon" suits="gf df nf"/>
+      <dish id="2" name="Carp of Lake Garda in carpione, with onions and vinegar" suits="gf df nf"/>
+      <dish id="3" name="Salad of herbs and flowers, with capers and raisins" suits="v vg gf df nf"/>
+    </course>
+    <course name="First service from the kitchen">
+      <dish id="4" name="Spit-roast capon with a sauce of verjuice and saffron" suits="gf df nf"/>
+      <dish id="5" name="Roast turkey cock (gallo d'India) with pomegranate" suits="gf df nf"/>
+      <dish id="6" name="Garda trout grilled with bitter orange and fennel" suits="gf df nf"/>
+      <dish id="7" name="Torta of summer herbs and cheese" suits="v nf"/>
+      <dish id="14" name="Broad beans stewed with mint and verjuice" suits="v vg gf df nf"/>
+    </course>
+    <course name="Second service from the kitchen">
+      <dish id="8" name="Tortellini of pork and cheese in capon broth" suits="nf"/>
+      <dish id="9" name="Bigoli with anchovy and onion" suits="df nf"/>
+      <dish id="10" name="Rice with almond milk and saffron" suits="v vg gf df"/>
+    </course>
+    <course name="From the credenza: sweets and fruit">
+      <dish id="11" name="Marzipan torta bearing the arms of both houses" suits="v vg gf df"/>
+      <dish id="12" name="Sweet ricotta tart with cinnamon and rosewater" suits="v nf"/>
+      <dish id="13" name="Cherries, apricots, figs and melon" suits="v vg gf df nf"/>
+    </course>
+  </menu>
+  <choices>
+    <choice guest="3" dishes="3 14 10 11"/>
+    <choice guest="13" dishes="1 5 8 11"/>
+    <choice guest="1" dishes="1 4 8 12"/>
+    <choice guest="2" dishes="2 6 9 13"/>
+    <choice guest="4" dishes="1 5 9 12"/>
+    <choice guest="5" dishes="3 7 8 11"/>
+    <choice guest="6" dishes="1 4 8 12"/>
+    <choice guest="7" dishes="2 4 9 12"/>
+    <choice guest="11" dishes="2 5 8 11"/>
+    <choice guest="12" dishes="1 6 10 13"/>
+    <choice guest="14" dishes="3 5 9 11"/>
+    <choice guest="15" dishes="1 4 8 12"/>
+    <choice guest="16" dishes="2 5 8 11"/>
+    <choice guest="20" dishes="3 6 9 13"/>
+    <choice guest="19" dishes="1 4 8 11"/>
+  </choices>
+</event>

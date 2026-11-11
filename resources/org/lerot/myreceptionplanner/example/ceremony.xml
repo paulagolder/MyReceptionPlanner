@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<event name="Ceremony" type="hall" catered="no" place="Basilica di San Zeno Maggiore" time="14:00">
+  <invitations invited="47 48 64 67" accepted="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 65 66"/>
+  <tables>
+    <table id="1" name="High altar" shape="altar" length="5" x="750" y="120" rotation="0"/>
+    <table id="2" number="1" shape="pew" places="6" x="500" y="320" rotation="0" firstseat="6"/>
+    <table id="3" number="2" shape="pew" places="6" x="1000" y="320" rotation="0"/>
+    <table id="4" number="3" shape="pew" places="6" x="500" y="410" rotation="0" firstseat="6"/>
+    <table id="5" number="4" shape="pew" places="6" x="1000" y="410" rotation="0"/>
+    <table id="6" number="5" shape="pew" places="6" x="500" y="500" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="7" number="6" shape="pew" places="6" x="1000" y="500" rotation="0" open="1 2 3 4 5 6"/>
+    <table id="8" number="7" shape="pew" places="6" x="500" y="590" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="9" number="8" shape="pew" places="6" x="1000" y="590" rotation="0" open="1 2 3 4 5 6"/>
+    <table id="10" number="9" shape="pew" places="6" x="500" y="680" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="11" number="10" shape="pew" places="6" x="1000" y="680" rotation="0" open="1 2 3 4 5 6"/>
+    <table id="12" number="11" shape="pew" places="6" x="500" y="770" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="13" number="12" shape="pew" places="6" x="1000" y="770" rotation="0" open="1 2 3 4 5 6"/>
+    <table id="14" number="13" shape="pew" places="6" x="500" y="860" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="15" number="14" shape="pew" places="6" x="1000" y="860" rotation="0" open="1 2 3 4 5 6"/>
+    <table id="16" number="15" shape="pew" places="6" x="500" y="950" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="17" number="16" shape="pew" places="6" x="1000" y="950" rotation="0" open="1 2 3 4 5 6"/>
+    <table id="18" number="17" shape="pew" places="6" x="500" y="1040" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="19" number="18" shape="pew" places="6" x="1000" y="1040" rotation="0" open="1 2 3 4 5 6"/>
+    <table id="20" number="19" shape="pew" places="6" x="500" y="1130" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="21" number="20" shape="pew" places="6" x="1000" y="1130" rotation="0" open="1 2 3 4 5 6"/>
+    <table id="22" number="21" shape="pew" places="6" x="500" y="1220" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="23" number="22" shape="pew" places="6" x="1000" y="1220" rotation="0" open="1 2 3 4 5 6"/>
+    <table id="24" number="23" shape="pew" places="6" x="500" y="1310" rotation="0" firstseat="6" open="1 2 3 4 5 6"/>
+    <table id="25" number="24" shape="pew" places="6" x="1000" y="1310" rotation="0" open="1 2 3 4 5 6"/>
+  </tables>
+  <seating>
+    <seat guest="1" table="2" chair="6"/>
+    <seat guest="2" table="2" chair="5"/>
+    <seat guest="4" table="2" chair="4"/>
+    <seat guest="5" table="2" chair="3"/>
+    <seat guest="6" table="2" chair="2"/>
+    <seat guest="7" table="4" chair="6"/>
+    <seat guest="8" table="4" chair="5"/>
+    <seat guest="9" table="4" chair="4"/>
+    <seat guest="10" table="4" chair="3"/>
+    <seat guest="11" table="3" chair="1"/>
+    <seat guest="12" table="3" chair="2"/>
+    <seat guest="14" table="3" chair="3"/>
+    <seat guest="15" table="3" chair="4"/>
+    <seat guest="16" table="5" chair="1"/>
+    <seat guest="17" table="5" chair="2"/>
+    <seat guest="18" table="5" chair="3"/>
+    <seat guest="19" table="5" chair="4"/>
+    <seat guest="21" table="5" chair="5"/>
+  </seating>
+  <choices/>
+</event>

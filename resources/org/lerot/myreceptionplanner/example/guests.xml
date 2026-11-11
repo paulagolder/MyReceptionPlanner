@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<guests>
+  <party id="1" name="House of Capulet" colour="#B22222" lead="1">
+    <guest id="1" name="Lord Capulet" gender="m" role="Father of the bride">
+      <contact email="capulet@example.com"/>
+    </guest>
+    <guest id="2" name="Lady Capulet" gender="f" role="Mother of the bride"/>
+    <guest id="3" name="Juliet Capulet" gender="f" role="Bride" diet="vg"/>
+    <guest id="4" name="Tybalt" gender="m" role="Cousin of the bride"/>
+    <guest id="5" name="Rosaline" gender="f" role="Chief bridesmaid"/>
+    <guest id="6" name="Angelica" gender="f" role="Juliet's nurse"/>
+  </party>
+  <party id="2" name="Cousin Capulet's family" colour="#D9534F" lead="7">
+    <guest id="7" name="Cousin Capulet" gender="m" role="Bride's great-uncle">
+      <contact email="cousincapulet@example.com"/>
+    </guest>
+    <guest id="8" name="Lady Lucrezia Capulet" gender="f" role="Bride's great-aunt"/>
+    <guest id="9" name="Ginevra Capulet" gender="f" role="Cousin of the bride"/>
+    <guest id="10" name="Costanza Capulet" gender="f" role="Cousin of the bride"/>
+  </party>
+  <party id="3" name="House of Montague" colour="#1F4E9C" lead="11">
+    <guest id="11" name="Lord Montague" gender="m" role="Father of the groom">
+      <contact email="montague@example.com"/>
+    </guest>
+    <guest id="12" name="Lady Montague" gender="f" role="Mother of the groom" diet="gf"/>
+    <guest id="13" name="Romeo Montague" gender="m" role="Groom"/>
+    <guest id="14" name="Benvolio" gender="m" role="Best man" diet="df"/>
+    <guest id="15" name="Balthasar" gender="m" role="Romeo's man"/>
+  </party>
+  <party id="4" name="The Prince's household" colour="#6A3D9A" lead="16">
+    <guest id="16" name="Prince Escalus" gender="m" role="Prince of Verona">
+      <contact email="prince@example.com"/>
+    </guest>
+    <guest id="17" name="Mercutio" gender="m" role="Groomsman"/>
+    <guest id="18" name="Valentine" gender="m" role="Groomsman"/>
+    <guest id="19" name="Count Paris" gender="m" role="Groomsman"/>
+  </party>
+  <party id="5" name="The friars" colour="#8C6D46" lead="20">
+    <guest id="20" name="Friar Laurence" gender="m" role="Officiant" diet="df" dietnote="lactose intolerant">
+      <contact email="friars@example.com"/>
+    </guest>
+    <guest id="21" name="Friar John" gender="m"/>
+  </party>
+  <party id="6" name="Signior Martino's family" colour="#2CA02C" lead="22">
+    <guest id="22" name="Signior Martino" gender="m">
+      <contact email="martino@example.com"/>
+    </guest>
+    <guest id="23" name="Monna Bianca Martino" gender="f" role="Wife of Martino"/>
+    <guest id="24" name="Laura Martino" gender="f"/>
+    <guest id="25" name="Fiammetta Martino" gender="f"/>
+  </party>
+  <party id="7" name="Count Anselme and sisters" colour="#17BECF" lead="26">
+    <guest id="26" name="Count Anselme" gender="m">
+      <contact email="countanselme@example.com"/>
+    </guest>
+    <guest id="27" name="Lady Ippolita" gender="f" role="Sister of Anselme"/>
+    <guest id="28" name="Lady Violante" gender="f" role="Sister of Anselme"/>
+  </party>
+  <party id="8" colour="#7F7F7F" lead="29">
+    <guest id="29" name="Widow of Vitruvio" gender="f">
+      <contact email="widowofvitruvio@example.com"/>
+    </guest>
+  </party>
+  <party id="9" name="Signior Placentio and nieces" colour="#BCBD22" lead="30">
+    <guest id="30" name="Signior Placentio" gender="m">
+      <contact email="placentio@example.com"/>
+    </guest>
+    <guest id="31" name="Lucrezia Placentio" gender="f" role="Niece of Placentio"/>
+    <guest id="32" name="Ottavia Placentio" gender="f" role="Niece of Placentio"/>
+  </party>
+  <party id="10" colour="#E377C2" lead="33">
+    <guest id="33" name="Livia" gender="f" role="Bridesmaid">
+      <contact email="livia@example.com"/>
+    </guest>
+  </party>
+  <party id="11" colour="#9467BD" lead="34">
+    <guest id="34" name="Signior Valentio" gender="m">
+      <contact email="signiorvalentio@example.com"/>
+    </guest>
+  </party>
+  <party id="12" colour="#FF7F0E" lead="35">
+    <guest id="35" name="Lucio" gender="m">
+      <contact email="lucio@example.com"/>
+    </guest>
+    <guest id="36" name="Helena" gender="f" role="Bridesmaid"/>
+  </party>
+  <party id="13" colour="#C49C94" lead="37">
+    <guest id="37" name="Michelangelo Buonarroti" gender="m" role="Official artist">
+      <contact email="michelangelobuonarroti@example.com"/>
+    </guest>
+  </party>
+  <party id="14" colour="#C49C94" lead="38">
+    <guest id="38" name="Galileo Galilei" gender="m" role="Groomsman" diet="gf df">
+      <contact email="galileogalilei@example.com"/>
+    </guest>
+  </party>
+  <party id="15" colour="#C49C94" lead="39">
+    <guest id="39" name="Claudio Monteverdi" gender="m" role="Groomsman">
+      <contact email="claudiomonteverdi@example.com"/>
+    </guest>
+  </party>
+  <party id="16" colour="#F7B6D2" lead="40">
+    <guest id="40" name="Isabella d'Este" gender="f" role="Bridesmaid">
+      <contact email="isabelladeste@example.com"/>
+    </guest>
+  </party>
+  <party id="17" colour="#F7B6D2" lead="41">
+    <guest id="41" name="Vittoria Colonna" gender="f" role="Bridesmaid">
+      <contact email="vittoriacolonna@example.com"/>
+    </guest>
+  </party>
+  <party id="18" colour="#F7B6D2" lead="42">
+    <guest id="42" name="Artemisia Gentileschi" gender="f" role="Bridesmaid">
+      <contact email="artemisiagentileschi@example.com"/>
+    </guest>
+  </party>
+  <party id="19" colour="#98DF8A" lead="43">
+    <guest id="43" name="Dante Alighieri" gender="m" role="Gives a reading">
+      <contact email="dantealighieri@example.com"/>
+    </guest>
+  </party>
+  <party id="20" colour="#98DF8A" lead="44">
+    <guest id="44" name="Cangrande della Scala" gender="m" role="Lord of Verona">
+      <contact email="cangrandedellascala@example.com"/>
+    </guest>
+    <guest id="45" name="Giovanna di Svevia" gender="f"/>
+  </party>
+  <party id="21" colour="#98DF8A" lead="46">
+    <guest id="46" name="Francesco Petrarca" gender="m">
+      <contact email="francescopetrarca@example.com"/>
+    </guest>
+  </party>
+  <party id="22" colour="#AEC7E8" lead="47">
+    <guest id="47" name="Leonardo da Vinci" gender="m">
+      <contact email="leonardodavinci@example.com"/>
+    </guest>
+    <guest id="48" name="Salaì" gender="m" role="Leonardo's pupil"/>
+  </party>
+  <party id="23" colour="#AEC7E8" lead="49">
+    <guest id="49" name="Lorenzo de' Medici" gender="m">
+      <contact email="lorenzodemedici@example.com"/>
+    </guest>
+    <guest id="50" name="Clarice Orsini" gender="f"/>
+  </party>
+  <party id="24" colour="#AEC7E8" lead="51">
+    <guest id="51" name="Paolo Veronese" gender="m">
+      <contact email="paoloveronese@example.com"/>
+    </guest>
+    <guest id="52" name="Elena Badile" gender="f"/>
+  </party>
+  <party id="25" colour="#AEC7E8" lead="53">
+    <guest id="53" name="Andrea Palladio" gender="m">
+      <contact email="andreapalladio@example.com"/>
+    </guest>
+  </party>
+  <party id="26" colour="#FFBB78" lead="54">
+    <guest id="54" name="Giovanni da Palestrina" gender="m" role="Choirmaster">
+      <contact email="giovannidapalestrina@example.com"/>
+    </guest>
+  </party>
+  <party id="27" colour="#FFBB78" lead="55">
+    <guest id="55" name="Bartolomeo Scappi" gender="m" role="Head chef">
+      <contact email="bartolomeoscappi@example.com"/>
+    </guest>
+  </party>
+  <party id="28" colour="#FFBB78" lead="56">
+    <guest id="56" name="Benvenuto Cellini" gender="m" role="Ring maker">
+      <contact email="benvenutocellini@example.com"/>
+    </guest>
+  </party>
+  <party id="29" colour="#FFBB78" lead="57">
+    <guest id="57" name="William Shakespeare" gender="m" role="Chronicler">
+      <contact email="williamshakespeare@example.com"/>
+    </guest>
+  </party>
+  <party id="30" colour="#DBDB8D" lead="58">
+    <guest id="58" name="Albrecht Dürer" gender="m">
+      <contact email="albrechtdurer@example.com"/>
+    </guest>
+  </party>
+  <party id="31" colour="#DBDB8D" lead="59">
+    <guest id="59" name="Desiderius Erasmus" gender="m" dietnote="cannot abide fish">
+      <contact email="desideriuserasmus@example.com"/>
+    </guest>
+  </party>
+  <party id="32" colour="#DBDB8D" lead="60">
+    <guest id="60" name="Nicolaus Copernicus" gender="m">
+      <contact email="nicolauscopernicus@example.com"/>
+    </guest>
+  </party>
+  <party id="33" colour="#DBDB8D" lead="61">
+    <guest id="61" name="Michel de Montaigne" gender="m">
+      <contact email="micheldemontaigne@example.com"/>
+    </guest>
+  </party>
+  <party id="34" colour="#DBDB8D" lead="62">
+    <guest id="62" name="Miguel de Cervantes" gender="m">
+      <contact email="migueldecervantes@example.com"/>
+    </guest>
+  </party>
+  <party id="35" colour="#DBDB8D" lead="63">
+    <guest id="63" name="Niccolò Machiavelli" gender="m">
+      <contact email="niccolomachiavelli@example.com"/>
+    </guest>
+  </party>
+  <party id="36" colour="#9EDAE5" lead="64">
+    <guest id="64" name="Eleanor of Aquitaine" gender="f">
+      <contact email="eleanorofaquitaine@example.com"/>
+    </guest>
+  </party>
+  <party id="37" colour="#9EDAE5" lead="65">
+    <guest id="65" name="Hildegard of Bingen" gender="f" diet="vg">
+      <contact email="hildegardofbingen@example.com"/>
+    </guest>
+  </party>
+  <party id="38" colour="#9EDAE5" lead="66">
+    <guest id="66" name="Christine de Pizan" gender="f">
+      <contact email="christinedepizan@example.com"/>
+    </guest>
+  </party>
+  <party id="39" colour="#9EDAE5" lead="67">
+    <guest id="67" name="Marco Polo" gender="m" role="Guest speaker">
+      <contact email="marcopolo@example.com"/>
+    </guest>
+  </party>
+  <distinct a="11" b="12"/>
+  <distinct a="1" b="2"/>
+</guests>

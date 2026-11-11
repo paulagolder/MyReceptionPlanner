@@ -2,6 +2,7 @@ package org.lerot.myreceptionplanner;
 
 import net.miginfocom.swing.MigLayout;
 import org.lerot.myreceptionplanner.model.Event;
+import org.lerot.myreceptionplanner.model.Example;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
 import org.lerot.myreceptionplanner.model.Messages;
@@ -129,6 +130,9 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		occasionMenu.addSeparator();
 		occasionMenu.add("New occasion…").addActionListener(e -> newOccasion());
 		occasionMenu.add("Open occasion…").addActionListener(e -> openOccasion());
+		JMenuItem example = occasionMenu.add("Open the example…");
+		example.setToolTipText("A fresh copy of Romeo and Juliette's Wedding, an example occasion to try things on");
+		example.addActionListener(e -> openExample());
 		occasionMenu.addSeparator();
 		occasionMenu.add("Save…").addActionListener(e -> save());
 		bar.add(dropDown("Occasion", occasionMenu));
@@ -1017,12 +1021,38 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 	// ---- files ----
 
+	// the occasion open last time; the first time there are no occasions, the
+	// example, copied into the occasions folder
 	private void openLastOccasion()
 	{
 		String last = PREFS.get(LAST_OCCASION, null);
-		if (last == null) return;
-		Path f = Path.of(last);
-		if (OccasionXml.isOccasion(f)) load(f);
+		if (last != null && OccasionXml.isOccasion(Path.of(last)))
+		{
+			load(Path.of(last));
+			return;
+		}
+		try
+		{
+			if (Example.noOccasionsIn(ROOT)) load(Example.install(ROOT));
+		} catch (IOException e)
+		{
+			// start without it
+		}
+	}
+
+	// a fresh copy of the example, beside any copies already there
+	private void openExample()
+	{
+		if (!okToDiscard()) return;
+		try
+		{
+			Path f = Example.install(ROOT);
+			load(f);
+			status.setText("The example occasion, copied to " + f);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot copy the example", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	private void openOccasion()

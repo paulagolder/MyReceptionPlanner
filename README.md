@@ -39,6 +39,18 @@ installers, Linux and Windows, and puts them on a release page:
 
 ## Using it
 
+### The example
+
+The first time the planner starts, with no occasions yet, it copies an
+example into `MyReceptions` and opens it: *Romeo and Juliette's Wedding*
+(Verona, 16 July 1595), with a ceremony in the Basilica (reserved front
+pews), a Wedding Breakfast for the families at one round table and a
+Banquet for 67 at a high table and round tables, with menus, dietary needs,
+menu choices and an emblem. Try anything on it. **Occasion ▾ → Open the
+example…** brings a fresh copy at any time, beside any copy already there
+(`romeo-and-juliettes-wedding-2` ...), never over it. Its guests' email
+addresses are at example.com, so nothing sent from it reaches anyone.
+
 ### Occasions and events
 
 The **occasion** is the whole celebration, such as *Janet and John's
