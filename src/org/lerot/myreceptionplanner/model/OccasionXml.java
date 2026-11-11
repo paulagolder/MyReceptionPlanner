@@ -20,8 +20,8 @@ import java.time.format.DateTimeParseException;
  * An occasion is a folder. occasion.xml holds its name and date, the files of
  * its events in order, and the messages sent:
  *
- *   <occasion name="Lydia and Isaac's Wedding" date="2026-05-12"
- *             from="Lydia and Isaac" reply="lydia@example.com" countrycode="44">
+ *   <occasion name="Janet and John's Wedding" date="2026-05-12"
+ *             from="Janet and John" reply="janet@example.com" countrycode="44">
  *     <event file="wedding-breakfast.xml"/>
  *     <event file="evening-reception.xml"/>
  *     <communications>
@@ -48,7 +48,7 @@ import java.time.format.DateTimeParseException;
  * invites, its tables (see PlanXml) and who sits where, by guest id, table id and chair (counted from 1 as in the
  * tables):
  *
- *   <event name="Wedding Breakfast" type="seated" place="The Old Barn, Lichfield" time="2pm">
+ *   <event name="Wedding Breakfast" type="seated" place="The Old Barn, Mayfield" time="2pm">
  *     <invitations decided="1 2" invited="3 12" accepted="4" declined="7"/>
  *     <tables> ... </tables>
  *     <seating>

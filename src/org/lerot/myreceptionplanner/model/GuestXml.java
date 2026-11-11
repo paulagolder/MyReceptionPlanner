@@ -14,7 +14,7 @@ import java.io.IOException;
  *       <guest id="1" name="Ann Smith" gender="f" role="Mother of the bride">
  *         <contact source="MyContacts" phone="01234 567890" mobile="07700 900123"
  *                  whatsapp="07700 900123" email="ann@example.com">
- *           <address><line>1 High Street</line><line>Lichfield</line></address>
+ *           <address><line>1 High Street</line><line>Mayfield</line></address>
  *         </contact>
  *       </guest>
  *       <guest id="2" gender="u" plus="1" diet="vg nf" dietnote="no sesame"/>

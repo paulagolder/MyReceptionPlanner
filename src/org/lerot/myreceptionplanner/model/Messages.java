@@ -38,7 +38,7 @@ public final class Messages
 		FILL_INS.put("party", "the party's name");
 		FILL_INS.put("guests", "the party's guests, e.g. \"Ann Smith, Bob Smith and a guest\"");
 		FILL_INS.put("places", "how many places the party has");
-		FILL_INS.put("occasion", "the occasion, e.g. Lydia and Isaac's Wedding");
+		FILL_INS.put("occasion", "the occasion, e.g. Janet and John's Wedding");
 		FILL_INS.put("date", "the occasion's date, e.g. 12 May 2026");
 		FILL_INS.put("events", "a line for each event the party is invited to: what, where, when");
 		FILL_INS.put("event", "the event chosen, e.g. Wedding Breakfast");

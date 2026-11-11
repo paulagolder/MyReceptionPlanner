@@ -20,14 +20,14 @@ class OccasionXmlTest
 	@Test
 	void aSavedOccasionLoadsTheSame() throws IOException
 	{
-		Occasion o = new Occasion("Lydia and Isaac's Wedding", new GuestList());
+		Occasion o = new Occasion("Janet and John's Wedding", new GuestList());
 		o.setDate(LocalDate.of(2026, 5, 12));
 		GuestList list = o.getGuests();
 		Party smiths = list.createParty("Ann Smith", 3, "Smith & family");
 		Guest ann = smiths.getLead();
 		ann.setGender(Gender.FEMALE);
 		Contact c = ann.getContact();
-		c.setAddress("1 High Street\nLichfield\nWS13 6AA");
+		c.setAddress("1 High Street\nMayfield\nWS13 6AA");
 		c.setPhone("01543 000000");
 		c.setMobile("07700 900123");
 		c.setWhatsApp("07700 900123");
@@ -52,7 +52,7 @@ class OccasionXmlTest
 		top.setFirstSeat(3);
 		breakfastPlan.renumber();
 		Event breakfast = new Event("Wedding Breakfast", o.fileFor("Wedding Breakfast"), breakfastPlan, new Seating());
-		breakfast.setPlace("The Old Barn, Lichfield");
+		breakfast.setPlace("The Old Barn, Mayfield");
 		breakfast.setTime("2pm");
 		breakfast.getSeating().seat(ann, new Seat(2, 3));
 		breakfast.getSeating().seat(plus2, new Seat(1, 5));
@@ -68,12 +68,12 @@ class OccasionXmlTest
 		assertTrue(Files.isRegularFile(folder.resolve("evening-reception.xml")));
 
 		Occasion loaded = OccasionXml.load(folder);
-		assertEquals("Lydia and Isaac's Wedding", loaded.getName());
+		assertEquals("Janet and John's Wedding", loaded.getName());
 		assertEquals(LocalDate.of(2026, 5, 12), loaded.getDate());
 		assertEquals(2, loaded.events().size());
 		Event b = loaded.events().get(0);
 		assertEquals("Wedding Breakfast", b.getName());
-		assertEquals("The Old Barn, Lichfield", b.getPlace());
+		assertEquals("The Old Barn, Mayfield", b.getPlace());
 		assertEquals("2pm", b.getTime());
 		assertNull(b.getDate());
 		assertEquals(LocalDate.of(2026, 5, 13), loaded.events().get(1).getDate());
@@ -95,7 +95,7 @@ class OccasionXmlTest
 		Guest a = b.getSeating().guestAt(2, 3).orElseThrow();
 		assertSame(p.getLead(), a);
 		assertEquals(Gender.FEMALE, a.getGender());
-		assertEquals("1 High Street\nLichfield\nWS13 6AA", a.getContact().getAddress());
+		assertEquals("1 High Street\nMayfield\nWS13 6AA", a.getContact().getAddress());
 		assertEquals("07700 900123", a.getContact().getWhatsApp());
 		assertEquals("ann@example.com", a.getContact().getEmail());
 		assertEquals("MyContacts", a.getContact().getSource());
@@ -132,12 +132,12 @@ class OccasionXmlTest
 	@Test
 	void headingsSayWhatWhereAndWhen()
 	{
-		Occasion o = new Occasion("Lydia and Isaac's Wedding", new GuestList());
+		Occasion o = new Occasion("Janet and John's Wedding", new GuestList());
 		o.setDate(Occasion.parseDate("12 May 2026"));
 		Event e = new Event("Wedding Breakfast", "wb.xml", new Plan(), new Seating());
 		e.setPlace("The Old Barn");
 		e.setTime("2pm");
-		assertEquals("Lydia and Isaac's Wedding  ·  Tuesday 12 May 2026", o.heading());
+		assertEquals("Janet and John's Wedding  ·  Tuesday 12 May 2026", o.heading());
 		assertEquals("Wedding Breakfast  ·  The Old Barn  ·  2pm", o.headingOf(e));
 		e.setDate(Occasion.parseDate("13/5/2026"));
 		assertEquals("Wedding Breakfast  ·  The Old Barn  ·  Wednesday 13 May 2026 2pm", o.headingOf(e));
@@ -176,7 +176,7 @@ class OccasionXmlTest
 	@Test
 	void eachOccasionHasAFolderNamedFromIt()
 	{
-		assertEquals("lydia-and-isaacs-wedding", Occasion.folderName("Lydia and Isaac's Wedding"));
+		assertEquals("janet-and-johns-wedding", Occasion.folderName("Janet and John's Wedding"));
 		assertEquals("the-wedding-of-the-century", Occasion.folderName("The wedding of the Century"));
 		assertEquals("noces-dete-2026", Occasion.folderName("  Noces d'Été 2026! "));
 		assertEquals("occasion", Occasion.folderName("???"));

@@ -13,7 +13,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /*
- * The occasion, such as "Lydia and Isaac's Wedding" on 12 May 2026: one guest
+ * The occasion, such as "Janet and John's Wedding" on 1 April 2026: one guest
  * list (parties, their leads and contacts) shared by its events, each with
  * its own place, time, tables and seating. Its wording goes on the reports
  * and on anything sent to the guests.
@@ -28,8 +28,8 @@ public class Occasion
 	private LocalDate date;  // null if not set
 	private final GuestList guests;
 	private final List<Event> events = new ArrayList<>();
-	private String sender = "";        // who messages are from, "Lydia and Isaac"
-	private String replyTo = "";       // how to reply, "lydia@example.com or 07700 900123"
+	private String sender = "";        // who messages are from, "Janet and John"
+	private String replyTo = "";       // how to reply, "janet@example.com or 07700 900123"
 	private String countryCode = "44"; // for making phone numbers international (WhatsApp)
 	private String emblem;             // the occasion's SVG emblem, as text; null for none
 	private final List<MessageTemplate> templates = Messages.standard();
@@ -119,7 +119,7 @@ public class Occasion
 	public void removeEvent(Event event) { events.remove(event); }
 
 	// a file name for a new event, from its name, not used by another
-	// the occasion's own folder, from its name: "Lydia and Isaac's Wedding" → "lydia-and-isaacs-wedding"
+	// the occasion's own folder, from its name: "Janet and John's Wedding" → "janet-and-johns-wedding"
 	public static String folderName(String occasionName)
 	{
 		String base = java.text.Normalizer.normalize(occasionName, java.text.Normalizer.Form.NFD)
@@ -154,13 +154,13 @@ public class Occasion
 		return event.getDate() != null ? event.getDate() : date;
 	}
 
-	// "Lydia and Isaac's Wedding" and "12 May 2026", as headings put them
+	// "Janet and John's Wedding" and "1 April 2026", as headings put them
 	public String heading()
 	{
 		return date == null ? name : name + "  ·  " + format(date);
 	}
 
-	// "Wedding Breakfast · The Old Barn, Lichfield · 2pm", with the event's
+	// "Wedding Breakfast · The Old Barn, Mayfield · 2pm", with the event's
 	// date too if it differs from the occasion's
 	public String headingOf(Event event)
 	{
@@ -211,7 +211,7 @@ public class Occasion
 		return events.stream().anyMatch(e -> e.getSeating().isSeated(guest));
 	}
 
-	// "Tuesday 12 May 2026", with the day of the week the date fell on
+	// "Wednesday 1 April 2026", with the day of the week the date fell on
 	public static String format(LocalDate date)
 	{
 		return weekday(date).getDisplayName(TextStyle.FULL, Locale.UK) + " " + DATE.format(date);
@@ -229,7 +229,7 @@ public class Occasion
 		return DayOfWeek.of((int) (julianDay % 7) + 1);  // Julian day 0 was a Monday
 	}
 
-	// "12 May 2026", "12/5/2026", "2026-05-12" ..., perhaps after a day of the
+	// "1 April 2026", "12/5/2026", "2026-05-12" ..., perhaps after a day of the
 	// week ("Monday, 16 July 1595"), which is dropped: the date says which day
 	// it was. null for blank, and an exception if it cannot be read
 	public static LocalDate parseDate(String text)
@@ -246,6 +246,6 @@ public class Occasion
 			{
 			}
 		}
-		throw new IllegalArgumentException("Not a date: " + t + " (try 12 May 2026)");
+		throw new IllegalArgumentException("Not a date: " + t + " (try 1 April 2026)");
 	}
 }

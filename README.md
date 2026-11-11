@@ -41,10 +41,10 @@ installers, Linux and Windows, and puts them on a release page:
 
 ### Occasions and events
 
-The **occasion** is the whole celebration, such as *Lydia and Isaac's
+The **occasion** is the whole celebration, such as *Janet and John's
 Wedding* on *12 May 2026*. It has one guest list (the parties, their leads
 and contact details) shared by its **events**, such as the *Wedding
-Breakfast* at *The Old Barn, Lichfield* at *2pm* and the *Evening
+Breakfast* at *The Old Barn, Mayfield* at *2pm* and the *Evening
 Reception*. Each event has its own tables and its own seating, so a guest
 can sit in one place at the breakfast and another in the evening. These
 names, places, dates and times head the reports and anything sent to the
@@ -393,7 +393,7 @@ are plain text, so they cannot carry it.
 ### Messages to the guests
 
 Messages go to each party's lead, from the details in **Occasion ▾ →
-Occasion details…**: *From* signs them ("Lydia and Isaac"), *Reply to* says
+Occasion details…**: *From* signs them ("Janet and John"), *Reply to* says
 how to answer, and the *phone country code* (44) turns 07700 900123 into an
 international number for WhatsApp.
 
@@ -471,8 +471,8 @@ on **Catering ▾** (above):
 ### Files
 
 `~/Documents/MyReceptions` holds the occasions, each in a folder of its own
-named from the occasion ("Lydia and Isaac's Wedding" is
-`lydia-and-isaacs-wedding`), made when it is first saved:
+named from the occasion ("Janet and John's Wedding" is
+`janet-and-johns-wedding`), made when it is first saved:
 
 - `emblem.svg`: the occasion's emblem, if it has one
 - `occasion.xml`: the occasion's name and date, who messages are from and

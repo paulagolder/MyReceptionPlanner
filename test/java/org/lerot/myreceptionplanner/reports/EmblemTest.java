@@ -47,7 +47,7 @@ class EmblemTest
 	@Test
 	void printedDocumentsCarryIt() throws Exception
 	{
-		Occasion o = new Occasion("Lydia and Isaac's Wedding", new GuestList());
+		Occasion o = new Occasion("Janet and John's Wedding", new GuestList());
 		o.setEmblem(Emblem.sample("hearts"));
 		Event e = new Event("Wedding Breakfast", "wb.xml", new Plan(), new Seating());
 		o.addEvent(e);

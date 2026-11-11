@@ -23,10 +23,10 @@ class MessagesTest
 
 	private void wedding()
 	{
-		o = new Occasion("Lydia and Isaac's Wedding", new GuestList());
+		o = new Occasion("Janet and John's Wedding", new GuestList());
 		o.setDate(Occasion.parseDate("12 May 2026"));
-		o.setSender("Lydia and Isaac");
-		o.setReplyTo("lydia@example.com");
+		o.setSender("Janet and John");
+		o.setReplyTo("janet@example.com");
 		breakfast = new Event("Wedding Breakfast", "wb.xml", new Plan(), new Seating());
 		breakfast.setPlace("The Old Barn");
 		breakfast.setTime("2pm");
@@ -56,11 +56,11 @@ class MessagesTest
 		wedding();
 		assertEquals("Dear Ann,", fill("Dear {leadfirst},", null));
 		assertEquals("Ann Smith, Bob Smith and a guest", fill("{guests}", null));
-		assertEquals("Lydia and Isaac's Wedding on Tuesday 12 May 2026", fill("{occasion} on {date}", null));
+		assertEquals("Janet and John's Wedding on Tuesday 12 May 2026", fill("{occasion} on {date}", null));
 		assertEquals("• Wedding Breakfast, The Old Barn, Tuesday 12 May 2026 at 2pm\n  • Evening Party, Tuesday 12 May 2026 at 7.30pm",
 				fill("{events}", null));
 		assertEquals("{nonsense} stays", fill("{nonsense} stays", null));
-		assertEquals("Lydia and Isaac", fill("{from}", null));
+		assertEquals("Janet and John", fill("{from}", null));
 	}
 
 	@Test
@@ -141,11 +141,11 @@ class MessagesTest
 	{
 		wedding();
 		smiths.getLead().getContact().setMobile("07700 900123");
-		smiths.getLead().getContact().setAddress("1 High Street\nLichfield");
+		smiths.getLead().getContact().setAddress("1 High Street\nMayfield");
 		MessageTemplate inv = Messages.standard().get(0);
 		var list = new org.lerot.myreceptionplanner.reports.ContactList(o, inv.getName(),
 				java.util.Map.of(smiths, Messages.fill(inv, o, smiths, null)));
-		assertEquals(List.of("[   ]", "Ann Smith", "Ann Smith", "", "07700 900123 (mobile)", "1 High Street, Lichfield"),
+		assertEquals(List.of("[   ]", "Ann Smith", "Ann Smith", "", "07700 900123 (mobile)", "1 High Street, Mayfield"),
 				list.sections.get(0).rows().get(0));
 		assertTrue(list.html().contains("Dear Ann,"));
 		Path pdf = folder.resolve("list.pdf");
@@ -175,8 +175,8 @@ class MessagesTest
 		o.logSent(smiths, "Invitation", "email", breakfast);
 		OccasionXml.save(o, folder);
 		Occasion loaded = OccasionXml.load(folder);
-		assertEquals("Lydia and Isaac", loaded.getSender());
-		assertEquals("lydia@example.com", loaded.getReplyTo());
+		assertEquals("Janet and John", loaded.getSender());
+		assertEquals("janet@example.com", loaded.getReplyTo());
 		assertEquals("33", loaded.getCountryCode());
 		assertEquals(6, loaded.templates().size());
 		MessageTemplate d = loaded.templates().get(5);
@@ -210,21 +210,21 @@ class MessagesTest
 			assertFalse(m.subject().contains("{"));
 		}
 		Messages.Message inv = Messages.fill(Messages.standard().get(0), o, smiths, breakfast);
-		assertTrue(inv.body().contains("Please let us know whether you can come (lydia@example.com)."));
+		assertTrue(inv.body().contains("Please let us know whether you can come (janet@example.com)."));
 	}
 
 	@Test
 	void lettersAndLabelsBecomePdfs() throws Exception
 	{
 		wedding();
-		smiths.getLead().getContact().setAddress("1 High Street\nLichfield\nWS13 6AA");
+		smiths.getLead().getContact().setAddress("1 High Street\nMayfield\nWS13 6AA");
 		Path letters = folder.resolve("letters.pdf"), labels = folder.resolve("labels.pdf");
 		org.lerot.myreceptionplanner.reports.LettersPdf.letters(o, List.of(new org.lerot.myreceptionplanner.reports.LettersPdf.Letter(
 				smiths, Messages.fill(Messages.standard().get(0), o, smiths, null))), letters);
 		org.lerot.myreceptionplanner.reports.LettersPdf.labels(List.of(smiths), labels);
 		assertTrue(Files.size(letters) > 500);
 		assertTrue(Files.size(labels) > 300);
-		assertEquals(List.of("Ann Smith", "1 High Street", "Lichfield", "WS13 6AA"),
+		assertEquals(List.of("Ann Smith", "1 High Street", "Mayfield", "WS13 6AA"),
 				org.lerot.myreceptionplanner.reports.LettersPdf.addressLines(smiths));
 	}
 }

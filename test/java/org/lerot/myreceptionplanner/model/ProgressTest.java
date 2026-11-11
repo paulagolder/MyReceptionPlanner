@@ -15,7 +15,7 @@ class ProgressTest
 
 	private void wedding()
 	{
-		o = new Occasion("Lydia and Isaac's Wedding", new GuestList());
+		o = new Occasion("Janet and John's Wedding", new GuestList());
 		breakfast = new Event("Wedding Breakfast", "wb.xml", new Plan(), new Seating());
 		evening = new Event("Evening Party", "ev.xml", new Plan(), new Seating());
 		evening.setKind(Event.Kind.UNRESERVED);
@@ -46,8 +46,8 @@ class ProgressTest
 		assertEquals(Progress.State.NOT_STARTED, stage(s, Progress.Step.REPLIES).state());
 
 		o.setDate(Occasion.parseDate("12 May 2026"));
-		o.setSender("Lydia and Isaac");
-		o.setReplyTo("lydia@example.com");
+		o.setSender("Janet and John");
+		o.setReplyTo("janet@example.com");
 		o.logSent(smiths, Messages.INVITATION, "email", null);
 		s = Progress.ofOccasion(o);
 		assertEquals(Progress.State.DONE, stage(s, Progress.Step.OCCASION).state());

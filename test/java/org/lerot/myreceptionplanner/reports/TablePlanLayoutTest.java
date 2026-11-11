@@ -108,7 +108,7 @@ class TablePlanLayoutTest
 	@Test
 	void aPdfIsWritten() throws Exception
 	{
-		Occasion o = new Occasion("Lydia and Isaac's Wedding", new GuestList());
+		Occasion o = new Occasion("Janet and John's Wedding", new GuestList());
 		o.setDate(Occasion.parseDate("12 May 2026"));
 		Event e = new Event("Wedding Breakfast", "wb.xml", new Plan(), new Seating());
 		o.addEvent(e);

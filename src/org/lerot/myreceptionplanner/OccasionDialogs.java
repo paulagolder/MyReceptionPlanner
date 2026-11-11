@@ -28,7 +28,7 @@ public class OccasionDialogs
 	public static Occasion newOccasion(Component parent)
 	{
 		JTextField name = new JTextField(28);
-		name.putClientProperty("JTextField.placeholderText", "Lydia and Isaac's Wedding");
+		name.putClientProperty("JTextField.placeholderText", "Janet and John's Wedding");
 		JTextField date = dateField(null);
 		JTextField eventName = new JTextField("Wedding Breakfast");
 		JTextField place = new JTextField();
@@ -69,9 +69,9 @@ public class OccasionDialogs
 		JTextField name = new JTextField(occasion.getName(), 28);
 		JTextField date = dateField(occasion.getDate());
 		JTextField from = new JTextField(occasion.getSender());
-		from.putClientProperty("JTextField.placeholderText", "Lydia and Isaac");
+		from.putClientProperty("JTextField.placeholderText", "Janet and John");
 		JTextField reply = new JTextField(occasion.getReplyTo());
-		reply.putClientProperty("JTextField.placeholderText", "lydia@example.com or 07700 900123");
+		reply.putClientProperty("JTextField.placeholderText", "janet@example.com or 07123456789");
 		JTextField code = new JTextField(occasion.getCountryCode());
 		JPanel form = form();
 		row(form, "Occasion", name);
