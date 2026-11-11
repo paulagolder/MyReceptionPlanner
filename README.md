@@ -93,7 +93,7 @@ The toolbar starts with:
     *Catering list…*, *Kitchen quantities…*, *Service by table…* (below)
     and *Export menu…*.
 - **Messages ▾** is there in both views.
-- **Info ▾**, at the right-hand end, → *Help…* (still to be written) and
+- **Info ▾**, at the right-hand end, → *Help…* (MyReceptionPlanner 101, a short tour from the example to printing) and
   *About MyReceptionPlanner…* (the version, when it was built, the Java it
   runs on, the occasion open and its folder, and where the settings are kept).
 

@@ -11,7 +11,7 @@ import java.util.Date;
 
 /*
  * The Info menu's dialogs: About (facts about this build and the open
- * occasion, then what the planner is for) and Help (still to be written),
+ * occasion, then what the planner is for) and Help (MyReceptionPlanner 101),
  * after the pattern of the other Lerot apps.
  */
 public class InfoDialogs
@@ -62,10 +62,27 @@ public class InfoDialogs
 		JOptionPane.showMessageDialog(parent, info, "About MyReceptionPlanner", JOptionPane.PLAIN_MESSAGE);
 	}
 
+	// MyReceptionPlanner 101, from help.html in the program, in a window that can be resized
 	public static void help(Component parent)
 	{
-		JOptionPane.showMessageDialog(parent, "Help is still to be written.", "MyReceptionPlanner Help",
-				JOptionPane.PLAIN_MESSAGE);
+		JEditorPane page = new JEditorPane();
+		page.setEditable(false);
+		page.setContentType("text/html");
+		page.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true);  // the app's own font
+		try (java.io.InputStream in = InfoDialogs.class.getResourceAsStream("help.html"))
+		{
+			page.setText(in == null ? "<p>The help page is missing from the program.</p>"
+					: new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+		} catch (java.io.IOException e)
+		{
+			page.setText("<p>Cannot read the help page: " + e.getMessage() + "</p>");
+		}
+		page.setCaretPosition(0);
+		JScrollPane scroll = new JScrollPane(page);
+		scroll.setPreferredSize(new Dimension(640, 560));
+		Object[] close = { "Close" };
+		ResizableDialog.show(parent, new JOptionPane(scroll, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION,
+				null, close, close[0]), "MyReceptionPlanner Help", "helpDialog");
 	}
 
 	// where Java keeps the planner's preferences: the registry on Windows, a file elsewhere
