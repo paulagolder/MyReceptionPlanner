@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="170" height="195" viewBox="0 0 170 195" font-family="sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M 68.8 52.8 L 100.8 52.8 L 120.8 77.8 L 113.7 109.0 L 84.8 122.9 L 56.0 109.0 L 48.9 77.8 Z" fill="#e8dcc4" stroke="#7a5c2e" stroke-width="1.5" fill-rule="evenodd"/>
+<circle cx="84.8" cy="38.4" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="84.8" y="41.9" font-size="10" text-anchor="middle" fill="#1d3557">1</text>
+<circle cx="122.1" cy="56.3" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="122.1" y="59.8" font-size="10" text-anchor="middle" fill="#1d3557">2</text>
+<circle cx="131.3" cy="96.6" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="131.3" y="100.1" font-size="10" text-anchor="middle" fill="#1d3557">3</text>
+<circle cx="105.5" cy="128.9" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="105.5" y="132.4" font-size="10" text-anchor="middle" fill="#1d3557">4</text>
+<circle cx="64.2" cy="128.9" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="64.2" y="132.4" font-size="10" text-anchor="middle" fill="#1d3557">5</text>
+<circle cx="38.4" cy="96.6" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="38.4" y="100.1" font-size="10" text-anchor="middle" fill="#1d3557">6</text>
+<circle cx="47.6" cy="56.3" r="10.2" fill="#ffffff" stroke="#2f6fdb" stroke-width="1.5"/>
+<text x="47.6" y="59.8" font-size="10" text-anchor="middle" fill="#1d3557">7</text>
+<text x="85" y="183" font-size="13" text-anchor="middle" fill="#222">polygon, 7 sides × 1: 7 seats</text>
+</svg>
