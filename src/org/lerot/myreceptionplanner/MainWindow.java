@@ -220,13 +220,13 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 		JPopupMenu catering = new JPopupMenu();
 		JMenuItem importMenu = catering.add("Import menu…");
-		importMenu.setToolTipText("Take a menu exported from another event, or another occasion's event file");
+		importMenu.setToolTipText("Take a menu file (XML or YAML) exported from another event, or another occasion's event file");
 		importMenu.addActionListener(e -> importMenu());
 		JSeparator afterImport = new JSeparator();
 		catering.add(afterImport);
 		catering.add("Menu…").addActionListener(e ->
 		{
-			if (MenuDialog.edit(this, occasion, event)) changed();
+			if (MenuDialog.edit(this, occasion, event, menuFolder(), MenuDialog.Start.MENU)) changed();
 		});
 		catering.add("Menu choices and dietary needs…").addActionListener(e ->
 		{
@@ -520,7 +520,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			}
 			case MENU ->
 			{
-				if (MenuDialog.edit(this, occasion, e)) changed();
+				if (MenuDialog.edit(this, occasion, e, menuFolder(), MenuDialog.Start.MENU)) changed();
 			}
 			case SEATS ->
 			{
@@ -902,6 +902,13 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		return f.toPath();
 	}
 
+	// where to look for a menu file: the Output folder, if there is one yet
+	private Path menuFolder()
+	{
+		Path out = occasionFolder().resolve(Occasion.OUTPUT);
+		return Files.isDirectory(out) ? out : ROOT;
+	}
+
 	// an XML file to read, starting in the Output folder; null if cancelled
 	private Path chooseImport(String title)
 	{
@@ -969,38 +976,50 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		changed();
 	}
 
+	// as XML (all of it, as in the event's file) or YAML (short, to read and edit by hand)
 	private void exportMenu()
 	{
-		Path to = chooseOutput(eventBase() + "_menu.xml", "xml", "Menu files (XML)", "Export menu");
-		if (to == null) return;
+		File in = occasionFolder().resolve(Occasion.OUTPUT).toFile();
+		in.mkdirs();
+		JFileChooser fc = new JFileChooser(in);
+		fc.setDialogTitle("Export menu");
+		javax.swing.filechooser.FileNameExtensionFilter xml =
+				new javax.swing.filechooser.FileNameExtensionFilter("Menu files (XML)", "xml");
+		javax.swing.filechooser.FileNameExtensionFilter yaml =
+				new javax.swing.filechooser.FileNameExtensionFilter("Menu files (YAML, to read and edit)", "yml", "yaml");
+		fc.addChoosableFileFilter(xml);
+		fc.addChoosableFileFilter(yaml);
+		fc.setAcceptAllFileFilterUsed(false);
+		fc.setFileFilter(xml);
+		fc.setSelectedFile(new File(in, eventBase() + "_menu.xml"));
+		// the name follows the format chosen
+		fc.addPropertyChangeListener(JFileChooser.FILE_FILTER_CHANGED_PROPERTY, e ->
+		{
+			String ext = fc.getFileFilter() == yaml ? ".yml" : ".xml";
+			fc.setSelectedFile(new File(fc.getCurrentDirectory(), eventBase() + "_menu" + ext));
+		});
+		if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+		File f = fc.getSelectedFile();
+		boolean asYaml = fc.getFileFilter() == yaml || f.getName().toLowerCase().matches(".*\\.ya?ml");
+		if (!f.getName().toLowerCase().matches(".*\\.(xml|ya?ml)"))
+			f = new File(f.getParentFile(), f.getName() + (asYaml ? ".yml" : ".xml"));
+		if (f.exists() && JOptionPane.showConfirmDialog(this, f.getName() + " is already there. Replace it?",
+				"Export menu", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
 		try
 		{
-			OccasionXml.saveMenu(event.getMenu(), to);
-			JOptionPane.showMessageDialog(this, "Saved " + to, "Export menu", JOptionPane.INFORMATION_MESSAGE);
+			if (asYaml) org.lerot.myreceptionplanner.model.MenuText.save(event.getMenu(), event.getName(), f.toPath());
+			else OccasionXml.saveMenu(event.getMenu(), f.toPath());
+			JOptionPane.showMessageDialog(this, "Saved " + f, "Export menu", JOptionPane.INFORMATION_MESSAGE);
 		} catch (IOException e)
 		{
 			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot export", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
-	// a menu from a file, for an event with none yet
+	// a menu from a file, for an event with none yet, opened in Menu… to check
 	private void importMenu()
 	{
-		Path from = chooseImport("Import a menu");
-		if (from == null) return;
-		try
-		{
-			org.lerot.myreceptionplanner.model.Menu m = OccasionXml.loadMenu(from);
-			event.getMenu().courses().clear();
-			event.getMenu().courses().addAll(m.courses());
-			event.getMenu().setNote(m.getNote());
-			event.tidy(occasion.getGuests());
-			changed();
-			if (MenuDialog.edit(this, occasion, event)) changed();
-		} catch (IOException e)
-		{
-			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot import", JOptionPane.ERROR_MESSAGE);
-		}
+		if (MenuDialog.edit(this, occasion, event, menuFolder(), MenuDialog.Start.IMPORT)) changed();
 	}
 
 	// in the desktop's PDF viewer, if there is one

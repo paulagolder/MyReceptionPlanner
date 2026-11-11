@@ -110,9 +110,34 @@ menu. Imported, it can be changed like any other.
   event's own (asking first; anyone seated loses their seat). *New event…*
   can also start from a layout file: *Import layout*, under *Start with*.
 - **Catering ▾ → Export menu…** writes the menu, with its note, to
-  `Output/<event>_menu.xml`.
+  `Output/<event>_menu.xml`, or, choosing *YAML* as the file type,
+  `Output/<event>_menu.yml`: the same menu, shorter and easier to read and
+  edit by hand, each dish on a line with its diets in brackets:
+
+  ```yaml
+  menu: Wedding Breakfast
+  note: |
+    All our food is sourced locally.
+  courses:
+    - name: Starter
+      dishes:
+        - Leek and potato soup [v gf]
+        - Chicken liver pâté
+  ```
 - **Catering ▾ → Import menu…**, there while the event has no menu, takes a
-  menu file and opens it in *Menu…* to change.
+  menu file (XML or YAML) and opens it in *Menu…* to check and change.
+- In **Menu…**, *Import…* does the same at any time, and *Paste a menu…*
+  takes a caterer's menu pasted as text (copied from their PDF, Word
+  document or email): headings such as *Starters*, *MAIN COURSE* or
+  *Desserts:* start courses, the lines under them are dishes, a line
+  starting in lower case goes on with the dish above, and marks such as
+  (V), (VG), (GF) and (DF) give the diets; prices and a key to the marks are
+  left out, and lines before the first heading go in the note. Either way,
+  if the event has a menu already you choose to replace it (guests keep
+  their choice of a dish that is still there) or add to it, and it shows in
+  *Menu…* to put right before OK. A menu in a picture needs turning into
+  text first (Windows Snipping Tool's *Text actions*, Google Lens, or Live
+  Text on an iPhone).
 
 An event's own file (`wedding-breakfast.xml`, from this or another
 occasion) can be imported as a layout or a menu too.

@@ -3,11 +3,15 @@ package org.lerot.myreceptionplanner;
 import org.lerot.myreceptionplanner.model.Diet;
 import org.lerot.myreceptionplanner.model.Event;
 import org.lerot.myreceptionplanner.model.Menu;
+import org.lerot.myreceptionplanner.model.MenuText;
 import org.lerot.myreceptionplanner.model.Occasion;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -18,16 +22,21 @@ import java.util.Set;
 /*
  * An event's menu: a line for each dish, with its course and the diets it
  * suits. The courses come in the order they first appear. Changes apply on
- * OK; a dish taken away takes with it any guest's choice of it.
+ * OK; a dish taken away takes with it any guest's choice of it. A menu can
+ * be pasted in (a caterer's, as text) or imported from a menu file (XML or
+ * YAML) or an event's file, to replace the menu or add to it; either way it
+ * shows here to check before OK.
  */
 public class MenuDialog
 {
+	public enum Start { MENU, IMPORT }  // IMPORT: choose a menu file first
+
 	private static class Row
 	{
 		String course;
 		String dish;
 		final Set<Diet> suits = EnumSet.noneOf(Diet.class);
-		Menu.Dish was;  // null for a dish added here
+		Menu.Dish was;  // null for a dish added here (or pasted, imported)
 
 		Row(String course, Menu.Dish d)
 		{
@@ -38,8 +47,8 @@ public class MenuDialog
 		}
 	}
 
-	// true if changed
-	public static boolean edit(Component parent, Occasion occasion, Event event)
+	// true if changed; menu files are looked for in lookIn
+	public static boolean edit(Component parent, Occasion occasion, Event event, Path lookIn, Start start)
 	{
 		List<Row> rows = new ArrayList<>();
 		for (Menu.Course c : event.getMenu().courses())
@@ -119,15 +128,34 @@ public class MenuDialog
 			rows.remove(sel);
 			model.fireTableDataChanged();
 		});
+		JTextArea note = new JTextArea(event.getMenu().getNote(), 4, 50);
+		JButton paste = new JButton("Paste a menu…");
+		paste.setToolTipText("Paste a caterer's menu as text: its headings become courses, the lines under them dishes");
+		paste.addActionListener(e ->
+		{
+			stop(table);
+			Menu m = pasted(table);
+			if (m != null && take(table, m, rows, note)) model.fireTableDataChanged();
+		});
+		JButton load = new JButton("Import…");
+		load.setToolTipText("Take a menu file (XML or YAML), or the menu of an event's file");
+		load.addActionListener(e ->
+		{
+			stop(table);
+			Menu m = imported(table, lookIn);
+			if (m != null && take(table, m, rows, note)) model.fireTableDataChanged();
+		});
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
 		buttons.add(addCourse);
 		buttons.add(addDish);
 		buttons.add(remove);
+		buttons.add(Box.createHorizontalStrut(24));
+		buttons.add(paste);
+		buttons.add(load);
 		StringBuilder key = new StringBuilder("Tick what each dish suits:  ");
 		for (Diet d : diets) key.append(d.code()).append(" ").append(d).append("   ");
 		JLabel hint = new JLabel(key.toString().strip());
 		hint.setForeground(Theme.EDGE);
-		JTextArea note = new JTextArea(event.getMenu().getNote(), 4, 50);
 		note.setLineWrap(true);
 		note.setWrapStyleWord(true);
 		note.setToolTipText("About the menu as a whole, e.g. \"All our food is sourced locally\"; "
@@ -143,6 +171,11 @@ public class MenuDialog
 		p.add(scroll, BorderLayout.CENTER);
 		p.add(south, BorderLayout.SOUTH);
 
+		if (start == Start.IMPORT)
+		{
+			Menu m = imported(parent, lookIn);
+			if (m == null || !take(parent, m, rows, note)) return false;
+		}
 		while (true)
 		{
 			if (!ResizableDialog.ok(parent, p, "Menu: " + event.getName(), "menuDialog")) return false;
@@ -157,6 +190,95 @@ public class MenuDialog
 		event.getMenu().setNote(note.getText());
 		event.tidy(occasion.getGuests());
 		return true;
+	}
+
+	// a caterer's menu pasted in; null if none
+	private static Menu pasted(Component parent)
+	{
+		JTextArea text = new JTextArea(18, 60);
+		text.setLineWrap(true);
+		text.setWrapStyleWord(true);
+		JLabel how = new JLabel("<html>Paste the menu as text (copied from the caterer's PDF, Word document or email).<br>"
+				+ "Headings such as <i>Starters</i>, <i>MAIN COURSE</i> or <i>Desserts:</i> start courses; the lines under "
+				+ "them are dishes. Marks such as (V), (VG), (GF), (DF) give the diets; prices are left out.<br>"
+				+ "You can check and change it all before OK.</html>");
+		JPanel p = new JPanel(new BorderLayout(0, 6));
+		p.add(how, BorderLayout.NORTH);
+		p.add(new JScrollPane(text), BorderLayout.CENTER);
+		SwingUtilities.invokeLater(text::requestFocusInWindow);
+		if (!ResizableDialog.ok(parent, p, "Paste a menu", "pasteMenuDialog") || text.getText().isBlank()) return null;
+		Menu m = MenuText.fromText(text.getText());
+		if (m.isEmpty())
+		{
+			JOptionPane.showMessageDialog(parent, "No courses or dishes could be found in the text.", "Paste a menu",
+					JOptionPane.WARNING_MESSAGE);
+			return null;
+		}
+		return m;
+	}
+
+	// a menu from a file; null if none
+	private static Menu imported(Component parent, Path lookIn)
+	{
+		JFileChooser fc = new JFileChooser(lookIn.toFile());
+		fc.setDialogTitle("Import a menu");
+		fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+				"Menu or event files (XML, YAML)", "xml", "yml", "yaml"));
+		if (fc.showOpenDialog(parent) != JFileChooser.APPROVE_OPTION) return null;
+		File f = fc.getSelectedFile();
+		try
+		{
+			return MenuText.load(f.toPath());
+		} catch (IOException | RuntimeException e)
+		{
+			JOptionPane.showMessageDialog(parent, f.getName() + ": " + e.getMessage(), "Cannot import",
+					JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
+	}
+
+	/*
+	 * The menu taken into the lines, in place of them or after them (asking,
+	 * if there are any). In place of them, a dish of the same course and name
+	 * stays the same dish, so guests who chose it keep their choice. False if
+	 * cancelled.
+	 */
+	private static boolean take(Component parent, Menu m, List<Row> rows, JTextArea note)
+	{
+		boolean replace = true;
+		if (rows.stream().anyMatch(r -> !r.dish.isBlank()))
+		{
+			Object[] options = {"Replace the menu", "Add to it", "Cancel"};
+			int a = JOptionPane.showOptionDialog(parent, m.dishes().size() + " dishes in " + m.courses().size()
+							+ (m.courses().size() == 1 ? " course" : " courses") + ". Replace the menu with them, or add them to it?",
+					"Menu", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+			if (a != 0 && a != 1) return false;
+			replace = a == 0;
+		}
+		List<Row> was = new ArrayList<>(rows);
+		if (replace) rows.clear();
+		for (Menu.Course c : m.courses())
+		{
+			for (Menu.Dish d : c.dishes())
+			{
+				if (!replace && was.stream().anyMatch(r -> same(r, c.getName(), d.getName()))) continue;
+				Row r = new Row(c.getName(), null);
+				r.dish = d.getName();
+				r.suits.addAll(d.suits());
+				if (replace)
+					was.stream().filter(o -> o.was != null && same(o, c.getName(), d.getName())).findFirst()
+							.ifPresent(o -> r.was = o.was);
+				rows.add(r);
+			}
+		}
+		if (!m.getNote().isEmpty())
+			note.setText(replace || note.getText().isBlank() ? m.getNote() : note.getText().strip() + "\n" + m.getNote());
+		return true;
+	}
+
+	private static boolean same(Row r, String course, String dish)
+	{
+		return r.course.equalsIgnoreCase(course) && r.dish.equalsIgnoreCase(dish);
 	}
 
 	// the menu as the lines say, keeping the courses and dishes that were there
