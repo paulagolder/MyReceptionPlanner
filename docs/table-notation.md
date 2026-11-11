@@ -20,8 +20,12 @@ the centimetre, only close enough to plan with. So:
   space) is done as now, by **disabling** that seat. The table keeps its
   gross size and seat numbers.
 
-Positions on the plan stay in centimetres (`x`, `y`, the centre of the
-box) and `rotation` in degrees, as now. Seats are counted **clockwise**
+Every shape can be moved and turned, as tables are now: `x` and `y`, in
+centimetres on the plan, are the centre of its enclosing box (for a polygon
+or a joined table, the box round its outline), and `rotation`, in degrees,
+turns it clockwise about that centre. The shapes are described, and
+sketched here, unturned; a horseshoe turned 90 has its top table along the
+right-hand side, its arms reaching left. Turning a table does not renumber its seats. Seats are counted **clockwise**
 from 1, and `firstseat`, `disabled` and `open` (open-access seats) name
 them by those numbers, as now.
 
