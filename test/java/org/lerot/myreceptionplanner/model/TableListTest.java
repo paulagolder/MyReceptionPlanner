@@ -119,4 +119,41 @@ class TableListTest
 		assertTrue(first.contains(e.getPlan().label(tables.get(0))) && first.contains(e.getPlan().label(tables.get(1))), first);
 		r.close();
 	}
+
+	@Test
+	void theSmallerCardsGoFourOrTwoToAnA4Sheet() throws Exception
+	{
+		Occasion o = OccasionXml.load(Example.install(dir));
+		Event e = banquet(o);
+		List<Table> tables = e.getPlan().tables();  // 7
+
+		Path a6 = dir.resolve("a6.pdf");
+		TableListPdf.writeAll(o, e, tables, TableListPdf.Card.A6, a6);
+		PdfReader r = new PdfReader(a6.toString());
+		assertEquals(2, r.getNumberOfPages(), "four to a sheet");
+		assertEquals(595, r.getPageSizeWithRotation(1).getWidth(), 1, "A4 upright");
+		String first = PdfTextExtractor.getTextFromPage(r, 1);
+		for (int i = 0; i < 4; i++)
+			assertTrue(first.contains(e.getPlan().label(tables.get(i))), first);
+		r.close();
+
+		Path folded = dir.resolve("a5folded.pdf");
+		TableListPdf.writeAll(o, e, tables, TableListPdf.Card.A5_FOLDED, folded);
+		r = new PdfReader(folded.toString());
+		assertEquals(4, r.getNumberOfPages(), "two to a sheet");
+		first = PdfTextExtractor.getTextFromPage(r, 1);
+		assertEquals(2, first.split("Head table", -1).length - 1, "front and back");
+		r.close();
+
+		// one table on its own: a page its own size
+		Path one = dir.resolve("one.pdf");
+		TableListPdf.write(o, e, tables.get(0), TableListPdf.Card.A6, one);
+		r = new PdfReader(one.toString());
+		assertEquals(298, r.getPageSizeWithRotation(1).getWidth(), 1);
+		r.close();
+		TableListPdf.write(o, e, tables.get(0), TableListPdf.Card.A5_FOLDED, one);
+		r = new PdfReader(one.toString());
+		assertEquals(595, r.getPageSizeWithRotation(1).getWidth(), 1, "A5 across");
+		r.close();
+	}
 }

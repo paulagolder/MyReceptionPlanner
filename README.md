@@ -508,18 +508,20 @@ on **Catering ▾** (above):
   large as fits. It is saved as `table-plan-<event>.pdf` in the occasion's
   folder's Output unless you choose otherwise, and opened.
 - **Table list (PDF)…**: a card to stand on one table. Choose the table
-  (the one selected on the plan to start with) and the card: an **A5
-  card** for a stand, or an **A4 folded card**, A4 landscape folded down
-  the middle like a greetings card, with the list on the front and again
-  on the back so it reads from both sides. The card has the occasion's
+  (the one selected on the plan to start with) and the card: an **A5** or
+  **A6 card** for a stand, or a folded card, **A4 folded to A5** or **A5
+  folded to A6**, folded down the middle like a greetings card, with the
+  list on the front and again on the back so it reads from both sides. The card has the occasion's
   emblem, the occasion and the date, the event, the table's name or number
   large (a table with a name of its own has its number underneath), then
   its guests in seat order with their seat numbers. Empty and disabled
   seats are left out, and so are dietary needs. It is saved as
   `table-list-<event>-<table>.pdf` in Output and opened. Choose **All
-  tables** to make them all at once, as `table-lists-<event>.pdf`: folded
-  A4 a page each, or A5 two to a sheet of A4 landscape to cut down the
-  middle; tables with no one seated are left out.
+  tables** to make them all at once, as `table-lists-<event>.pdf`, on A4
+  sheets as many as fit, for cutting or for perforated laser card: A5 two
+  to a sheet, A6 four, A5 folded two, A4 folded one. Short marks at the
+  sheet's edges show where to cut and fold. Tables with no one seated are
+  left out. One table on its own is printed on a page its own size.
 - **Check…** lists what is still to settle at the event shown (for an
   unreserved party: who is invited, party by party, against its capacity):
 

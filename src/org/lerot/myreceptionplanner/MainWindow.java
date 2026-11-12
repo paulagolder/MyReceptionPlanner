@@ -930,10 +930,10 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		form.add(new JLabel("Card"));
 		form.add(card);
 		JLabel note = new JLabel("<html>The emblem, the occasion and the event, the table large,<br>"
-				+ "then its guests in seat order. The folded card has the list<br>"
+				+ "then its guests in seat order. A folded card has the list<br>"
 				+ "on the front and again on the back.<br>"
-				+ "All tables: folded A4 a page each, or A5 two to a sheet of A4<br>"
-				+ "to cut in half; tables with no one seated are left out.</html>");
+				+ "All tables go on A4 sheets, as many as fit (to cut, or tear<br>"
+				+ "on perforated card); tables with no one seated are left out.</html>");
 		note.setForeground(Theme.EDGE);
 		form.add(note, "skip, gaptop 6");
 		if (JOptionPane.showConfirmDialog(this, form, "Table list: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
