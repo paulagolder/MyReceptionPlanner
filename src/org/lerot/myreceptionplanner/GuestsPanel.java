@@ -231,6 +231,7 @@ public class GuestsPanel extends JPanel
 		setUp(guestTable);
 		guestTable.setAutoCreateRowSorter(true);
 		guestTable.setDefaultRenderer(Invitation.class, InvitationMarks.renderer());
+		TabEditing.install(guestTable, m -> guestModel.rows.get(m), g -> guestModel.rows.indexOf(g));
 		guestTable.getColumnModel().getColumn(0).setCellEditor(NameFields.titleEditor(occasion.getHonorifics()));
 		guestTable.getColumnModel().getColumn(0).setPreferredWidth(80);
 		guestTable.getColumnModel().getColumn(FORENAMES).setPreferredWidth(130);

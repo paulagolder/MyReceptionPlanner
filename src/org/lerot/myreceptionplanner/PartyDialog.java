@@ -192,6 +192,7 @@ public class PartyDialog
 		memberTable.getColumnModel().getColumn(4).setCellEditor(RoleField.editor());
 		memberTable.getColumnModel().getColumn(4).setPreferredWidth(130);
 		memberTable.setDefaultRenderer(Object.class, new MemberRenderer());
+		TabEditing.install(memberTable, rows::get, r -> rows.indexOf(r));
 		memberTable.putClientProperty("terminateEditOnFocusLost", true);
 		memberTable.setRowHeight(Math.max(memberTable.getRowHeight(), 22));
 		memberTable.setFillsViewportHeight(true);
