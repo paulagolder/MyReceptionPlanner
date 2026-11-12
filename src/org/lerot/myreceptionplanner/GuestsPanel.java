@@ -5,6 +5,7 @@ import org.lerot.myreceptionplanner.model.Contact;
 import org.lerot.myreceptionplanner.model.Event;
 import org.lerot.myreceptionplanner.model.Gender;
 import org.lerot.myreceptionplanner.model.Guest;
+import org.lerot.myreceptionplanner.model.Name;
 import org.lerot.myreceptionplanner.model.GuestList;
 import org.lerot.myreceptionplanner.model.Invitation;
 import org.lerot.myreceptionplanner.model.Occasion;
@@ -37,7 +38,8 @@ public class GuestsPanel extends JPanel
 
 	private static final String NO_PARTY = "No party";
 	private static final int ICON = 14;
-	private static final int EVENTS_FROM = 6;  // the first event's column in the guest table
+	private static final int EVENTS_FROM = 8;  // the first event's column in the guest table
+	private static final int FORENAMES = 1, ROLE = 3, GENDER = 4, PARTY = 5, DIET = 6, REACH = 7;
 
 	private final Occasion occasion;
 	private final GuestList guests;
@@ -229,16 +231,19 @@ public class GuestsPanel extends JPanel
 		setUp(guestTable);
 		guestTable.setAutoCreateRowSorter(true);
 		guestTable.setDefaultRenderer(Invitation.class, InvitationMarks.renderer());
-		guestTable.getColumnModel().getColumn(0).setPreferredWidth(200);
-		guestTable.getColumnModel().getColumn(1).setCellEditor(RoleField.editor());
-		guestTable.getColumnModel().getColumn(1).setPreferredWidth(150);
-		TableColumn gender = guestTable.getColumnModel().getColumn(2);
+		guestTable.getColumnModel().getColumn(0).setCellEditor(NameFields.titleEditor(occasion.getHonorifics()));
+		guestTable.getColumnModel().getColumn(0).setPreferredWidth(80);
+		guestTable.getColumnModel().getColumn(FORENAMES).setPreferredWidth(130);
+		guestTable.getColumnModel().getColumn(2).setPreferredWidth(120);
+		guestTable.getColumnModel().getColumn(ROLE).setCellEditor(RoleField.editor());
+		guestTable.getColumnModel().getColumn(ROLE).setPreferredWidth(140);
+		TableColumn gender = guestTable.getColumnModel().getColumn(GENDER);
 		gender.setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
 		gender.setPreferredWidth(90);
-		guestTable.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(partyCombo));
-		guestTable.getColumnModel().getColumn(3).setPreferredWidth(160);
-		guestTable.getColumnModel().getColumn(5).setPreferredWidth(90);
-		guestTable.getColumnModel().getColumn(5).setMaxWidth(110);
+		guestTable.getColumnModel().getColumn(PARTY).setCellEditor(new DefaultCellEditor(partyCombo));
+		guestTable.getColumnModel().getColumn(PARTY).setPreferredWidth(160);
+		guestTable.getColumnModel().getColumn(REACH).setPreferredWidth(90);
+		guestTable.getColumnModel().getColumn(REACH).setMaxWidth(110);
 		for (int i = 0; i < events.size(); i++)
 		{
 			TableColumn c = guestTable.getColumnModel().getColumn(EVENTS_FROM + i);
@@ -261,8 +266,8 @@ public class GuestsPanel extends JPanel
 					return;
 				}
 				if (e.getClickCount() != 2) return;
-				if (col == 4 && DietDialog.editNamed(GuestsPanel.this, g)) changed();
-				else if (col == 5 && g.getParty() != null)
+				if (col == DIET && DietDialog.editNamed(GuestsPanel.this, g)) changed();
+				else if (col == REACH && g.getParty() != null)
 				{
 					select(g.getParty());
 					editParty();
@@ -309,7 +314,7 @@ public class GuestsPanel extends JPanel
 		if (row < 0) return;
 		guestTable.setRowSelectionInterval(row, row);
 		guestTable.scrollRectToVisible(guestTable.getCellRect(row, 0, true));
-		guestTable.editCellAt(row, 0);
+		guestTable.editCellAt(row, guestTable.convertColumnIndexToView(FORENAMES));
 		if (guestTable.getEditorComponent() != null) guestTable.getEditorComponent().requestFocusInWindow();
 	}
 
@@ -366,7 +371,7 @@ public class GuestsPanel extends JPanel
 
 	private class GuestModel extends AbstractTableModel
 	{
-		private final String[] columns = { "Name", "Role", "Gender", "Party", "Diet", "Reach" };
+		private final String[] columns = { "Title", "Forenames", "Family name", "Role", "Gender", "Party", "Diet", "Reach" };
 		private List<Guest> rows = List.of();
 
 		void reload()
@@ -390,17 +395,19 @@ public class GuestsPanel extends JPanel
 			Guest g = rows.get(row);
 			return switch (col)
 			{
-				case 0 -> g.getName();
-				case 1 -> g.getRole();
-				case 2 -> g.getGender();
-				case 3 -> g.getParty() == null ? NO_PARTY : g.getParty();
-				case 4 -> g.dietText();
-				case 5 -> reach(g);
+				case 0 -> g.getNameParts().title();
+				case FORENAMES -> g.getNameParts().forenames();
+				case 2 -> g.getNameParts().family();
+				case ROLE -> g.getRole();
+				case GENDER -> g.getGender();
+				case PARTY -> g.getParty() == null ? NO_PARTY : g.getParty();
+				case DIET -> g.dietText();
+				case REACH -> reach(g);
 				default -> events.get(col - EVENTS_FROM).invitation(g);
 			};
 		}
 
-		public boolean isCellEditable(int row, int col) { return col <= 3; }
+		public boolean isCellEditable(int row, int col) { return col <= PARTY; }
 
 		public void setValueAt(Object value, int row, int col)
 		{
@@ -408,19 +415,32 @@ public class GuestsPanel extends JPanel
 			Guest g = rows.get(row);
 			switch (col)
 			{
-				case 0 ->
+				case 0, FORENAMES, 2 ->
 				{
-					if (value.toString().equals(g.getName())) return;
-					if (NameCheck.ask(GuestsPanel.this, guests, value.toString(), g, false) != NameCheck.Answer.DIFFERENT) return;
-					guests.rename(g, value.toString());
+					Name was = g.getNameParts(), now = switch (col)
+					{
+						case 0 -> was.withTitle(value.toString());
+						case FORENAMES -> was.withForenames(value.toString());
+						default -> was.withFamily(value.toString());
+					};
+					if (now.equals(was)) return;
+					if (now.isEmpty() && g.isLead())
+					{
+						JOptionPane.showMessageDialog(GuestsPanel.this, "The lead of a party keeps a name.", "Name",
+								JOptionPane.INFORMATION_MESSAGE);
+						return;
+					}
+					if (!now.plain().equals(was.plain()) && !now.isEmpty()
+							&& NameCheck.ask(GuestsPanel.this, guests, now.full(), g, false) != NameCheck.Answer.DIFFERENT) return;
+					guests.rename(g, now);
 				}
-				case 1 ->
+				case ROLE ->
 				{
 					if (value.toString().strip().equals(g.getRole())) return;
 					g.setRole(value.toString());
 				}
-				case 2 -> g.setGender((Gender) value);
-				case 3 ->
+				case GENDER -> g.setGender((Gender) value);
+				case PARTY ->
 				{
 					if (!guests.setParty(g, value instanceof Party p ? p : null))
 					{
@@ -475,7 +495,7 @@ public class GuestsPanel extends JPanel
 				setText("");
 				setHorizontalAlignment(CENTER);
 			} else if (NO_PARTY.equals(value)) fg = Theme.EDGE;
-			if (t == guestTable && t.convertColumnIndexToModel(col) == 0)
+			if (t == guestTable && t.convertColumnIndexToModel(col) == FORENAMES)
 			{
 				Guest g = guestAt(row);
 				if (!g.isNamed())
@@ -485,7 +505,7 @@ public class GuestsPanel extends JPanel
 					fg = Theme.EDGE;
 				}
 			}
-			if (t == guestTable && t.convertColumnIndexToModel(col) == 4) setHorizontalAlignment(CENTER);
+			if (t == guestTable && t.convertColumnIndexToModel(col) == DIET) setHorizontalAlignment(CENTER);
 			if (!selected) setForeground(fg);
 			return this;
 		}

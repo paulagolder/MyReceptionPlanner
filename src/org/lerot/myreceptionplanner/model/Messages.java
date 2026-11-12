@@ -144,7 +144,7 @@ public final class Messages
 		return switch (key)
 		{
 			case "lead" -> lead == null ? party.getName() : lead.getName();
-			case "leadfirst" -> lead == null ? party.getName() : o.getHonorifics().greeting(lead.getName());
+			case "leadfirst" -> lead == null ? party.getName() : o.getHonorifics().greeting(lead.getNameParts());
 			case "party" -> party.getName();
 			case "guests" -> guestsText(guests.membersOf(party));
 			case "places" -> Integer.toString(guests.placesOf(party));

@@ -37,22 +37,22 @@ COLOURS = ["#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD", "#8C564B", "#E
            "#BCBD22", "#17BECF", "#B22222", "#1F4E9C", "#2E8B57", "#DAA520", "#6A5ACD", "#CD5C5C"]
 DIETS = ["v", "vg", "gf", "df", "nf", "h", "k"]
 
-# fictional celebrities: (name, gender, role); a list is one party, its first the lead
+# fictional celebrities: ((title, forenames, family), gender, role); a list is one party, its first the lead
 CELEBS = [
-    [("Dame Margot Fairweather", "f", "Prima ballerina"), ("Sir Anton Fairweather", "m", "Conductor")],
-    [("Rudolf Kestrel", "m", "Principal dancer")],
-    [("Lady Imogen Ashcombe", "f", "Patron"), ("Lord Ashcombe", "m", "Patron"), ("Hon. Clara Ashcombe", "f", "")],
-    [("Celeste Moreau", "f", "Choreographer"), (None, "u", "")],
-    [("Vikram Sethi", "m", "Film director"), ("Anjali Sethi", "f", "")],
-    [("The Mayor of Thornbury", "u", "Mayor"), ("Mayoress", "f", "Mayoress")],
-    [("Bishop Ambrose Penhallow", "m", "Bishop")],
-    [("Olga Brandt", "f", "Ballet mistress"), ("Kurt Brandt", "m", "")],
-    [("Jasper Quill", "m", "Critic")],
-    [("Signora Lucia Bellini", "f", "Soprano"), (None, "u", "")],
-    [("Dr Hamish McTavish", "m", "Festival director"), ("Morag McTavish", "f", "")],
-    [("Elodie Vance", "f", "Television presenter"), ("Marcus Vance", "m", ""), (None, "u", "")],
-    [("Sir Percival Hawkes", "m", "Sponsor"), ("Lady Hawkes", "f", "Sponsor")],
-    [("Ines Carvalho", "f", "Costume designer")],
+    [(("Dame", "Margot", "Fairweather"), "f", "Prima ballerina"), (("Sir", "Anton", "Fairweather"), "m", "Conductor")],
+    [(("", "Rudolf", "Kestrel"), "m", "Principal dancer")],
+    [(("Lady", "Imogen", "Ashcombe"), "f", "Patron"), (("Lord", "", "Ashcombe"), "m", "Patron"), (("Hon.", "Clara", "Ashcombe"), "f", "")],
+    [(("", "Celeste", "Moreau"), "f", "Choreographer"), (None, "u", "")],
+    [(("", "Vikram", "Sethi"), "m", "Film director"), (("", "Anjali", "Sethi"), "f", "")],
+    [(("The Mayor of Thornbury", "", ""), "u", "Mayor"), (("The Mayoress", "", ""), "f", "Mayoress")],
+    [(("Bishop", "Ambrose", "Penhallow"), "m", "Bishop")],
+    [(("", "Olga", "Brandt"), "f", "Ballet mistress"), (("", "Kurt", "Brandt"), "m", "")],
+    [(("", "Jasper", "Quill"), "m", "Critic")],
+    [(("Signora", "Lucia", "Bellini"), "f", "Soprano"), (None, "u", "")],
+    [(("Dr", "Hamish", "McTavish"), "m", "Festival director"), (("", "Morag", "McTavish"), "f", "")],
+    [(("", "Elodie", "Vance"), "f", "Television presenter"), (("", "Marcus", "Vance"), "m", ""), (None, "u", "")],
+    [(("Sir", "Percival", "Hawkes"), "m", "Sponsor"), (("Lady", "", "Hawkes"), "f", "Sponsor")],
+    [(("", "Ines", "Carvalho"), "f", "Costume designer")],
 ]
 
 guest_id = 0
@@ -62,6 +62,7 @@ families_by_surname = {}
 
 
 def new_guest(name, gender, role="", plus=0):
+    """name: (title, forenames, family), or None for a place not named."""
     global guest_id
     guest_id += 1
     g = {"id": guest_id, "name": name, "gender": gender, "role": role, "plus": plus,
@@ -75,7 +76,7 @@ def new_party(name, guests, kind):
     global party_id
     party_id += 1
     lead = guests[0]
-    first = lead["name"].split()[0].lower().replace("'", "")
+    first = (lead["name"][1] or lead["name"][2] or "guest").split()[0].lower().replace("'", "").replace(" ", "")
     lead["contact"] = {"email": f"{first}.{party_id}@example.com"}
     if random.random() < 0.6:
         lead["contact"]["mobile"] = f"07700 9{random.randint(0, 99999):05d}"
@@ -101,7 +102,7 @@ for members in CELEBS:
 # patrons: couples who dine at the Gala
 for _ in range(22):
     sur = random.choice(SURNAMES)
-    gs = [new_guest(f"{random.choice(MEN)} {sur}", "m", "Patron"), new_guest(f"{random.choice(WOMEN)} {sur}", "f", "Patron")]
+    gs = [new_guest(("", random.choice(MEN), sur), "m", "Patron"), new_guest(("", random.choice(WOMEN), sur), "f", "Patron")]
     random.shuffle(gs)
     new_party("", gs, "patron")
 
@@ -112,16 +113,16 @@ while guest_id < 470:
     gs = []
     if size == 1:
         sex = random.choice("mf")
-        gs.append(new_guest(f"{random.choice(MEN if sex == 'm' else WOMEN)} {sur}", sex))
+        gs.append(new_guest(("", random.choice(MEN if sex == 'm' else WOMEN), sur), sex))
     else:
-        gs.append(new_guest(f"{random.choice(MEN)} {sur}", "m"))
-        gs.append(new_guest(f"{random.choice(WOMEN)} {sur}", "f"))
+        gs.append(new_guest(("", random.choice(MEN), sur), "m"))
+        gs.append(new_guest(("", random.choice(WOMEN), sur), "f"))
         for _ in range(size - 2):
             if random.random() < 0.25:
                 gs.append(new_guest(None, "u"))
             else:
                 sex = random.choice("mf")
-                gs.append(new_guest(f"{random.choice(MEN if sex == 'm' else WOMEN)} {sur}", sex))
+                gs.append(new_guest(("", random.choice(MEN if sex == 'm' else WOMEN), sur), sex))
         if random.random() < 0.5:
             gs[0], gs[1] = gs[1], gs[0]
     count = families_by_surname.get(sur, 0) + 1
@@ -133,10 +134,10 @@ while guest_id < 470:
 village = [p for p in parties if p["kind"] == "village"]
 for p in random.sample(village, 4):
     src = p["guests"][0]
-    first, *rest = src["name"].split()
+    _, first, family = src["name"]
     alias = {"Thomas": "Tom", "William": "Bill", "Elizabeth": "Liz", "Robert": "Bob", "Edward": "Ted",
              "Richard": "Dick", "Margaret": "Peggy", "Samuel": "Sam", "Frederick": "Fred"}.get(first, first)
-    new_party("", [new_guest(" ".join([alias] + rest), src["gender"])], "village")
+    new_party("", [new_guest(("", alias, family), src["gender"])], "village")
 
 all_guests = [g for p in parties for g in p["guests"]]
 print(f"{len(parties)} parties, {len(all_guests)} guests "
@@ -152,7 +153,9 @@ def write_guests(path):
         for g in p["guests"]:
             a = f'id="{g["id"]}"'
             if g["name"]:
-                a += f' name={q(g["name"])}'
+                for key, part in zip(("title", "forenames", "family"), g["name"]):
+                    if part:
+                        a += f' {key}={q(part)}'
             a += f' gender="{g["gender"]}"'
             if g["role"]:
                 a += f' role={q(g["role"])}'

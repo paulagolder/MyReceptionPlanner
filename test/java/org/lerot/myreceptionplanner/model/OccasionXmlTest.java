@@ -198,7 +198,7 @@ class OccasionXmlTest
 		assertFalse(occasionXml.contains("<guests"));
 		assertFalse(occasionXml.contains("<template"));
 		assertTrue(occasionXml.contains("<communications>"));
-		assertTrue(Files.readString(folder.resolve(OccasionXml.GUESTS)).contains("Ann Smith"));
+		assertTrue(Files.readString(folder.resolve(OccasionXml.GUESTS)).contains("forenames=\"Ann\" family=\"Smith\""));
 		assertTrue(Files.readString(folder.resolve(OccasionXml.TEMPLATES)).contains("Directions"));
 
 		Occasion loaded = OccasionXml.load(folder);

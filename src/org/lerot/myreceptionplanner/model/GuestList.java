@@ -37,9 +37,9 @@ public class GuestList
 	 * "Ann Smith+1", "Ann Smith+2" ... The party is called after the lead
 	 * unless given a name of its own.
 	 */
-	public Party createParty(String leadName, int places, String partyName)
+	public Party createParty(Name leadName, int places, String partyName)
 	{
-		if (leadName == null || leadName.isBlank()) throw new IllegalArgumentException("a party needs a lead guest");
+		if (leadName == null || leadName.isEmpty()) throw new IllegalArgumentException("a party needs a lead guest");
 		if (places < 1) throw new IllegalArgumentException("a party has at least its lead's place");
 		int id = parties.stream().mapToInt(Party::getId).max().orElse(0) + 1;
 		Party p = new Party(id, partyName, nextColour());
@@ -102,7 +102,25 @@ public class GuestList
 		return going;
 	}
 
+	// a whole name typed in one piece is split as Name.guess does
+	public Party createParty(String leadName, int places, String partyName)
+	{
+		return createParty(Name.guess(leadName, HONORIFICS), places, partyName);
+	}
+
 	public Guest addGuest(String name, Gender gender, Party party)
+	{
+		return addGuest(Name.guess(name, HONORIFICS), gender, party);
+	}
+
+	public void rename(Guest guest, String name)
+	{
+		rename(guest, Name.guess(name, HONORIFICS));
+	}
+
+	private static final Honorifics HONORIFICS = Honorifics.standard();
+
+	public Guest addGuest(Name name, Gender gender, Party party)
 	{
 		int id = guests.stream().mapToInt(Guest::getId).max().orElse(0) + 1;
 		Guest g = new Guest(id, name, gender, party);
@@ -179,9 +197,9 @@ public class GuestList
 
 	// a guest whose name is cleared keeps a place in their party, with a number;
 	// the lead must keep a name, so an empty one is ignored for them
-	public void rename(Guest guest, String name)
+	public void rename(Guest guest, Name name)
 	{
-		boolean empty = name == null || name.isBlank();
+		boolean empty = name == null || name.isEmpty();
 		if (empty && guest.isLead()) return;
 		guest.setName(name);
 		if (guest.isPlaceholder() && guest.getPlus() == 0) guest.setPlus(nextPlus(guest.getParty()));

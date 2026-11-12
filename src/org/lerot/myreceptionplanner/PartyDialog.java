@@ -6,6 +6,7 @@ import org.lerot.myreceptionplanner.model.Contact;
 import org.lerot.myreceptionplanner.model.Gender;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
+import org.lerot.myreceptionplanner.model.Name;
 import org.lerot.myreceptionplanner.model.Occasion;
 import org.lerot.myreceptionplanner.model.Party;
 
@@ -27,7 +28,8 @@ import java.util.List;
 import java.util.prefs.Preferences;
 
 /*
- * Makes a new party or edits one: the lead guest and how to reach them (typed
+ * Makes a new party or edits one: the lead guest (title, forenames, family
+ * name) and how to reach them (typed
  * in, or copied once from a contacts file exported from Google Contacts or
  * another address book), the party's own name if it has one,
  * its number of places, and its guests. A new party is the lead and places
@@ -41,7 +43,7 @@ public class PartyDialog
 	private static class Row
 	{
 		Guest guest;  // null for a place added here
-		String name;
+		Name name;
 		Gender gender;
 		String role = "";
 		int plus;
@@ -51,7 +53,7 @@ public class PartyDialog
 		{
 			guest = g;
 			this.seated = seated;
-			name = g.getName();
+			name = g.getNameParts();
 			gender = g.getGender();
 			role = g.getRole();
 			plus = g.getPlus();
@@ -60,12 +62,12 @@ public class PartyDialog
 
 		Row(int plus)
 		{
-			name = "";
+			name = Name.NONE;
 			gender = Gender.UNKNOWN;
 			this.plus = plus;
 		}
 
-		boolean named() { return !name.isBlank(); }
+		boolean named() { return !name.isEmpty(); }
 
 		boolean seated;  // at any event
 		boolean locked;  // an invitation sent to them stands, so they stay
@@ -76,7 +78,7 @@ public class PartyDialog
 	private final Party party;  // null for a new one
 	private final List<Row> rows = new ArrayList<>();
 
-	private final JTextField leadName = new JTextField();
+	private final NameFields leadName;
 	private final JTextField partyName = new JTextField();
 	private final JSpinner places = new JSpinner(new SpinnerNumberModel(2, 1, 60, 1));
 	private final JLabel placesHint = new JLabel();
@@ -101,6 +103,7 @@ public class PartyDialog
 		this.occasion = occasion;
 		this.guests = occasion.getGuests();
 		this.party = party;
+		this.leadName = new NameFields(occasion.getHonorifics());
 		if (party == null)
 		{
 			Row lead = new Row(0);
@@ -129,7 +132,7 @@ public class PartyDialog
 				r.lead = true;
 				rows.add(0, r);
 			}
-			leadName.setText(lead == null ? "" : lead.getName());
+			leadName.set(lead == null ? Name.NONE : lead.getNameParts());
 			if (party.hasOwnName()) partyName.setText(party.getName());
 			Contact c = lead == null ? new Contact() : lead.getContact();
 			address.setText(c.getAddress());
@@ -148,7 +151,7 @@ public class PartyDialog
 	{
 		JPanel form = new JPanel(new MigLayout("insets 0, wrap 3", "[right][grow,fill][]"));
 		form.add(new JLabel("Lead guest"));
-		form.add(leadName, "w 220!");
+		form.add(leadName, "w 380!");
 		JButton findInFile = new JButton("Find in a contacts file…");
 		findInFile.setToolTipText("A vCard (.vcf) or CSV file exported from Google Contacts or another address book");
 		findInFile.addActionListener(e -> findInContactsFile(form));
@@ -181,29 +184,25 @@ public class PartyDialog
 		form.add(source, "skip, span 2");
 
 		form.add(heading("Guests"), "span 3, gaptop 10, growx");
-		memberTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
-		memberTable.getColumnModel().getColumn(2).setCellEditor(RoleField.editor());
-		memberTable.getColumnModel().getColumn(2).setPreferredWidth(150);
-		memberTable.getColumnModel().getColumn(0).setPreferredWidth(200);
+		memberTable.getColumnModel().getColumn(0).setCellEditor(NameFields.titleEditor(occasion.getHonorifics()));
+		memberTable.getColumnModel().getColumn(0).setPreferredWidth(60);
+		memberTable.getColumnModel().getColumn(1).setPreferredWidth(130);
+		memberTable.getColumnModel().getColumn(2).setPreferredWidth(110);
+		memberTable.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(new JComboBox<>(Gender.values())));
+		memberTable.getColumnModel().getColumn(4).setCellEditor(RoleField.editor());
+		memberTable.getColumnModel().getColumn(4).setPreferredWidth(130);
 		memberTable.setDefaultRenderer(Object.class, new MemberRenderer());
 		memberTable.putClientProperty("terminateEditOnFocusLost", true);
 		memberTable.setRowHeight(Math.max(memberTable.getRowHeight(), 22));
 		memberTable.setFillsViewportHeight(true);
-		memberTable.setPreferredScrollableViewportSize(new Dimension(520, 150));
+		memberTable.setPreferredScrollableViewportSize(new Dimension(640, 150));
 		form.add(new JScrollPane(memberTable), "span 3, grow");
 		JLabel hint = new JLabel("Type over a +1, +2 … to name that guest.");
 		hint.setForeground(Theme.EDGE);
 		form.add(hint, "span 3");
 
 		places.addChangeListener(e -> resize((Integer) places.getValue()));
-		leadName.getDocument().addDocumentListener(new DocumentListener()
-		{
-			public void insertUpdate(DocumentEvent e) { leadChanged(); }
-
-			public void removeUpdate(DocumentEvent e) { leadChanged(); }
-
-			public void changedUpdate(DocumentEvent e) { leadChanged(); }
-		});
+		leadName.onChange(this::leadChanged);
 
 		String title = party == null ? "New party" : "Party: " + party.getName();
 		while (true)
@@ -219,7 +218,7 @@ public class PartyDialog
 							: goingNow + " places not named yet will be taken off the guest list. Are you sure?",
 					title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION)
 				continue;
-			if (!leadName.getText().isBlank())
+			if (!leadName.get().isEmpty())
 			{
 				List<Pending> alike = namesAlike();
 				if (alike.isEmpty() || sameAnyway(parent, alike))
@@ -247,7 +246,7 @@ public class PartyDialog
 
 	private void leadChanged()
 	{
-		rows.get(0).name = leadName.getText().trim();
+		rows.get(0).name = leadName.get();
 		updatePlacesLimit();
 		memberModel.fireTableDataChanged();
 	}
@@ -290,14 +289,14 @@ public class PartyDialog
 	// the names typed or changed here that look like someone already on the list, or like each other
 	private List<Pending> namesAlike()
 	{
-		rows.get(0).name = leadName.getText().trim();
+		rows.get(0).name = leadName.get();
 		List<Guest> here = rows.stream().map(r -> r.guest).filter(g -> g != null).toList();
 		List<Pending> out = new ArrayList<>();
 		for (int i = 0; i < rows.size(); i++)
 		{
 			Row r = rows.get(i);
-			if (!r.named() || (r.guest != null && r.guest.getName().equals(r.name))) continue;
-			for (var l : guests.like(r.name, r.guest))
+			if (!r.named() || (r.guest != null && r.guest.getNameParts().equals(r.name))) continue;
+			for (var l : guests.like(r.name.full(), r.guest))
 			{
 				if (!here.contains(l.b())) out.add(new Pending(r, l.b(), l.b().getName()
 						+ (l.b().getParty() == null ? "" : " (" + l.b().getParty().getName() + ")"), l.why()));
@@ -306,8 +305,8 @@ public class PartyDialog
 			{
 				Row o = rows.get(j);
 				if (j == i || !o.named() || (j < i && changed(o))) continue;
-				org.lerot.myreceptionplanner.model.NameMatch.why(r.name, o.name)
-						.ifPresent(w -> out.add(new Pending(r, o.guest, o.name + " (in this party)", w)));
+				org.lerot.myreceptionplanner.model.NameMatch.why(r.name.full(), o.name.full())
+						.ifPresent(w -> out.add(new Pending(r, o.guest, o.name.full() + " (in this party)", w)));
 			}
 		}
 		return out;
@@ -315,7 +314,7 @@ public class PartyDialog
 
 	private static boolean changed(Row r)
 	{
-		return r.named() && (r.guest == null || !r.guest.getName().equals(r.name));
+		return r.named() && (r.guest == null || !r.guest.getNameParts().equals(r.name));
 	}
 
 	// true to save anyway: they are different people
@@ -324,7 +323,7 @@ public class PartyDialog
 		StringBuilder html = new StringBuilder("<html><body style='width:380px'>"
 				+ "These names look like others on the guest list:<ul>");
 		for (Pending a : alike)
-			html.append("<li><b>").append(escape(a.row().name)).append("</b> and <b>").append(escape(a.otherName()))
+			html.append("<li><b>").append(escape(a.row().name.full())).append("</b> and <b>").append(escape(a.otherName()))
 					.append("</b> — ").append(escape(a.why())).append("</li>");
 		html.append("</ul>Each person should be on the list only once, in one party.</body></html>");
 		Object[] options = { "Save: they are different people", "Go back" };
@@ -339,7 +338,7 @@ public class PartyDialog
 
 	private Party apply()
 	{
-		String lead = leadName.getText().trim();
+		Name lead = leadName.get();
 		Party p = party;
 		if (p == null)
 		{
@@ -387,7 +386,7 @@ public class PartyDialog
 
 	private void copy(ContactFile.Entry chosen, String from)
 	{
-		leadName.setText(chosen.name());
+		leadName.set(chosen.parts().isEmpty() ? Name.guess(chosen.name(), occasion.getHonorifics()) : chosen.parts());
 		address.setText(chosen.address());
 		phone.setText(chosen.phone());
 		mobile.setText(chosen.mobile());
@@ -424,7 +423,7 @@ public class PartyDialog
 			}
 			PREFS.put(CONTACTS_FILE, file.toString());
 			boolean[] other = { false };
-			ContactFile.Entry chosen = choose(parent, entries, leadName.getText().trim(),
+			ContactFile.Entry chosen = choose(parent, entries, leadName.get().plain(),
 					file.getFileName().toString(), other);
 			if (chosen != null)
 			{
@@ -525,7 +524,7 @@ public class PartyDialog
 
 	private class MemberModel extends AbstractTableModel
 	{
-		private final String[] columns = { "Name", "Gender", "Role", "Seat" };
+		private final String[] columns = { "Title", "Forenames", "Family name", "Gender", "Role", "Seat" };
 
 		public int getRowCount() { return rows.size(); }
 
@@ -538,9 +537,11 @@ public class PartyDialog
 			Row r = rows.get(row);
 			return switch (col)
 			{
-				case 0 -> r.name;
-				case 1 -> r.gender;
-				case 2 -> r.role;
+				case 0 -> r.name.title();
+				case 1 -> r.name.forenames();
+				case 2 -> r.name.family();
+				case 3 -> r.gender;
+				case 4 -> r.role;
 				default -> r.seated ? "seated" : "";
 			};
 		}
@@ -548,16 +549,18 @@ public class PartyDialog
 		// the lead's name is the one above
 		public boolean isCellEditable(int row, int col)
 		{
-			return col == 1 || col == 2 || (col == 0 && !rows.get(row).lead);
+			return col == 3 || col == 4 || (col <= 2 && !rows.get(row).lead);
 		}
 
 		public void setValueAt(Object value, int row, int col)
 		{
 			if (value == null) return;
 			Row r = rows.get(row);
-			if (col == 0) r.name = value.toString().trim();
-			else if (col == 1) r.gender = (Gender) value;
-			else if (col == 2) r.role = value.toString().strip();
+			if (col == 0) r.name = r.name.withTitle(value.toString());
+			else if (col == 1) r.name = r.name.withForenames(value.toString());
+			else if (col == 2) r.name = r.name.withFamily(value.toString());
+			else if (col == 3) r.gender = (Gender) value;
+			else if (col == 4) r.role = value.toString().strip();
 			updatePlacesLimit();
 		}
 	}
@@ -573,12 +576,13 @@ public class PartyDialog
 			setIcon(null);
 			setFont(t.getFont());
 			Color fg = Theme.TEXT;
-			if (col == 0)
+			if (r.lead && col == 0 && r.name.title().isEmpty()) setText("(lead)");
+			if (r.lead && col <= 2) fg = Theme.EDGE;  // typed above
+			if (col == 1 && !r.lead)
 			{
-				if (r.lead) setText(r.name + "  (lead)");
-				else if (!r.named())
+				if (!r.named())
 				{
-					String lead = leadName.getText().isBlank() ? "Lead" : leadName.getText().trim();
+					String lead = leadName.get().isEmpty() ? "Lead" : leadName.get().full();
 					setText(lead + "+" + r.plus);
 					setFont(t.getFont().deriveFont(Font.ITALIC));
 					fg = Theme.EDGE;

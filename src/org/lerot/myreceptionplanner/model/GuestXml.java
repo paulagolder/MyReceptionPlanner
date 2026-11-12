@@ -11,7 +11,7 @@ import java.io.IOException;
  *
  *   <guests>
  *     <party id="1" name="Smith family" colour="#1F77B4" lead="1">
- *       <guest id="1" name="Ann Smith" gender="f" role="Mother of the bride">
+ *       <guest id="1" title="Mrs" forenames="Ann" family="Smith" gender="f" role="Mother of the bride">
  *         <contact source="MyContacts" phone="01234 567890" mobile="07700 900123"
  *                  whatsapp="07700 900123" email="ann@example.com">
  *           <address><line>1 High Street</line><line>Mayfield</line></address>
@@ -19,10 +19,12 @@ import java.io.IOException;
  *       </guest>
  *       <guest id="2" gender="u" plus="1" diet="vg nf" dietnote="no sesame"/>
  *     </party>
- *     <guest id="3" name="Father Brown" gender="m"/>
+ *     <guest id="3" title="Father" family="Brown" gender="m"/>
  *     <distinct a="3" b="9"/>
  *   </guests>
  *
+ * A guest's name is in its parts (see Name), each left out when empty; a
+ * file from before then has name="Ann Smith", split as Name.guess does.
  * gender is f, m or u (not known). lead is the id of the party's lead guest;
  * a party without a name of its own goes by the lead's. A guest with no name
  * is a place kept for one of the party, shown as the lead's name +plus. A
@@ -34,6 +36,8 @@ import java.io.IOException;
  */
 public class GuestXml
 {
+	private static final Honorifics HONORIFICS = Honorifics.standard();
+
 	public static void write(GuestList list, org.dom4j.Branch parent)
 	{
 		Element root = parent.addElement("guests");
@@ -62,7 +66,10 @@ public class GuestXml
 	private static void addGuest(Element parent, Guest g)
 	{
 		Element e = parent.addElement("guest").addAttribute("id", Integer.toString(g.getId()));
-		if (g.isNamed()) e.addAttribute("name", g.getName());
+		Name n = g.getNameParts();
+		if (!n.title().isEmpty()) e.addAttribute("title", n.title());
+		if (!n.forenames().isEmpty()) e.addAttribute("forenames", n.forenames());
+		if (!n.family().isEmpty()) e.addAttribute("family", n.family());
 		e.addAttribute("gender", g.getGender().code());
 		if (!g.getRole().isEmpty()) e.addAttribute("role", g.getRole());
 		if (g.isPlaceholder()) e.addAttribute("plus", Integer.toString(g.getPlus()));
@@ -125,8 +132,9 @@ public class GuestXml
 
 	private static Guest guest(Element e, Party party) throws IOException
 	{
-		Guest g = new Guest(PlanXml.number(e, "id", 0), e.attributeValue("name", ""),
-				Gender.fromCode(e.attributeValue("gender", "u")), party);
+		Name name = new Name(e.attributeValue("title"), e.attributeValue("forenames"), e.attributeValue("family"));
+		if (name.isEmpty() && e.attributeValue("name") != null) name = Name.guess(e.attributeValue("name"), HONORIFICS);
+		Guest g = new Guest(PlanXml.number(e, "id", 0), name, Gender.fromCode(e.attributeValue("gender", "u")), party);
 		if (g.isPlaceholder()) g.setPlus(PlanXml.number(e, "plus", 0));
 		g.setRole(e.attributeValue("role"));
 		g.diets().addAll(Diet.fromCodes(e.attributeValue("diet")));

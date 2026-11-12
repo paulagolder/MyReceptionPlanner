@@ -12,9 +12,10 @@ import java.util.Locale;
 import java.util.Set;
 
 /*
- * The titles that go with a name when a guest is greeted ({leadfirst}): "Dear
- * Count Paris", not "Dear Count". Kept in honorifics.yml, a short YAML file
- * of two lists:
+ * The titles that go with a name: offered when a guest's title is typed, used
+ * to split a name typed in one piece (see Name.guess), and for how a guest is
+ * greeted ({leadfirst}): "Dear Count Paris", not "Dear Count". Kept in
+ * honorifics.yml, a short YAML file of two lists:
  *
  *   # the title and the name after it: Count Paris, Friar Laurence, Sir John
  *   with-name:
@@ -26,17 +27,19 @@ import java.util.Set;
  * A title may be more than one word ("The Reverend"); a full stop after it
  * ("Dr.") and the case do not matter. An occasion takes the file in its own
  * folder, else the one in the folder above it (MyReceptions), else the
- * standard list. A name with no title is greeted by its first word, as
- * before; a title followed by "of" ("Widow of Vitruvio") keeps the rest.
+ * standard list. A guest with no title is greeted by their first forename;
+ * a title not on either list is taken as one with the name. The lists need
+ * not be complete: any title may be typed.
  */
 public class Honorifics
 {
 	public static final String FILE = "honorifics.yml";
 
-	private static final Set<String> JOINS = Set.of("of", "de", "di", "da", "del", "della", "von", "van", "du", "la", "le");
+	static final Set<String> JOINS = Set.of("of", "de", "di", "da", "del", "della", "von", "van", "du", "la", "le");
 
 	private final List<List<String>> withName = new ArrayList<>();
 	private final List<List<String>> withSurname = new ArrayList<>();
+	private final List<String> titles = new ArrayList<>();  // as written in the file, both lists
 
 	public static Honorifics standard()
 	{
@@ -71,7 +74,7 @@ public class Honorifics
 			if (line.isEmpty()) continue;
 			if (line.startsWith("-"))
 			{
-				if (into != null) add(into, line.substring(1));
+				if (into != null) h.add(into, line.substring(1));
 				continue;
 			}
 			int colon = line.indexOf(':');
@@ -81,15 +84,50 @@ public class Honorifics
 			String rest = line.substring(colon + 1).strip();
 			if (into != null && rest.startsWith("["))
 				for (String item : rest.replaceAll("^\\[|]$", "").split(","))
-					add(into, item);
+					h.add(into, item);
 		}
 		return h;
 	}
 
-	private static void add(List<List<String>> into, String item)
+	private void add(List<List<String>> into, String item)
 	{
 		String title = item.strip().replaceAll("^[\"']|[\"']$", "").strip();
-		if (!title.isEmpty()) into.add(words(title));
+		if (!title.isEmpty())
+		{
+			into.add(words(title));
+			if (!titles.contains(title)) titles.add(title);
+		}
+	}
+
+	// every title, as written, in the file's order: for choosing one
+	public List<String> titles() { return List.copyOf(titles); }
+
+	// how many words at the start of a whole name are a known title, or 0
+	public int titleLength(String name)
+	{
+		List<String> lower = words(name);
+		return Math.max(longest(withName, lower), longest(withSurname, lower));
+	}
+
+	// "Dr", "Mrs": greeted with the family name, Dr Smith
+	public boolean greetsBySurname(String title)
+	{
+		List<String> t = words(title);
+		return !title.isBlank() && withSurname.contains(t);
+	}
+
+	/*
+	 * What a guest is greeted by: "Count Paris" (a title with the name),
+	 * "Dr Smith" (a title with the surname), "Ann" (no title: the first
+	 * forename); a guest with only a title, or only one part, by what there is.
+	 */
+	public String greeting(Name n)
+	{
+		if (n.title().isEmpty()) return n.firstName().isEmpty() ? n.full() : n.firstName();
+		if (n.forenames().isEmpty() && n.family().isEmpty()) return n.title();
+		if (greetsBySurname(n.title()))
+			return n.title() + " " + (n.family().isEmpty() ? n.forenames() : n.family());
+		return n.title() + " " + n.firstName();
 	}
 
 	private static List<String> words(String s)
@@ -98,22 +136,8 @@ public class Honorifics
 				.map(w -> w.replaceFirst("\\.$", "").toLowerCase(Locale.ROOT)).toList();
 	}
 
-	// what a guest is greeted by: "Count Paris", "Dr Smith", "Ann"
-	public String greeting(String name)
-	{
-		String[] w = name.strip().split("\\s+");
-		if (w.length <= 1) return name.strip();
-		List<String> lower = words(name);
-		int n = longest(withName, lower);
-		int s = longest(withSurname, lower);
-		if (n == 0 && s == 0) return w[0];
-		if (s > n)
-			return s >= w.length ? name.strip() : join(w, 0, s) + " " + w[w.length - 1];
-		if (n >= w.length) return name.strip();
-		int end = n + 1;  // the title and the word after it
-		if (JOINS.contains(lower.get(n))) end = w.length;  // Widow of Vitruvio
-		return join(w, 0, end);
-	}
+	// what a whole name, typed in one piece, is greeted by
+	public String greeting(String name) { return greeting(Name.guess(name, this)); }
 
 	// how many words of the name the longest title it starts with takes, or 0
 	private static int longest(List<List<String>> titles, List<String> name)
@@ -124,8 +148,4 @@ public class Honorifics
 		return best;
 	}
 
-	private static String join(String[] w, int from, int to)
-	{
-		return String.join(" ", Arrays.copyOfRange(w, from, to));
-	}
 }

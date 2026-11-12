@@ -47,8 +47,8 @@ class TableListTest
 		RoundTable t = new RoundTable(1, "", 6);
 		plan.add(t);
 		Seating seating = new Seating();
-		Guest ann = new Guest(1, "Ann Smith", Gender.FEMALE, null);
-		Guest bob = new Guest(2, "Bob Jones", Gender.MALE, null);
+		Guest ann = new Guest(1, new Name("", "Ann", "Smith"), Gender.FEMALE, null);
+		Guest bob = new Guest(2, new Name("", "Bob", "Jones"), Gender.MALE, null);
 		seating.seat(ann, new Seat(1, 0));
 		seating.seat(bob, new Seat(1, 3));
 		t.setDisabled(2, true);

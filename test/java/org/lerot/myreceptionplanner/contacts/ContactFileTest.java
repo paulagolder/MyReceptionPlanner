@@ -48,6 +48,9 @@ class ContactFileTest
 				""");
 		assertEquals(3, e.size());
 		ContactFile.Entry ann = e.get(0);
+		assertEquals(new org.lerot.myreceptionplanner.model.Name("", "Ann", "Smith"), ann.parts());
+		assertEquals(new org.lerot.myreceptionplanner.model.Name("Dr", "Tom", "Brown"),
+				e.stream().filter(x -> x.name().equals("Dr Tom Brown")).findFirst().orElseThrow().parts());
 		assertEquals("Ann Smith", ann.name());
 		assertEquals("ann@example.com", ann.email());
 		assertEquals("07700 900123", ann.mobile());
@@ -69,6 +72,7 @@ class ContactFileTest
 				Paris,,,Count,,,,,,,,,
 				""");
 		assertEquals(List.of("Ann Smith", "Count Paris"), e.stream().map(ContactFile.Entry::name).toList());
+		assertEquals(new org.lerot.myreceptionplanner.model.Name("Count", "Paris", ""), e.get(1).parts(), "the name in its parts");
 		ContactFile.Entry ann = e.get(0);
 		assertEquals("ann@example.com", ann.email());
 		assertEquals("01234 567890", ann.phone());

@@ -5,6 +5,7 @@ import org.lerot.myreceptionplanner.model.Event;
 import org.lerot.myreceptionplanner.model.Gender;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
+import org.lerot.myreceptionplanner.model.Name;
 import org.lerot.myreceptionplanner.model.Occasion;
 import org.lerot.myreceptionplanner.model.Party;
 import org.lerot.myreceptionplanner.model.Plan;
@@ -185,6 +186,8 @@ public class SeatingPanel extends JPanel
 		p.add(tableTitle, BorderLayout.NORTH);
 		setUp(seatTable, seatModel::guestAt, this::notForGuests, 1);
 		seatTable.getColumnModel().getColumn(0).setMaxWidth(60);
+		seatTable.getColumnModel().getColumn(1).setCellEditor(NameFields.dialogEditor(occasion.getHonorifics(), "Guest in this seat",
+				row -> { Guest g = seatModel.guestAt(row); return g == null ? Name.NONE : g.getNameParts(); }));
 		seatTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(genderChooser()));
 		narrow(seatTable.getColumnModel().getColumn(2));
 		seatTable.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(seatPartyCombo));
@@ -315,14 +318,15 @@ public class SeatingPanel extends JPanel
 			{
 				case 1 ->
 				{
-					String name = value.toString().trim();
+					Name name = (Name) value;
 					if (g == null && name.isEmpty()) return;
+					if (g != null && name.equals(g.getNameParts())) return;
 					if (g == null)
 					{
 						// someone already on the list may be meant: seat them instead
-						List<GuestList.Likeness> like = guests.like(name, null);
+						List<GuestList.Likeness> like = guests.like(name.full(), null);
 						NameCheck.Answer a = like.isEmpty() ? NameCheck.Answer.DIFFERENT
-								: NameCheck.ask(SeatingPanel.this, name, like, like.size() == 1);
+								: NameCheck.ask(SeatingPanel.this, name.full(), like, like.size() == 1);
 						if (a == NameCheck.Answer.BACK) return;
 						if (a == NameCheck.Answer.USE_EXISTING) g = like.get(0).b();
 						else
@@ -334,7 +338,8 @@ public class SeatingPanel extends JPanel
 						seating.seat(g, seat);
 					} else
 					{
-						if (NameCheck.ask(SeatingPanel.this, guests, name, g, false) != NameCheck.Answer.DIFFERENT) return;
+						if (!name.isEmpty() && !name.plain().equals(g.getNameParts().plain())
+								&& NameCheck.ask(SeatingPanel.this, guests, name.full(), g, false) != NameCheck.Answer.DIFFERENT) return;
 						guests.rename(g, name);
 					}
 				}
@@ -430,6 +435,8 @@ public class SeatingPanel extends JPanel
 		setUp(guestTable, row -> guestModel.rows.get(guestTable.convertRowIndexToModel(row)), row -> null, 0);
 		guestTable.setDefaultRenderer(org.lerot.myreceptionplanner.model.Invitation.class, InvitationMarks.renderer(false));
 		guestTable.setAutoCreateRowSorter(true);
+		guestTable.getColumnModel().getColumn(0).setCellEditor(NameFields.dialogEditor(occasion.getHonorifics(), "Name",
+				row -> guestModel.rows.get(row).getNameParts()));
 		guestTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(genderChooser()));
 		narrow(guestTable.getColumnModel().getColumn(1));
 		guestTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(guestPartyCombo));
@@ -650,8 +657,11 @@ public class SeatingPanel extends JPanel
 			{
 				case 0 ->
 				{
-					if (NameCheck.ask(this_(), guests, value.toString(), g, false) != NameCheck.Answer.DIFFERENT) return;
-					guests.rename(g, value.toString());
+					Name name = (Name) value;
+					if (name.equals(g.getNameParts())) return;
+					if (!name.isEmpty() && !name.plain().equals(g.getNameParts().plain())
+							&& NameCheck.ask(this_(), guests, name.full(), g, false) != NameCheck.Answer.DIFFERENT) return;
+					guests.rename(g, name);
 				}
 				case 1 -> g.setGender((Gender) value);
 				case 2 ->

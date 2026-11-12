@@ -6,7 +6,8 @@ import java.util.Locale;
 import java.util.Set;
 
 /*
- * A guest. A party keeps places for guests not named yet: such a guest has no
+ * A guest. Their name is kept in its parts, title, forenames and family name
+ * (see Name). A party keeps places for guests not named yet: such a guest has no
  * name and goes by the lead's name and a number, "Ann Smith+2" (the plus one,
  * built in). They can be seated like anyone else until a name is given;
  * where each guest sits is kept by each event (Seating).
@@ -18,7 +19,7 @@ public class Guest
 	public static final int ROLE_LENGTH = 20;
 
 	private final int id;
-	private String name;
+	private Name name = Name.NONE;
 	private Gender gender;
 	private Party party;  // null if in no party
 	private int plus;     // n for the lead's +n while unnamed; 0 otherwise
@@ -27,7 +28,7 @@ public class Guest
 	private String dietNote = "";  // allergies and the like, in words
 	private String role = "";      // "Mother of the bride", or ""
 
-	public Guest(int id, String name, Gender gender, Party party)
+	public Guest(int id, Name name, Gender gender, Party party)
 	{
 		this.id = id;
 		setName(name);
@@ -37,11 +38,14 @@ public class Guest
 
 	public int getId() { return id; }
 
-	public String getName() { return name; }
+	// the whole name, "Dame Margot Fairweather"; "" for a place not named
+	public String getName() { return name.full(); }
+
+	public Name getNameParts() { return name; }
 
 	// use GuestList.rename for a guest in a party, so a guest whose name is
 	// cleared gets a number again
-	public void setName(String name) { this.name = name == null ? "" : name.trim(); }
+	public void setName(Name name) { this.name = name == null ? Name.NONE : name; }
 
 	public boolean isNamed() { return !name.isEmpty(); }
 
@@ -94,7 +98,7 @@ public class Guest
 	// the name, or for a place not named yet the lead's name and its number
 	public String displayName()
 	{
-		if (isNamed()) return name;
+		if (isNamed()) return name.full();
 		if (party == null) return "Unnamed guest";
 		Guest lead = party.getLead();
 		String who = lead != null && lead.isNamed() ? lead.getName() : party.getName();

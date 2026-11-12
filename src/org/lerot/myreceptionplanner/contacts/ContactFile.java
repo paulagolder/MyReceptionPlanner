@@ -1,5 +1,7 @@
 package org.lerot.myreceptionplanner.contacts;
 
+import org.lerot.myreceptionplanner.model.Name;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -19,13 +21,14 @@ import java.util.regex.Pattern;
  * a vCard file (.vcf: Google Contacts, Apple, Thunderbird, Outlook) or a CSV
  * file (Google Contacts' "Google CSV", old or new style, or Outlook's). Each
  * contact gives a name, address, phone, mobile and email, the first of each
- * kind; one with no name goes by their email, and one with neither is left out. Nothing reaches the network: the
+ * kind, and the name's parts where the file has them (a vCard's N, a CSV's
+ * prefix, first, middle and last name columns); one with no name goes by their email, and one with neither is left out. Nothing reaches the network: the
  * file is exported by hand, and read again whenever it is searched.
  */
 public class ContactFile
 {
 	// a contact found, with what the planner copies from it
-	public record Entry(String name, String address, String phone, String mobile, String email)
+	public record Entry(String name, Name parts, String address, String phone, String mobile, String email)
 	{
 		// the line before the last of the address (usually the town), to tell
 		// people of the same name apart
@@ -46,7 +49,7 @@ public class ContactFile
 		{
 			if (f.name.isBlank()) f.name = f.email;  // known only by their address
 			if (f.name.isBlank()) continue;
-			out.add(new Entry(f.name.strip(), f.address.strip(), f.phone, f.mobile, f.email));
+			out.add(new Entry(f.name.strip(), f.parts, f.address.strip(), f.phone, f.mobile, f.email));
 		}
 		out.sort(Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER));
 		return out;
@@ -55,6 +58,7 @@ public class ContactFile
 	private static class Fields
 	{
 		String name = "", address = "", phone = "", mobile = "", email = "";
+		Name parts = Name.NONE;  // none if the file does not give them
 
 		// a number goes to mobile or phone by its label, the first of each kind
 		void number(String label, String value)
@@ -103,6 +107,7 @@ public class ContactFile
 		List<Fields> out = new ArrayList<>();
 		Fields f = null;
 		String fullName = "", structured = "";
+		Name parts = Name.NONE;
 		for (String line : unfold(text))
 		{
 			Matcher m = PROPERTY.matcher(line);
@@ -117,11 +122,13 @@ public class ContactFile
 				{
 					f = new Fields();
 					fullName = structured = "";
+					parts = Name.NONE;
 				}
 				case "END" ->
 				{
 					if (f == null) break;
 					f.name = !fullName.isBlank() ? fullName : structured;
+					f.parts = parts;
 					out.add(f);
 					f = null;
 				}
@@ -131,6 +138,7 @@ public class ContactFile
 					// family; given; additional; prefix; suffix
 					List<String> n = split(value);
 					structured = words(at(n, 3), at(n, 1), at(n, 2), at(n, 0), at(n, 4));
+					parts = new Name(at(n, 3), words(at(n, 1), at(n, 2)), at(n, 0));
 				}
 				case "EMAIL" -> { if (f != null && f.email.isEmpty()) f.email = unescape(value).strip(); }
 				case "TEL" -> { if (f != null) f.number(params, unescape(value).replaceFirst("(?i)^tel:", "")); }
@@ -247,6 +255,9 @@ public class ContactFile
 				return i == null || i >= row.size() ? "" : row.get(i).strip();
 			};
 			f.name = v.apply("name");
+			f.parts = new Name(v.apply("name prefix"),
+					words(v.apply("first name"), v.apply("given name"), v.apply("middle name"), v.apply("additional name")),
+					words(v.apply("last name"), v.apply("family name")));
 			if (f.name.isEmpty())
 				f.name = words(v.apply("name prefix"), v.apply("first name"), v.apply("given name"),
 						v.apply("middle name"), v.apply("additional name"), v.apply("last name"),
