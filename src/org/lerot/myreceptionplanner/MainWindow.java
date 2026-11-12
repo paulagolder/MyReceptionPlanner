@@ -1491,12 +1491,12 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		{
 			case SEATED -> event.invited().size() + " invited, " + event.getSeating().seatedCount() + " seated";
 			case HALL -> "hall: " + event.invited().size() + " invited, " + plan.reservedPlaces() + " reserved seats ("
-					+ event.getSeating().seatedCount() + " given), " + (plan.places() - plan.reservedPlaces()) + " open";
+					+ event.getSeating().seatedCount() + " given), " + (plan.places() - plan.reservedPlaces()) + " open"
+					+ (event.getCapacity() > 0 ? ", capacity " + event.getCapacity() : "");
 			case UNRESERVED -> "party, unreserved: " + event.invited().size() + " invited"
 					+ (event.getCapacity() > 0 ? " of a capacity of " + event.getCapacity() : "");
 		};
-		if (event.overCapacity() > 0) people += "  ⚠ " + event.overCapacity() + " more than the "
-				+ (event.getKind() == Event.Kind.HALL ? "seats" : "capacity");
+		if (event.overCapacity() > 0) people += "  ⚠ " + event.overCapacity() + " more than the " + event.capacityWord();
 		status.setForeground(event.overCapacity() > 0 ? Theme.HEAD.darker() : UIManager.getColor("Label.foreground"));
 		status.setText(occasion.heading() + "   ·   " + occasion.headingOf(event) + "   ·   "
 				+ plan.tables().size() + " tables, " + plan.places() + " places, " + head + ",   " + people);

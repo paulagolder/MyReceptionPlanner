@@ -85,6 +85,7 @@ public class ChecksDialog
 		int given = event.getSeating().seatedCount(), invited = event.invited().size();
 		p.add(total(reserved + " reserved seats, " + given + " given;  " + (seats - reserved) + " open seats"));
 		JLabel fit = new JLabel(invited + " invited for " + seats + " seats in all"
+				+ (event.getCapacity() > 0 ? ", capacity " + event.getCapacity() : "")
 				+ (event.overCapacity() > 0 ? ": " + event.overCapacity() + " too many" : ""));
 		fit.setForeground(event.overCapacity() > 0 ? Theme.HEAD.darker() : Theme.FIRST);
 		p.add(fit);

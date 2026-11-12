@@ -50,6 +50,7 @@ public class GuestsPanel extends JPanel
 	private final JTable guestTable;  // made once the events are known, a column for each
 	private final JComboBox<Object> partyCombo = new JComboBox<>();
 	private final JCheckBox chosenPartyOnly = new JCheckBox("Only the party chosen");
+	private final FindField find = new FindField(() -> guestModel.reload());
 	private final JLabel totals = new JLabel();
 
 	public GuestsPanel(Occasion occasion, Listener listener)
@@ -221,7 +222,8 @@ public class GuestsPanel extends JPanel
 	private JComponent guestsSide()
 	{
 		JPanel p = new JPanel(new MigLayout("insets 8, fill, wrap 1", "[grow]", "[][grow][]"));
-		p.add(new JLabel("<html><b>Guests</b></html>"), "split 2");
+		p.add(new JLabel("<html><b>Guests</b></html>"), "split 3");
+		p.add(find, "gapleft 12");
 		chosenPartyOnly.addActionListener(e -> guestModel.reload());
 		p.add(chosenPartyOnly, "gapleft push");
 		setUp(guestTable);
@@ -354,8 +356,7 @@ public class GuestsPanel extends JPanel
 					.append(n[Invitation.DECLINED.ordinal()]).append(" declined");
 			if (e.overCapacity() > 0)
 			{
-				s.append(" ⚠ ").append(e.overCapacity()).append(" more than its ")
-						.append(e.getKind() == Event.Kind.HALL ? "seats" : "capacity");
+				s.append(" ⚠ ").append(e.overCapacity()).append(" more than its ").append(e.capacityWord());
 				over = true;
 			}
 		}
@@ -371,7 +372,8 @@ public class GuestsPanel extends JPanel
 		void reload()
 		{
 			Party only = chosenPartyOnly.isSelected() ? selectedParty() : null;
-			rows = only == null ? guests.guests() : guests.membersOf(only);
+			rows = (only == null ? guests.guests() : guests.membersOf(only)).stream()
+					.filter(g -> g.matches(find.getText())).toList();
 			fireTableDataChanged();
 		}
 

@@ -24,6 +24,27 @@ class GuestListTest
 	}
 
 	@Test
+	void guestsAreFoundByNamePartyOrRole()
+	{
+		GuestList list = new GuestList();
+		Party p = list.createParty("Seán Ó Briain", 2, "The Harvest Committee");
+		Guest sean = p.getLead(), plusOne = list.membersOf(p).get(1);
+		sean.setRole("Chairman");
+		Guest bob = list.addGuest("Bob O'Neill", Gender.MALE, null);
+		assertTrue(sean.matches(""), "nothing typed: everyone");
+		assertTrue(sean.matches("SEAN"), "case and accents left aside");
+		assertTrue(sean.matches("obri"), "Ó Briain as typed on a plain keyboard");
+		assertTrue(sean.matches("sean briain"), "every word, in any order");
+		assertFalse(sean.matches("sean neill"));
+		assertTrue(plusOne.matches("sean"), "a place goes by its lead's name");
+		assertTrue(plusOne.matches("committee"), "and is found by its party");
+		assertTrue(sean.matches("chair"), "by role");
+		assertTrue(bob.matches("oneill"), "the apostrophe left aside");
+		assertTrue(bob.matches("O'Neill"));
+		assertFalse(bob.matches("committee"));
+	}
+
+	@Test
 	void placesFollowTheLeadsName()
 	{
 		GuestList list = new GuestList();

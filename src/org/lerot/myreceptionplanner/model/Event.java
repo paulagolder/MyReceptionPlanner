@@ -19,7 +19,8 @@ import java.util.Set;
  * set out for the staff, but no one is given a seat; it may have a capacity,
  * the most guests the place can take. A hall or ceremony (the church) is set
  * out mostly with pews of open seats, and only its reserved seats are given
- * to guests; its capacity is all its seats. It is kept in its own file in the
+ * to guests; its capacity is all its seats, unless one is set for those
+ * standing too (a ball with tables round the dance floor). It is kept in its own file in the
  * occasion's folder; the file's name is given when the event is made and
  * stays the same if the event is renamed.
  */
@@ -57,7 +58,7 @@ public class Event
 
 	private String name;
 	private Kind kind = Kind.SEATED;
-	private int capacity;      // 0 for no limit; for an unreserved party
+	private int capacity;      // 0 for no limit (a hall: its seats); not for a seated event
 	private boolean catered;   // has a menu, dietary needs and kitchen lists
 	private String place = "";
 	private LocalDate date;    // null: the occasion's date
@@ -99,17 +100,20 @@ public class Event
 
 	public void setCapacity(int capacity) { this.capacity = Math.max(0, capacity); }
 
-	// the most guests: an unreserved party's capacity, all a hall's usable
-	// seats; 0 for no limit (a seated event is limited by its seats instead)
+	// the most guests: an unreserved party's capacity; a hall's, or else all
+	// its usable seats; 0 for no limit (a seated event is limited by its seats)
 	public int capacityLimit()
 	{
 		return switch (kind)
 		{
 			case UNRESERVED -> capacity;
-			case HALL -> plan.places();
+			case HALL -> capacity > 0 ? capacity : plan.places();
 			case SEATED -> 0;
 		};
 	}
+
+	// what the limit is, for "3 more than its seats"
+	public String capacityWord() { return kind == Kind.HALL && capacity == 0 ? "seats" : "capacity"; }
 
 	// how many more are invited than the capacity allows; 0 if none or no limit
 	public int overCapacity()

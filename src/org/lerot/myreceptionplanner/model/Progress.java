@@ -176,10 +176,13 @@ public final class Progress
 			note = "capacity " + room + " for " + invited + " invited";
 		} else
 		{
-			room = e.getPlan().places();
-			if (room == 0) return notStarted(Step.TABLES, "no tables yet");
+			int places = e.getPlan().places();
+			if (places == 0) return notStarted(Step.TABLES, "no tables yet");
 			int tables = e.getPlan().tables().size();
-			note = tables + (tables == 1 ? " table, " : " tables, ") + room + " places for " + invited + " invited";
+			note = tables + (tables == 1 ? " table, " : " tables, ") + places + " places";
+			room = e.getKind() == Event.Kind.HALL && e.getCapacity() > 0 ? e.getCapacity() : places;
+			if (room != places) note += ", capacity " + room;
+			note += " for " + invited + " invited";
 		}
 		if (e.overCapacity() > 0) note += ": " + e.overCapacity() + " too many";
 		if (invited == 0) return new Stage(Step.TABLES, 0, 0, note, State.DONE, false);

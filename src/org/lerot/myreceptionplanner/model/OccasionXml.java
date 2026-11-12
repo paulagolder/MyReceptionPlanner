@@ -68,7 +68,7 @@ import java.time.format.DateTimeParseException;
  * An event's date is only there if it differs from the occasion's. A
  * guest's choice names one dish of each course they have chosen for. type is
  * seated, or unreserved for a party where no one has a seat, which may have
- * a capacity="150". catered="yes" if food is served there (its menu, choices
+ * a capacity="150"; so may a hall, whose capacity is otherwise its seats. catered="yes" if food is served there (its menu, choices
  * and kitchen lists apply).
  */
 public class OccasionXml

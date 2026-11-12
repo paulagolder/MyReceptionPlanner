@@ -1,6 +1,8 @@
 package org.lerot.myreceptionplanner.model;
 
+import java.text.Normalizer;
 import java.util.EnumSet;
+import java.util.Locale;
 import java.util.Set;
 
 /*
@@ -97,6 +99,24 @@ public class Guest
 		Guest lead = party.getLead();
 		String who = lead != null && lead.isNamed() ? lead.getName() : party.getName();
 		return who + "+" + plus;
+	}
+
+	// for finding guests in a long list: every word typed is somewhere in the
+	// name, the party's name or the role, whatever the case or accents
+	// ("obri" finds Ó Briain); true if nothing is typed
+	public boolean matches(String typed)
+	{
+		// spaces left out, so "obri" finds Ó Briain and "vander" Van der Berg
+		String within = plain(displayName() + " " + (party == null ? "" : party.getName()) + " " + role).replace(" ", "");
+		for (String word : plain(typed).split("\\s+"))
+			if (!within.contains(word)) return false;
+		return true;
+	}
+
+	private static String plain(String s)
+	{
+		return Normalizer.normalize(s == null ? "" : s, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
+				.replace("'", "").toLowerCase(Locale.ROOT).strip();
 	}
 
 	@Override

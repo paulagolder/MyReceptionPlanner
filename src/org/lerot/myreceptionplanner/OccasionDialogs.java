@@ -150,7 +150,7 @@ public class OccasionDialogs
 		JTextField time = new JTextField();
 		JComboBox<Event.Kind> kind = new JComboBox<>(Event.Kind.values());
 		JSpinner capacity = capacityField(0);
-		kind.addActionListener(a -> capacity.setEnabled(kind.getSelectedItem() == Event.Kind.UNRESERVED));
+		kind.addActionListener(a -> capacity.setEnabled(kind.getSelectedItem() != Event.Kind.SEATED));
 		capacity.setEnabled(false);
 		JComboBox<Object> start = new JComboBox<>();
 		start.addItem("An empty room");
@@ -225,7 +225,8 @@ public class OccasionDialogs
 		row(form, "Import layout", layoutRow);
 		row(form, "Invite", invite);
 		note(form, "Leave the date empty if it is on the occasion's day. A hall or ceremony is set out with "
-				+ "pews whose seats are open to all, and only seats you reserve are given to guests. A party, "
+				+ "pews or tables whose seats are open to all, and only seats you reserve are given to guests; "
+				+ "its capacity is its seats, unless you set one with room for those standing. A party, "
 				+ "unreserved, has invitations and may have tables set out, but no seats are given; its capacity "
 				+ "(0 for no limit) warns when too many are invited. Copied tables start with no one seated. "
 				+ "Change who is invited later in the Guests view.");
@@ -266,8 +267,8 @@ public class OccasionDialogs
 		JComboBox<Event.Kind> kind = new JComboBox<>(Event.Kind.values());
 		kind.setSelectedItem(event.getKind());
 		JSpinner capacity = capacityField(event.getCapacity());
-		capacity.setEnabled(!event.isSeated());
-		kind.addActionListener(a -> capacity.setEnabled(kind.getSelectedItem() == Event.Kind.UNRESERVED));
+		capacity.setEnabled(event.getKind() != Event.Kind.SEATED);
+		kind.addActionListener(a -> capacity.setEnabled(kind.getSelectedItem() != Event.Kind.SEATED));
 		JPanel form = form();
 		row(form, "Event", name);
 		row(form, "Place", place);

@@ -130,6 +130,12 @@ class PewTest
 			hall.invite(g.addGuest(n, null, null));
 		assertEquals(2, hall.capacityLimit());
 		assertEquals(1, hall.overCapacity());
+		assertEquals("seats", hall.capacityWord());
+		// room for some standing too, as at a ball
+		hall.setCapacity(5);
+		assertEquals(5, hall.capacityLimit());
+		assertEquals(0, hall.overCapacity());
+		assertEquals("capacity", hall.capacityWord());
 	}
 
 	@Test

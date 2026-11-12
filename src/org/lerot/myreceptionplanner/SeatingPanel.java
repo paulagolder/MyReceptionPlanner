@@ -77,6 +77,7 @@ public class SeatingPanel extends JPanel
 	private final GuestModel guestModel = new GuestModel();
 	private final JTable guestTable = new JTable(guestModel);
 	private final JCheckBox unseatedOnly = new JCheckBox("Not seated");
+	private final FindField find = new FindField(() -> guestModel.reload());
 	private final JLabel guestsTitle = new JLabel();
 	private final JButton showAll = new JButton("Show all");
 	private final JComboBox<Object> seatPartyCombo = new JComboBox<>();
@@ -419,10 +420,11 @@ public class SeatingPanel extends JPanel
 		parties.add(partyButtons);
 
 		JPanel people = new JPanel(new MigLayout("insets 8, fill, wrap 1", "[grow]", "[][grow][][]"));
-		people.add(guestsTitle, "split 3");
+		people.add(guestsTitle, "split 4");
 		showAll.setToolTipText("List the guests of every party again (or Esc in the parties)");
 		showAll.addActionListener(e -> partyTable.clearSelection());
 		people.add(showAll, "gapleft 8");
+		people.add(find, "gapleft 8, growx 0");
 		unseatedOnly.addActionListener(e -> guestModel.reload());
 		people.add(unseatedOnly, "gapleft push");
 		setUp(guestTable, row -> guestModel.rows.get(guestTable.convertRowIndexToModel(row)), row -> null, 0);
@@ -610,7 +612,7 @@ public class SeatingPanel extends JPanel
 			Party only = selectedParty();
 			rows = (unseatedOnly.isSelected() ? invitedNotSeated()
 					: guests.guests().stream().filter(g -> event.invitation(g) != org.lerot.myreceptionplanner.model.Invitation.NONE).toList())
-					.stream().filter(g -> only == null || g.getParty() == only).toList();
+					.stream().filter(g -> (only == null || g.getParty() == only) && g.matches(find.getText())).toList();
 			fireTableDataChanged();
 			guestsTitle.setText("<html><b>Guests</b>" + (only == null ? "" : ": " + escape(only.getName())) + "</html>");
 			showAll.setVisible(only != null);
