@@ -363,12 +363,22 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 - **Layout ▾** → Round table / Rectangular table / Oval table / Polygon
   table / Pew puts a new one in view. An **oval** is given by its length and
   width in seats (60 cm a seat); its places follow from those. A
-  **polygon** (a hexagon, a heptagon …) by its sides and the places on each. A **pew** is a straight row of seats all facing forward (up the plan
+  **polygon** (a hexagon, a heptagon …) by its sides and the places on each.
+  A **pew** is a straight row of seats all facing forward (up the plan
   until turned), with its backrest behind; use pews for a church, or for
   rows of seats round the walls at a party. It turns, moves and duplicates
   like a table. Pews are numbered on their own ("Pew 1", "Pew 2" …), across
   each row and then the next row back; their seats are numbered from seat 1
   towards the far end, so make the seat by the aisle seat 1.
+- **Layout ▾ → Table design (T, E …)…** adds a table from a design file:
+  a T or an E top table, say, made of the venue's own tables pushed
+  together. The designs are in the **Table designs** folder beside your
+  occasions, made with a T and an E in it the first time; copy one and edit
+  it to make your own (each file explains itself, and
+  `docs/table-notation.md` has the whole notation). A design can be any
+  shape, including a walk round the table's edge. Edit on a composed table
+  shows the tables it is made of, to check against what the venue has; a
+  design whose seats come too close together says so.
 - **Layout ▾ → Altar / speakers' table** puts down a table with no
   chairs, there to show which way the room faces. Its length is given in
   seats along its front (in Edit), so it lines up with the pews or tables

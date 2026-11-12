@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A T: a top table of 11 (five 2 x 1 tables and a 1 x 1), with a stem of
+  four 1 x 2 tables from its middle, seated on both sides. 27 places.
+
+  Sizes are in seats (60 cm a seat), as the table is placed: "2 1" is two
+  seats along and one across. Each <tables> is a line of count tables from
+  "at" (from the top left), going right or down. "bare" names the sides with
+  no seats: far, near, left, right. Where two seated edges make an inside
+  corner, the later seat round the table is left out.
+  See docs/table-notation.md.
+-->
+<table shape="composed" head="true">
+  <tables size="2 1" count="5" at="0 0" bare="near left"/>
+  <tables size="1 1" at="10 0" bare="near right"/>
+  <tables size="1 2" count="4" at="5 1" going="down" bare="near"/>
+</table>

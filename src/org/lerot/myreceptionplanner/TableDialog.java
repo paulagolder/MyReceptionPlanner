@@ -4,10 +4,12 @@ import net.miginfocom.swing.MigLayout;
 import org.lerot.myreceptionplanner.model.Altar;
 import org.lerot.myreceptionplanner.model.Pew;
 import org.lerot.myreceptionplanner.model.Plan;
+import org.lerot.myreceptionplanner.model.ComposedTable;
 import org.lerot.myreceptionplanner.model.OvalTable;
 import org.lerot.myreceptionplanner.model.PolygonTable;
 import org.lerot.myreceptionplanner.model.RectTable;
 import org.lerot.myreceptionplanner.model.RoundTable;
+import org.lerot.myreceptionplanner.model.WalkTable;
 import org.lerot.myreceptionplanner.model.Table;
 
 import javax.swing.*;
@@ -78,6 +80,17 @@ public class TableDialog
 			form.add(side, "growx");
 			form.add(new JLabel("Places at each end"));
 			form.add(end, "growx");
+		}
+		if (table instanceof ComposedTable composed)
+		{
+			form.add(new JLabel("Made of"));
+			form.add(new JLabel(composed.pickListText() + " tables"), "growx");
+		}
+		if (table instanceof WalkTable walked && !walked.warnings().isEmpty())
+		{
+			JLabel warnings = new JLabel("<html>" + String.join("<br>", walked.warnings()) + "</html>");
+			warnings.setForeground(Theme.HEAD);
+			form.add(warnings, "skip");
 		}
 		JSpinner turn = new JSpinner(new SpinnerNumberModel(
 				(int) Math.round(table.getRotation()), 0, 359, (int) PlanPanel.ROTATE_STEP));

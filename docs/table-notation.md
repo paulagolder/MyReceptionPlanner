@@ -1,7 +1,11 @@
 # A notation for tables
 
-*A draft, on the `tabledesign` branch: a convention for describing tables in
-a layout file, before any of it is programmed.*
+*A convention for describing tables, on the `tabledesign` branch. Now in
+the planner: the walk (`shape="walk"`), ovals and polygons (in Layout ▾),
+and composed tables, added from table design files (Layout ▾ → Table design;
+the planner comes with the T and the E below). Not yet: `box` and `seated`
+for rectangles, `seated` for polygons, and the ring and stadium as shapes
+of their own (each can be written as a walk).*
 
 ## The principle
 

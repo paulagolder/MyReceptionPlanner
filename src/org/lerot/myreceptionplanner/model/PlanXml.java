@@ -29,7 +29,11 @@ import java.io.IOException;
  * An oval table has box="8 4" (length and width in seats), a polygon
  * sides="6" perside="2". A table of any other shape is a walk round its
  * edge (shape="walk"), its steps, turns and arcs within it (see WalkXml).
- * Ovals, polygons and walks number their chairs in the order walked.
+ * A composed table (shape="composed") is the venue's tables pushed
+ * together, a <tables size="2 1" count="5" at="0 0" going="right"
+ * bare="near"/> for each line of them (see ComposedTable), and
+ * seated="holes" if the edges round its holes have seats. Ovals, polygons,
+ * walks and composed tables number their chairs in the order walked.
  */
 public class PlanXml
 {
@@ -73,8 +77,24 @@ public class PlanXml
 			if (!t.getOpenSeats().isEmpty())
 				e.addAttribute("open", String.join(" ",
 						t.getOpenSeats().stream().map(c -> Integer.toString(c + 1)).toList()));
-			// the other shapes make their walk from their size
+			// the other shapes make their walk from their size, or their tables
 			if (t instanceof WalkTable walked && WalkTable.SHAPE.equals(t.shape())) WalkXml.write(walked.getWalk(), e);
+			if (t instanceof ComposedTable composed) writePieces(composed, e);
+		}
+	}
+
+	private static void writePieces(ComposedTable t, Element e)
+	{
+		if (t.seatsHoles()) e.addAttribute("seated", "holes");
+		for (ComposedTable.Piece p : t.pieces())
+		{
+			Element line = e.addElement("tables").addAttribute("size", p.width() + " " + p.depth());
+			if (p.count() > 1) line.addAttribute("count", Integer.toString(p.count()));
+			line.addAttribute("at", p.x() + " " + p.y());
+			if (p.down()) line.addAttribute("going", "down");
+			if (!p.bare().isEmpty())
+				line.addAttribute("bare", String.join(" ", java.util.List.of("far", "near", "left", "right").stream()
+						.filter(p.bare()::contains).toList()));
 		}
 	}
 
@@ -82,44 +102,90 @@ public class PlanXml
 	{
 		Plan plan = new Plan();
 		for (Element e : root == null ? java.util.List.<Element>of() : root.elements("table"))
-		{
-			int id = number(e, "id", 0);
-			String name = e.attributeValue("name", "");
-			String shape = e.attributeValue("shape", RoundTable.SHAPE);
-			Table t = switch (shape)
-			{
-				case RoundTable.SHAPE -> new RoundTable(id, name, number(e, "places", 8));
-				case RectTable.SHAPE -> new RectTable(id, name,
-						number(e, "sideplaces", 4), number(e, "endplaces", 0));
-				case Pew.SHAPE -> new Pew(id, name, number(e, "places", 8));
-				case Altar.SHAPE -> new Altar(id, name, number(e, "length", 4));
-				case WalkTable.SHAPE -> new WalkTable(id, name, WalkXml.read(e, "Table " + id));
-				case OvalTable.SHAPE -> oval(id, name, e);
-				case PolygonTable.SHAPE -> polygon(id, name, number(e, "sides", 6), number(e, "perside", 1));
-				default -> throw new IOException("Table " + id + " has an unknown shape: " + shape);
-			};
-			t.setNumber(number(e, "number", 0));
-			t.moveTo(number(e, "x", 0), number(e, "y", 0));
-			t.setRotation(number(e, "rotation", 0));
-			t.markHead("true".equals(e.attributeValue("head")));
-			int first = number(e, "firstseat", 1);
-			if (first >= 1 && first <= t.places()) t.setFirstSeat(first - 1);
-			for (String chair : e.attributeValue("disabled", "").trim().split("\\s+"))
-			{
-				if (chair.isEmpty()) continue;
-				int c = chairNumber(chair, t);
-				t.setDisabled(c - 1, true);
-			}
-			t.setAllOpen(false);  // as the file says, not as the shape starts
-			for (String chair : e.attributeValue("open", "").trim().split("\\s+"))
-			{
-				if (chair.isEmpty()) continue;
-				t.setOpen(chairNumber(chair, t) - 1, true);
-			}
-			plan.add(t);
-		}
+			plan.add(table(e, number(e, "id", 0)));
 		plan.numberUnnumbered();
 		return plan;
+	}
+
+	// one <table>, given this id (a table design's has none of its own)
+	public static Table table(Element e, int id) throws IOException
+	{
+		String name = e.attributeValue("name", "");
+		String shape = e.attributeValue("shape", RoundTable.SHAPE);
+		Table t = switch (shape)
+		{
+			case RoundTable.SHAPE -> new RoundTable(id, name, number(e, "places", 8));
+			case RectTable.SHAPE -> new RectTable(id, name,
+					number(e, "sideplaces", 4), number(e, "endplaces", 0));
+			case Pew.SHAPE -> new Pew(id, name, number(e, "places", 8));
+			case Altar.SHAPE -> new Altar(id, name, number(e, "length", 4));
+			case WalkTable.SHAPE -> new WalkTable(id, name, WalkXml.read(e, "Table " + id));
+			case OvalTable.SHAPE -> oval(id, name, e);
+			case PolygonTable.SHAPE -> polygon(id, name, number(e, "sides", 6), number(e, "perside", 1));
+			case ComposedTable.SHAPE -> composed(id, name, e);
+			default -> throw new IOException("Table " + id + " has an unknown shape: " + shape);
+		};
+		t.setNumber(number(e, "number", 0));
+		t.moveTo(number(e, "x", 0), number(e, "y", 0));
+		t.setRotation(number(e, "rotation", 0));
+		t.markHead("true".equals(e.attributeValue("head")));
+		int first = number(e, "firstseat", 1);
+		if (first >= 1 && first <= t.places()) t.setFirstSeat(first - 1);
+		for (String chair : e.attributeValue("disabled", "").trim().split("\\s+"))
+		{
+			if (chair.isEmpty()) continue;
+			int c = chairNumber(chair, t);
+			t.setDisabled(c - 1, true);
+		}
+		t.setAllOpen(false);  // as the file says, not as the shape starts
+		for (String chair : e.attributeValue("open", "").trim().split("\\s+"))
+		{
+			if (chair.isEmpty()) continue;
+			t.setOpen(chairNumber(chair, t) - 1, true);
+		}
+		return t;
+	}
+
+	// <tables size="2 1" count="5" at="0 0" going="right" bare="near"/> for each line of tables
+	private static Table composed(int id, String name, Element e) throws IOException
+	{
+		String what = "Table " + id;
+		java.util.List<ComposedTable.Piece> pieces = new java.util.ArrayList<>();
+		for (Element p : e.elements())
+		{
+			if (!p.getName().equals("tables"))
+				throw new IOException(what + ": a composed table is made of <tables>, not <" + p.getName() + ">");
+			int[] size = pair(p, "size", null, what);
+			int[] at = pair(p, "at", "0 0", what);
+			String going = p.attributeValue("going", "right").trim();
+			if (!going.equals("right") && !going.equals("down"))
+				throw new IOException(what + ": tables go right or down, not \"" + going + "\"");
+			java.util.Set<String> bare = new java.util.HashSet<>();
+			for (String side : p.attributeValue("bare", "").trim().split("\\s+"))
+				if (!side.isEmpty()) bare.add(side);
+			int count = number(p, "count", 1);
+			pieces.add(shaped(id, () -> new ComposedTable.Piece(size[0], size[1], count, at[0], at[1],
+					going.equals("down"), bare)));
+		}
+		String seated = e.attributeValue("seated", "").trim();
+		if (!seated.isEmpty() && !seated.equals("holes"))
+			throw new IOException(what + ": seated=\"holes\" is the only choice for a composed table");
+		return shaped(id, () -> new ComposedTable(id, name, pieces, seated.equals("holes")));
+	}
+
+	// "2 1": two whole numbers
+	private static int[] pair(Element e, String attribute, String otherwise, String what) throws IOException
+	{
+		String value = e.attributeValue(attribute, otherwise);
+		if (value == null) throw new IOException(what + ": <" + e.getName() + "> needs " + attribute + "=\"…\"");
+		String[] parts = value.trim().split("\\s+");
+		try
+		{
+			if (parts.length == 2) return new int[] { Integer.parseInt(parts[0]), Integer.parseInt(parts[1]) };
+		} catch (NumberFormatException ignored)
+		{
+		}
+		throw new IOException(what + ": " + attribute + "=\"" + value + "\" should be two whole numbers");
 	}
 
 	private static Table oval(int id, String name, Element e) throws IOException
@@ -137,7 +203,7 @@ public class PlanXml
 
 	// a shape that cannot be made as the file says (or a box that is not
 	// numbers) is the file's fault
-	private static Table shaped(int id, java.util.function.Supplier<Table> make) throws IOException
+	private static <T> T shaped(int id, java.util.function.Supplier<T> make) throws IOException
 	{
 		try
 		{

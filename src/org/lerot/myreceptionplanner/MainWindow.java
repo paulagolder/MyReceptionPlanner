@@ -13,6 +13,8 @@ import org.lerot.myreceptionplanner.model.Progress;
 import org.lerot.myreceptionplanner.model.OvalTable;
 import org.lerot.myreceptionplanner.model.PolygonTable;
 import org.lerot.myreceptionplanner.model.RectTable;
+import org.lerot.myreceptionplanner.model.TableDesigns;
+import org.lerot.myreceptionplanner.model.WalkTable;
 import org.lerot.myreceptionplanner.model.RoundTable;
 import org.lerot.myreceptionplanner.model.Seating;
 import org.lerot.myreceptionplanner.model.Table;
@@ -181,6 +183,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		add.add("Rectangular table").addActionListener(e -> place(new RectTable(plan().nextId(), "", 4, 0)));
 		add.add("Oval table").addActionListener(e -> place(new OvalTable(plan().nextId(), "", 8, 4)));
 		add.add("Polygon table (hexagon …)").addActionListener(e -> place(new PolygonTable(plan().nextId(), "", 6, 1)));
+		add.add("Table design (T, E …)…").addActionListener(e -> addDesign());
 		add.add("Pew (a row of seats)").addActionListener(e -> addPew());
 		add.addSeparator();
 		add.add("Altar / speakers' table").addActionListener(e -> addAltar());
@@ -653,6 +656,47 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private void addPew()
 	{
 		place(new org.lerot.myreceptionplanner.model.Pew(plan().nextId(), "", 8));
+	}
+
+	// a table from a design file, from the Table designs folder (made, with
+	// the planner's own designs, the first time)
+	private void addDesign()
+	{
+		Path folder;
+		try
+		{
+			folder = TableDesigns.folder(ROOT);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Table designs", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		JFileChooser fc = new JFileChooser(folder.toFile());
+		fc.setDialogTitle("Add a table design");
+		fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Table designs (XML)", "xml"));
+		if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
+		TableDesigns.Design design;
+		try
+		{
+			design = TableDesigns.load(fc.getSelectedFile().toPath(), plan().nextId());
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot add the design", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		Table t = design.table();
+		place(t);
+		// the design's head table, unless there is one already
+		if (design.head() && plan().head().isEmpty())
+		{
+			plan().setHead(t);
+			planChanged();
+			planPanel.planUpdated();
+		}
+		if (t instanceof WalkTable walked && !walked.warnings().isEmpty())
+			JOptionPane.showMessageDialog(this, "<html>" + fc.getSelectedFile().getName() + ":<br>"
+							+ String.join("<br>", walked.warnings()) + "</html>", "Table design",
+					JOptionPane.WARNING_MESSAGE);
 	}
 
 	// in view, a little apart from the last one added, and chosen
