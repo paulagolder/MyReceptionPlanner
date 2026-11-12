@@ -495,7 +495,7 @@ international number for WhatsApp.
 
 ### Reports
 
-*Check…* and the table plan are on **Event ▾**, and the catering reports
+*Check…*, the table plan and the table lists are on **Event ▾**, and the catering reports
 on **Catering ▾** (above):
 
 - **Table plan (PDF)…**: one page to print and put up, with a panel for each
@@ -507,6 +507,16 @@ on **Catering ▾** (above):
   time. Choose the paper (A4 to A1) and the orientation; the type is made as
   large as fits. It is saved as `table-plan-<event>.pdf` in the occasion's
   folder's Output unless you choose otherwise, and opened.
+- **Table list (PDF)…**: a card to stand on one table. Choose the table
+  (the one selected on the plan to start with) and the card: an **A5
+  card** for a stand, or an **A4 folded card**, A4 landscape folded down
+  the middle like a greetings card, with the list on the front and again
+  on the back so it reads from both sides. The card has the occasion's
+  emblem, the occasion and the date, the event, the table's name or number
+  large (a table with a name of its own has its number underneath), then
+  its guests in seat order with their seat numbers. Empty and disabled
+  seats are left out, and so are dietary needs. It is saved as
+  `table-list-<event>-<table>.pdf` in Output and opened.
 - **Check…** lists what is still to settle at the event shown (for an
   unreserved party: who is invited, party by party, against its capacity):
 
