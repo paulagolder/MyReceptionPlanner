@@ -139,6 +139,10 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		example.addActionListener(e -> openExample());
 		occasionMenu.addSeparator();
 		occasionMenu.add("Save…").addActionListener(e -> save());
+		occasionMenu.addSeparator();
+		JMenuItem backup = occasionMenu.add("Backup…");
+		backup.setToolTipText("A copy of the whole occasion folder, as it stands now, in a folder of its own");
+		backup.addActionListener(e -> backup());
 		bar.add(dropDown("Occasion", occasionMenu));
 		bar.addSeparator();
 
@@ -167,6 +171,10 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JMenuItem check = eventsMenu.add("Check…");
 		check.setToolTipText("Spare places at the tables, and guests not yet seated");
 		check.addActionListener(e -> ChecksDialog.show(this, occasion, event));
+		eventsMenu.add("New event…").addActionListener(e -> newEvent());
+		deleteEventItem.addActionListener(e -> deleteEvent());
+		eventsMenu.add(deleteEventItem);
+		eventsMenu.addSeparator();
 		eventsMenu.add("Table plan (PDF)…").addActionListener(e -> tablePlanPdf());
 		JMenuItem tableList = eventsMenu.add("Table list (PDF)…");
 		tableList.setToolTipText("A card for one table: its name or number and its guests in seat order");
@@ -180,13 +188,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JMenuItem cards = eventsMenu.add("Place cards (PDF)…");
 		cards.setToolTipText("A folded card for each seated guest, table by table, for perforated card");
 		cards.addActionListener(e -> placeCardsPdf());
-		eventsMenu.add("Export layout…").addActionListener(e -> exportLayout());
 		eventsMenu.addSeparator();
 		eventsMenu.add("Save this event…").addActionListener(e -> saveEvent());
-		eventsMenu.addSeparator();
-		eventsMenu.add("New event…").addActionListener(e -> newEvent());
-		deleteEventItem.addActionListener(e -> deleteEvent());
-		eventsMenu.add(deleteEventItem);
 		bar.add(eventOnly(dropDown("Event", eventsMenu)));
 		bar.add(eventOnly(separator()));
 
@@ -201,6 +204,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		add.add("Altar / speakers' table").addActionListener(e -> addAltar());
 		add.addSeparator();
 		add.add("Import layout…").addActionListener(e -> importLayout());
+		add.add("Export layout…").addActionListener(e -> exportLayout());
 		addTableButton = dropDown("Layout", add);
 		addTableButton.setToolTipText("Add a table, pew or altar to the plan");
 		bar.add(addTableButton);
@@ -238,11 +242,6 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		bar.add(eventOnly(seatingButton));
 
 		JPopupMenu catering = new JPopupMenu();
-		JMenuItem importMenu = catering.add("Import menu…");
-		importMenu.setToolTipText("Take a menu file (XML or YAML) exported from another event, or another occasion's event file");
-		importMenu.addActionListener(e -> importMenu());
-		JSeparator afterImport = new JSeparator();
-		catering.add(afterImport);
 		catering.add("Menu…").addActionListener(e ->
 		{
 			if (MenuDialog.edit(this, occasion, event, menuFolder(), MenuDialog.Start.MENU)) changed();
@@ -265,6 +264,9 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 				new org.lerot.myreceptionplanner.reports.ServiceByTable(occasion, event), "Service by table",
 				"service-by-table", "Save as PDF, a page per table…"));
 		catering.addSeparator();
+		JMenuItem importMenu = catering.add("Import menu…");
+		importMenu.setToolTipText("Take a menu file (XML or YAML) exported from another event, or another occasion's event file");
+		importMenu.addActionListener(e -> importMenu());
 		JMenuItem exportMenu = catering.add("Export menu…");
 		exportMenu.addActionListener(e -> exportMenu());
 		// importing only until there is a menu; exporting once there is
@@ -273,7 +275,6 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e)
 			{
 				importMenu.setVisible(!event.hasMenu());
-				afterImport.setVisible(!event.hasMenu());
 				exportMenu.setEnabled(event.hasMenu());
 			}
 
@@ -1427,6 +1428,34 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		} catch (IOException e)
 		{
 			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot save", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	/*
+	 * A copy of the whole occasion, unsaved changes too, in a folder of its
+	 * own: offered beside the occasion's folder as "<name>_bak_n". The
+	 * occasion stays where it is, still saved or not as before.
+	 */
+	private void backup()
+	{
+		Path to = chooseFolder("Back up " + occasion.getName(), OccasionXml.nextBackup(occasionFolder()));
+		if (to == null) return;
+		try
+		{
+			boolean full;
+			try (var inside = Files.isDirectory(to) ? Files.list(to) : java.util.stream.Stream.<Path>empty())
+			{
+				full = inside.findAny().isPresent();
+			}
+			if (full && JOptionPane.showConfirmDialog(this, "The folder " + to + " is not empty.\nBack up into it anyway, replacing files of the same names?",
+							"Backup", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION)
+				return;
+			OccasionXml.backup(occasion, folder, to, droppedFiles);
+			JOptionPane.showMessageDialog(this, occasion.getName() + " is backed up in\n" + to.toAbsolutePath(), "Backup",
+					JOptionPane.INFORMATION_MESSAGE);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot back up", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 

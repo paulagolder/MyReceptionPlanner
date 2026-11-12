@@ -114,6 +114,50 @@ public class OccasionXml
 			write(event(e), folder.resolve(e.getFile()));
 	}
 
+	// the folder a backup of the occasion's folder is offered: beside it, "<name>_bak_n", n the first not yet used
+	public static Path nextBackup(Path folder)
+	{
+		Path parent = folder.toAbsolutePath().getParent();
+		for (int n = 1; ; n++)
+		{
+			Path b = parent.resolve(folder.getFileName() + "_bak_" + n);
+			if (!Files.exists(b)) return b;
+		}
+	}
+
+	/*
+	 * A backup in folder to: everything in the occasion's folder from (none
+	 * if never saved), each file keeping its name, Output and all; then the
+	 * occasion as it stands, unsaved changes too, written over it, and the
+	 * files of events deleted since (dropped) taken out. The occasion itself
+	 * stays where it is.
+	 */
+	public static void backup(Occasion occasion, Path from, Path to, java.util.Collection<String> dropped) throws IOException
+	{
+		Path target = to.toAbsolutePath().normalize();
+		if (from != null)
+		{
+			Path source = from.toAbsolutePath().normalize();
+			if (target.equals(source) || source.startsWith(target))
+				throw new IOException("A backup needs a folder of its own, not the occasion's folder or one holding it.");
+			if (Files.isDirectory(source))
+				try (var walk = Files.walk(source))
+				{
+					for (Path p : walk.toList())
+					{
+						if (p.startsWith(target)) continue;  // a backup kept inside the occasion's folder
+						Path copy = target.resolve(source.relativize(p).toString());
+						if (Files.isDirectory(p)) Files.createDirectories(copy);
+						else Files.copy(p, copy, java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+								java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
+					}
+				}
+		}
+		save(occasion, target);
+		for (String f : dropped)
+			Files.deleteIfExists(target.resolve(f));
+	}
+
 	// just this event's file, in the occasion's folder
 	public static void saveEvent(Event event, Path folder) throws IOException
 	{
