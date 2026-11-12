@@ -4,6 +4,8 @@ import net.miginfocom.swing.MigLayout;
 import org.lerot.myreceptionplanner.model.Altar;
 import org.lerot.myreceptionplanner.model.Pew;
 import org.lerot.myreceptionplanner.model.Plan;
+import org.lerot.myreceptionplanner.model.OvalTable;
+import org.lerot.myreceptionplanner.model.PolygonTable;
 import org.lerot.myreceptionplanner.model.RectTable;
 import org.lerot.myreceptionplanner.model.RoundTable;
 import org.lerot.myreceptionplanner.model.Table;
@@ -49,6 +51,25 @@ public class TableDialog
 			places = new JSpinner(new SpinnerNumberModel(round.places(), 1, 30, 1));
 			form.add(new JLabel("Places"));
 			form.add(places, "growx");
+		} else if (table instanceof OvalTable oval)
+		{
+			side = new JSpinner(new SpinnerNumberModel(oval.getLength(), 1, 30, 1));
+			end = new JSpinner(new SpinnerNumberModel(oval.getWidth(), 1, 30, 1));
+			form.add(new JLabel("Length (seats)"));
+			form.add(side, "growx");
+			form.add(new JLabel("Width (seats)"));
+			form.add(end, "growx");
+			JLabel hint = new JLabel("<html>Now " + oval.places() + " places round it. As wide as it is long, it is round.</html>");
+			hint.setForeground(Theme.EDGE);
+			form.add(hint, "skip");
+		} else if (table instanceof PolygonTable polygon)
+		{
+			side = new JSpinner(new SpinnerNumberModel(polygon.getSides(), 3, 12, 1));
+			end = new JSpinner(new SpinnerNumberModel(polygon.getPerSide(), 1, 10, 1));
+			form.add(new JLabel("Sides"));
+			form.add(side, "growx");
+			form.add(new JLabel("Places on each side"));
+			form.add(end, "growx");
 		} else if (table instanceof RectTable rect)
 		{
 			side = new JSpinner(new SpinnerNumberModel(rect.getSidePlaces(), 1, 30, 1));
@@ -87,6 +108,13 @@ public class TableDialog
 			pew.setPlaces((Integer) places.getValue());
 		else if (table instanceof RoundTable round)
 			round.setPlaces((Integer) places.getValue());
+		else if (table instanceof OvalTable oval)
+		{
+			// the longer way is its length
+			int a = (Integer) side.getValue(), b = (Integer) end.getValue();
+			oval.setBox(Math.max(a, b), Math.min(a, b));
+		} else if (table instanceof PolygonTable polygon)
+			polygon.setSides((Integer) side.getValue(), (Integer) end.getValue());
 		else if (table instanceof RectTable rect)
 			rect.setPlaces((Integer) side.getValue(), (Integer) end.getValue());
 		table.setRotation((Integer) turn.getValue());

@@ -10,6 +10,8 @@ import org.lerot.myreceptionplanner.model.Occasion;
 import org.lerot.myreceptionplanner.model.OccasionXml;
 import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.Progress;
+import org.lerot.myreceptionplanner.model.OvalTable;
+import org.lerot.myreceptionplanner.model.PolygonTable;
 import org.lerot.myreceptionplanner.model.RectTable;
 import org.lerot.myreceptionplanner.model.RoundTable;
 import org.lerot.myreceptionplanner.model.Seating;
@@ -175,8 +177,10 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		bar.add(eventOnly(separator()));
 
 		JPopupMenu add = new JPopupMenu();
-		add.add("Round table").addActionListener(e -> addTable(true));
-		add.add("Rectangular table").addActionListener(e -> addTable(false));
+		add.add("Round table").addActionListener(e -> place(new RoundTable(plan().nextId(), "", 8)));
+		add.add("Rectangular table").addActionListener(e -> place(new RectTable(plan().nextId(), "", 4, 0)));
+		add.add("Oval table").addActionListener(e -> place(new OvalTable(plan().nextId(), "", 8, 4)));
+		add.add("Polygon table (hexagon …)").addActionListener(e -> place(new PolygonTable(plan().nextId(), "", 6, 1)));
 		add.add("Pew (a row of seats)").addActionListener(e -> addPew());
 		add.addSeparator();
 		add.add("Altar / speakers' table").addActionListener(e -> addAltar());
@@ -639,25 +643,6 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	}
 
 	private Plan plan() { return event.getPlan(); }
-
-	private void addTable(boolean round)
-	{
-		Plan plan = plan();
-		int id = plan.nextId();
-		Table t = round
-				? new RoundTable(id, "", 8)
-				: new RectTable(id, "", 4, 0);
-		// in view, a little apart from the last one added
-		Point2D c = planPanel.visibleCentre();
-		double step = 40 * (plan.tables().size() % 5);
-		t.moveTo(Math.round(c.getX() + step), Math.round(c.getY() + step));
-		plan.add(t);
-		plan.numberUnnumbered();
-		planPanel.select(t);
-		planChanged();
-		planPanel.planUpdated();
-		planPanel.requestFocusInWindow();
-	}
 
 	// no chairs: only to show which way the room faces
 	private void addAltar()

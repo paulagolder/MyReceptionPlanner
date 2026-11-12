@@ -26,9 +26,10 @@ import java.io.IOException;
  * Pews and tables are numbered each on their own. An altar (shape="altar",
  * length="4" seats along its front) has no chairs and no number.
  *
- * A table of any other shape is a walk round its edge (shape="walk"), its
- * steps, turns and arcs within it (see WalkXml); its chairs are numbered in
- * the order walked.
+ * An oval table has box="8 4" (length and width in seats), a polygon
+ * sides="6" perside="2". A table of any other shape is a walk round its
+ * edge (shape="walk"), its steps, turns and arcs within it (see WalkXml).
+ * Ovals, polygons and walks number their chairs in the order walked.
  */
 public class PlanXml
 {
@@ -48,6 +49,13 @@ public class PlanXml
 			} else if (t instanceof Altar altar)
 			{
 				e.addAttribute("length", Integer.toString(altar.getLength()));
+			} else if (t instanceof OvalTable oval)
+			{
+				e.addAttribute("box", oval.getLength() + " " + oval.getWidth());
+			} else if (t instanceof PolygonTable polygon)
+			{
+				e.addAttribute("sides", Integer.toString(polygon.getSides()));
+				e.addAttribute("perside", Integer.toString(polygon.getPerSide()));
 			} else if (t instanceof RectTable rect)
 			{
 				e.addAttribute("sideplaces", Integer.toString(rect.getSidePlaces()));
@@ -65,7 +73,8 @@ public class PlanXml
 			if (!t.getOpenSeats().isEmpty())
 				e.addAttribute("open", String.join(" ",
 						t.getOpenSeats().stream().map(c -> Integer.toString(c + 1)).toList()));
-			if (t instanceof WalkTable walked) WalkXml.write(walked.getWalk(), e);
+			// the other shapes make their walk from their size
+			if (t instanceof WalkTable walked && WalkTable.SHAPE.equals(t.shape())) WalkXml.write(walked.getWalk(), e);
 		}
 	}
 
@@ -85,6 +94,8 @@ public class PlanXml
 				case Pew.SHAPE -> new Pew(id, name, number(e, "places", 8));
 				case Altar.SHAPE -> new Altar(id, name, number(e, "length", 4));
 				case WalkTable.SHAPE -> new WalkTable(id, name, WalkXml.read(e, "Table " + id));
+				case OvalTable.SHAPE -> oval(id, name, e);
+				case PolygonTable.SHAPE -> polygon(id, name, number(e, "sides", 6), number(e, "perside", 1));
 				default -> throw new IOException("Table " + id + " has an unknown shape: " + shape);
 			};
 			t.setNumber(number(e, "number", 0));
@@ -109,6 +120,32 @@ public class PlanXml
 		}
 		plan.numberUnnumbered();
 		return plan;
+	}
+
+	private static Table oval(int id, String name, Element e) throws IOException
+	{
+		String[] box = e.attributeValue("box", "4 2").trim().split("\\s+");
+		if (box.length != 2) throw new IOException("Table " + id + " needs box=\"length width\"");
+		return shaped(id, () -> new OvalTable(id, name,
+				(int) Math.round(Double.parseDouble(box[0])), (int) Math.round(Double.parseDouble(box[1]))));
+	}
+
+	private static Table polygon(int id, String name, int sides, int perSide) throws IOException
+	{
+		return shaped(id, () -> new PolygonTable(id, name, sides, perSide));
+	}
+
+	// a shape that cannot be made as the file says (or a box that is not
+	// numbers) is the file's fault
+	private static Table shaped(int id, java.util.function.Supplier<Table> make) throws IOException
+	{
+		try
+		{
+			return make.get();
+		} catch (IllegalArgumentException ex)
+		{
+			throw new IOException("Table " + id + ": " + ex.getMessage());
+		}
 	}
 
 	private static String whole(double value)

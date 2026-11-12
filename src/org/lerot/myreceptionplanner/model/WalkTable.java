@@ -38,7 +38,7 @@ public class WalkTable extends Table
 
 	public Walk getWalk() { return walk; }
 
-	public void setWalk(Walk walk)
+	protected void setWalk(Walk walk)
 	{
 		Walk.Traced traced = walk.trace();
 		boolean changed = this.walk == null || !walk.toString().equals(this.walk.toString());

@@ -360,8 +360,10 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 
 ### Layout
 
-- **Layout ▾** → Round table / Rectangular table / Pew puts a new one in
-  view. A **pew** is a straight row of seats all facing forward (up the plan
+- **Layout ▾** → Round table / Rectangular table / Oval table / Polygon
+  table / Pew puts a new one in view. An **oval** is given by its length and
+  width in seats (60 cm a seat); its places follow from those. A
+  **polygon** (a hexagon, a heptagon …) by its sides and the places on each. A **pew** is a straight row of seats all facing forward (up the plan
   until turned), with its backrest behind; use pews for a church, or for
   rows of seats round the walls at a party. It turns, moves and duplicates
   like a table. Pews are numbered on their own ("Pew 1", "Pew 2" …), across
