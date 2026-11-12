@@ -297,7 +297,7 @@ public class PartyDialog
 		{
 			Row r = rows.get(i);
 			if (!r.named() || (r.guest != null && r.guest.getNameParts().equals(r.name))) continue;
-			for (var l : guests.like(r.name.full(), r.guest))
+			for (var l : guests.like(r.name, r.guest))
 			{
 				if (!here.contains(l.b())) out.add(new Pending(r, l.b(), l.b().getName()
 						+ (l.b().getParty() == null ? "" : " (" + l.b().getParty().getName() + ")"), l.why()));
@@ -306,7 +306,7 @@ public class PartyDialog
 			{
 				Row o = rows.get(j);
 				if (j == i || !o.named() || (j < i && changed(o))) continue;
-				org.lerot.myreceptionplanner.model.NameMatch.why(r.name.full(), o.name.full())
+				org.lerot.myreceptionplanner.model.NameMatch.why(r.name, o.name)
 						.ifPresent(w -> out.add(new Pending(r, o.guest, o.name.full() + " (in this party)", w)));
 			}
 		}

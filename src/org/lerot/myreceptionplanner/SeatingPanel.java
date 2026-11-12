@@ -324,7 +324,7 @@ public class SeatingPanel extends JPanel
 					if (g == null)
 					{
 						// someone already on the list may be meant: seat them instead
-						List<GuestList.Likeness> like = guests.like(name.full(), null);
+						List<GuestList.Likeness> like = guests.like(name, null);
 						NameCheck.Answer a = like.isEmpty() ? NameCheck.Answer.DIFFERENT
 								: NameCheck.ask(SeatingPanel.this, name.full(), like, like.size() == 1);
 						if (a == NameCheck.Answer.BACK) return;
@@ -339,7 +339,7 @@ public class SeatingPanel extends JPanel
 					} else
 					{
 						if (!name.isEmpty() && !name.plain().equals(g.getNameParts().plain())
-								&& NameCheck.ask(SeatingPanel.this, guests, name.full(), g, false) != NameCheck.Answer.DIFFERENT) return;
+								&& NameCheck.ask(SeatingPanel.this, guests, name, g, false) != NameCheck.Answer.DIFFERENT) return;
 						guests.rename(g, name);
 					}
 				}
@@ -660,7 +660,7 @@ public class SeatingPanel extends JPanel
 					Name name = (Name) value;
 					if (name.equals(g.getNameParts())) return;
 					if (!name.isEmpty() && !name.plain().equals(g.getNameParts().plain())
-							&& NameCheck.ask(this_(), guests, name.full(), g, false) != NameCheck.Answer.DIFFERENT) return;
+							&& NameCheck.ask(this_(), guests, name, g, false) != NameCheck.Answer.DIFFERENT) return;
 					guests.rename(g, name);
 				}
 				case 1 -> g.setGender((Gender) value);

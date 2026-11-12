@@ -2,6 +2,7 @@ package org.lerot.myreceptionplanner;
 
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.GuestList;
+import org.lerot.myreceptionplanner.model.Name;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,11 +27,11 @@ public final class NameCheck
 	 * they are different people; then, for an existing guest, the pairs are
 	 * remembered. Offer the one guest already there when useExisting is set.
 	 */
-	public static Answer ask(Component parent, GuestList guests, String name, Guest self, boolean useExisting)
+	public static Answer ask(Component parent, GuestList guests, Name name, Guest self, boolean useExisting)
 	{
 		List<GuestList.Likeness> like = guests.like(name, self);
 		if (like.isEmpty()) return Answer.DIFFERENT;
-		Answer a = ask(parent, name, like, useExisting && like.size() == 1);
+		Answer a = ask(parent, name.full(), like, useExisting && like.size() == 1);
 		if (a == Answer.DIFFERENT && self != null) remember(guests, self, like);
 		return a;
 	}

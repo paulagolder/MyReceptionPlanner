@@ -432,7 +432,7 @@ public class GuestsPanel extends JPanel
 						return;
 					}
 					if (!now.plain().equals(was.plain()) && !now.isEmpty()
-							&& NameCheck.ask(GuestsPanel.this, guests, now.full(), g, false) != NameCheck.Answer.DIFFERENT) return;
+							&& NameCheck.ask(GuestsPanel.this, guests, now, g, false) != NameCheck.Answer.DIFFERENT) return;
 					guests.rename(g, now);
 				}
 				case ROLE ->

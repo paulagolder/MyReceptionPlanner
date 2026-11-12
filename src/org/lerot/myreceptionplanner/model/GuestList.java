@@ -138,14 +138,14 @@ public class GuestList
 	 * NameMatch), leaving out the guest being named and anyone already said
 	 * not to be them.
 	 */
-	public List<Likeness> like(String name, Guest self)
+	public List<Likeness> like(Name name, Guest self)
 	{
 		List<Likeness> out = new ArrayList<>();
-		if (name == null || name.isBlank()) return out;
+		if (name == null || name.isEmpty()) return out;
 		for (Guest g : guests)
 		{
 			if (g == self || !g.isNamed() || (self != null && isDistinct(self, g))) continue;
-			NameMatch.why(name, g.getName()).ifPresent(w -> out.add(new Likeness(self, g, w)));
+			NameMatch.why(name, g.getNameParts()).ifPresent(w -> out.add(new Likeness(self, g, w)));
 		}
 		return out;
 	}
@@ -160,7 +160,7 @@ public class GuestList
 			{
 				Guest a = named.get(i), b = named.get(j);
 				if (isDistinct(a, b)) continue;
-				NameMatch.why(a.getName(), b.getName()).ifPresent(w -> out.add(new Likeness(a, b, w)));
+				NameMatch.why(a.getNameParts(), b.getNameParts()).ifPresent(w -> out.add(new Likeness(a, b, w)));
 			}
 		return out;
 	}

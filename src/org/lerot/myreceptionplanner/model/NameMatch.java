@@ -163,6 +163,20 @@ public final class NameMatch
 	}
 
 	/*
+	 * The same for names in parts: the titles left aside, the first forename
+	 * as the first name and the whole family name as the surname, so "Van der
+	 * Berg" is one surname and "Lord Capulet" a surname alone.
+	 */
+	public static Optional<String> why(Name a, Name b) { return why(compared(a), compared(b)); }
+
+	private static String compared(Name n)
+	{
+		String family = n.family().replaceAll("[\\s-]+", "");
+		if (n.forenames().isEmpty() && family.isEmpty()) return n.title();
+		return (n.forenames() + " " + family).strip();
+	}
+
+	/*
 	 * Why the two names might be the same person, or empty if they seem not
 	 * to be. The reason reads after the names, e.g. "Tom and Thomas are forms
 	 * of one name".

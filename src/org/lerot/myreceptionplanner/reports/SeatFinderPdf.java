@@ -34,26 +34,23 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 /*
  * A seat finder, for the board at the door: the room in the middle, each
  * table as it stands with its name or number and each chair's seat number
  * (no guests' names, so it stays clear when enlarged); down the left, and on
- * down the right, every seated guest in order of surname with their table
- * and seat. The surname is taken as the last word of the name as written
- * ("Juliet Capulet" under C), and names are printed as written, under a
- * letter for each initial. Guests not yet seated are left out and counted
+ * down the right, every seated guest in order of family name with their
+ * table and seat. The family name is as typed ("Van der Berg" under V) and
+ * comes first ("Capulet, Juliet"), with or without titles, under a letter
+ * for each initial. Guests not yet seated are left out and counted
  * at the foot.
  */
 public class SeatFinderPdf
 {
-	// a guest's line: the name as written, where they sit, and the letter they go under
+	// a guest's line: the name, surname first, where they sit, and the letter they go under
 	public record Entry(String name, String place, String letter, boolean placeholder) {}
 
 	// one line of a column: a letter heading, or a guest
@@ -73,33 +70,21 @@ public class SeatFinderPdf
 	private static final Color ALTAR = new Color(0xEF, 0xE6, 0xD2);
 	private static final Color INK = new Color(0x2B, 0x2B, 0x2B);
 
-	// every seated guest, by surname, then by the whole name
-	public static List<Entry> entries(Event event)
+	// every seated guest, by family name, surname first ("Capulet, Juliet"), with or without titles
+	public static List<Entry> entries(Event event, boolean titles)
 	{
 		Plan plan = event.getPlan();
-		Collator order = Collator.getInstance(Locale.UK);
-		order.setStrength(Collator.PRIMARY);
+		Map<Guest, Seat> seats = event.getSeating().all();
 		List<Entry> out = new ArrayList<>();
-		for (Map.Entry<Guest, Seat> e : event.getSeating().all().entrySet())
+		for (Guest g : seats.keySet().stream().sorted(Guest.byFamilyName()).toList())
 		{
-			Table t = plan.find(e.getValue().tableId()).orElse(null);
-			if (t == null || e.getValue().chair() >= t.places()) continue;
-			Guest g = e.getKey();
-			String name = g.displayName();
-			out.add(new Entry(name, plan.label(t) + " · " + t.seatNumber(e.getValue().chair()),
-					letter(surname(name)), g.isPlaceholder()));
+			Seat s = seats.get(g);
+			Table t = plan.find(s.tableId()).orElse(null);
+			if (t == null || s.chair() >= t.places()) continue;
+			out.add(new Entry(g.listName(titles), plan.label(t) + " · " + t.seatNumber(s.chair()),
+					letter(g.sortName().sortWord()), g.isPlaceholder()));
 		}
-		out.sort(Comparator.comparing((Entry x) -> surname(x.name()), order)
-				.thenComparing(Entry::name, order));
 		return out;
-	}
-
-	// the last word of the name, without a placeholder's +1
-	static String surname(String name)
-	{
-		String s = name.strip().replaceFirst("\\+\\d+$", "").strip();
-		int space = s.lastIndexOf(' ');
-		return space < 0 ? s : s.substring(space + 1);
 	}
 
 	// the letter it goes under, as it sorts: "D" for d'Este, "O" for O'Neill, "E" for Élise
@@ -120,7 +105,7 @@ public class SeatFinderPdf
 		return (int) event.invited().stream().filter(g -> !event.getSeating().isSeated(g)).count();
 	}
 
-	public static void write(Occasion occasion, Event event, Rectangle page, Path file) throws IOException
+	public static void write(Occasion occasion, Event event, Rectangle page, boolean titles, Path file) throws IOException
 	{
 		try
 		{
@@ -164,7 +149,7 @@ public class SeatFinderPdf
 					bottom += 14 * k;
 				}
 
-				List<Entry> entries = entries(event);
+				List<Entry> entries = entries(event, titles);
 				Columns cols = columns(entries, regular, bold, italic, w - 2 * MARGIN * k, areaTop - bottom, k);
 				float left = MARGIN * k;
 				float planLeft = left + cols.perSide() * (cols.width() + GAP * k);

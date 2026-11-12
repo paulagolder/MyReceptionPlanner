@@ -62,9 +62,9 @@ class NameMatchTest
 		Guest claire = g.addGuest("Claire Perks", Gender.FEMALE, perks);
 		g.createParty("Tom Perks", 1, "");   // the same person, in another party
 
-		List<GuestList.Likeness> like = g.like("Tommy Perks", null);
+		List<GuestList.Likeness> like = g.like(new Name("", "Tommy", "Perks"), null);
 		assertEquals(2, like.size());
-		assertTrue(g.like("Claire Perks", claire).isEmpty(), "not like themselves");
+		assertTrue(g.like(new Name("", "Claire", "Perks"), claire).isEmpty(), "not like themselves");
 		assertEquals(1, g.alike().size());
 		GuestList.Likeness pair = g.alike().get(0);
 		g.markDistinct(pair.a(), pair.b());
@@ -73,11 +73,23 @@ class NameMatchTest
 		OccasionXml.save(o, folder);
 		GuestList loaded = OccasionXml.load(folder).getGuests();
 		assertTrue(loaded.alike().isEmpty(), "said to differ, after saving too");
-		assertTrue(loaded.like("Tom Perks", loaded.guests().stream()
+		assertTrue(loaded.like(new Name("", "Tom", "Perks"), loaded.guests().stream()
 				.filter(x -> x.getId() == thomas.getId()).findFirst().orElseThrow()).isEmpty());
 
 		g.removeGuest(thomas);
 		assertTrue(g.distinctPairs().isEmpty(), "forgotten when one of them goes");
+	}
+
+	@Test
+	void namesInPartsAreComparedWithoutTitlesAndTheFamilyNameWhole()
+	{
+		assertEquals("the same name", NameMatch.why(new Name("Dr", "Agnes", "Van der Berg"), new Name("", "Agnes", "Vanderberg"))
+				.orElse(null), "the family name as one surname");
+		assertEquals("Tom and Thomas are forms of one name",
+				NameMatch.why(new Name("Mr", "Tom", "Perks"), new Name("Sir", "Thomas", "Perks")).orElse(null));
+		assertTrue(NameMatch.why(new Name("Lord", "", "Capulet"), new Name("Lady", "", "Capulet")).isPresent(),
+				"a family name alone cannot tell them apart");
+		assertTrue(NameMatch.why(new Name("", "Agnes", "Van der Berg"), new Name("", "Agnes", "Berg")).isEmpty());
 	}
 
 	@Test

@@ -837,6 +837,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 	private static final String PAPER = "paper", LANDSCAPE = "landscape", CARD = "tableListCard",
 			FINDER_PAPER = "seatFinderPaper", DOOR_SPLIT = "doorListSplit",
+			DOOR_TITLES = "doorListTitles", FINDER_TITLES = "seatFinderTitles",
 			CARD_STOCK = "placeCardStock", CARDS_FOR_STAFF = "placeCardsForStaff";
 
 	// asks for the paper, then where to save, then writes and opens it
@@ -965,7 +966,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		}
 	}
 
-	// for the board at the door: the room, and everyone by surname with their table and seat
+	// for the board at the door: the room, and everyone by family name with their table and seat
 	private void seatFinderPdf()
 	{
 		if (!event.isSeated())
@@ -985,20 +986,23 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JPanel form = new JPanel(new MigLayout("insets 0, wrap 2", "[right][grow,fill]"));
 		form.add(new JLabel("Paper"));
 		form.add(paper);
+		JCheckBox titles = titlesBox(FINDER_TITLES);
+		form.add(titles, "skip");
 		JLabel note = new JLabel("<html>Landscape: the room in the middle with each table's name and<br>"
-				+ "seat numbers, and down each side everyone seated, by surname,<br>"
+				+ "seat numbers, and down each side everyone seated, by family name,<br>"
 				+ "with their table and seat. A4 can be enlarged when printed.</html>");
 		note.setForeground(Theme.EDGE);
 		form.add(note, "skip, gaptop 6");
 		if (JOptionPane.showConfirmDialog(this, form, "Seat finder: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
 				JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
 		PREFS.put(FINDER_PAPER, (String) paper.getSelectedItem());
+		PREFS.putBoolean(FINDER_TITLES, titles.isSelected());
 		Path file = choosePdf("seat-finder-" + eventBase() + ".pdf");
 		if (file == null) return;
 		try
 		{
 			org.lerot.myreceptionplanner.reports.SeatFinderPdf.write(occasion, event,
-					com.itextpdf.text.PageSize.getRectangle((String) paper.getSelectedItem()).rotate(), file);
+					com.itextpdf.text.PageSize.getRectangle((String) paper.getSelectedItem()).rotate(), titles.isSelected(), file);
 			open(file);
 		} catch (IOException e)
 		{
@@ -1006,10 +1010,17 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		}
 	}
 
-	// for the door: everyone expected, by surname, with a box to tick as they come in
+	// whether a list by family name gives titles, "Fairweather, Dame Margot"; remembered as key
+	private static JCheckBox titlesBox(String key)
+	{
+		return new JCheckBox("With titles: \"Fairweather, Dame Margot\" rather than \"Fairweather, Margot\"",
+				PREFS.getBoolean(key, true));
+	}
+
+	// for the door: everyone expected, by family name, with a box to tick as they come in
 	private void doorListPdf()
 	{
-		var entries = org.lerot.myreceptionplanner.reports.DoorListPdf.entries(event, occasion.getGuests().guests());
+		var entries = org.lerot.myreceptionplanner.reports.DoorListPdf.entries(event, occasion.getGuests().guests(), true);
 		if (entries.isEmpty())
 		{
 			JOptionPane.showMessageDialog(this, "No one is expected at " + event.getName() + " yet.", "Door list",
@@ -1024,7 +1035,9 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		split.setSelected(at != null && PREFS.getBoolean(DOOR_SPLIT, false));
 		JPanel form = new JPanel(new MigLayout("insets 0, wrap 1"));
 		form.add(split);
-		JLabel note = new JLabel("<html>A4, two columns: everyone expected by surname, with a box to tick.<br>"
+		JCheckBox titles = titlesBox(DOOR_TITLES);
+		form.add(titles);
+		JLabel note = new JLabel("<html>A4, two columns: everyone expected by family name, with a box to tick.<br>"
 				+ "A lead's places not yet named are on their line (+2), others have<br>"
 				+ "their party beside them, reserved seats are in bold, and those who<br>"
 				+ "have not replied are marked. The totals are at the end.</html>");
@@ -1033,11 +1046,12 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		if (JOptionPane.showConfirmDialog(this, form, "Door list: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
 				JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
 		if (at != null) PREFS.putBoolean(DOOR_SPLIT, split.isSelected());
+		PREFS.putBoolean(DOOR_TITLES, titles.isSelected());
 		Path file = choosePdf("door-list-" + eventBase() + ".pdf");
 		if (file == null) return;
 		try
 		{
-			org.lerot.myreceptionplanner.reports.DoorListPdf.write(occasion, event, split.isSelected(), file);
+			org.lerot.myreceptionplanner.reports.DoorListPdf.write(occasion, event, split.isSelected(), titles.isSelected(), file);
 			open(file);
 		} catch (IOException e)
 		{

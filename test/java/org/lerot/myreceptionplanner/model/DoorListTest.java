@@ -11,7 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// The door list: everyone expected, by surname, a box to tick each
+// The door list: everyone expected, by family name, a box to tick each
 class DoorListTest
 {
 	@TempDir
@@ -44,15 +44,15 @@ class DoorListTest
 		ball.setInvitation(bob, Invitation.ACCEPTED, list);
 		ball.getSeating().seat(zed, new Seat(1, 0));
 
-		List<DoorListPdf.Entry> entries = DoorListPdf.entries(ball, list.guests());
-		assertEquals(List.of("Zed Adams", "Ann Smith", "Bob Smith"), entries.stream().map(DoorListPdf.Entry::name).toList(),
-				"by surname; the places not named are not lines of their own");
-		DoorListPdf.Entry ann = entry(entries, "Ann Smith");
+		List<DoorListPdf.Entry> entries = DoorListPdf.entries(ball, list.guests(), true);
+		assertEquals(List.of("Adams, Zed", "Smith, Ann", "Smith, Bob"), entries.stream().map(DoorListPdf.Entry::name).toList(),
+				"by family name, then forenames; the places not named are not lines of their own");
+		DoorListPdf.Entry ann = entry(entries, "Smith, Ann");
 		assertEquals(2, ann.places());
 		assertEquals("", ann.party(), "a lead is their party");
 		assertFalse(ann.noReply());
-		assertEquals("The Smiths", entry(entries, "Bob Smith").party());
-		DoorListPdf.Entry z = entry(entries, "Zed Adams");
+		assertEquals("The Smiths", entry(entries, "Smith, Bob").party());
+		DoorListPdf.Entry z = entry(entries, "Adams, Zed");
 		assertEquals("Top table · 1", z.seat());
 		assertTrue(z.noReply(), "invited, not yet replied");
 		assertEquals("A", z.letter());
@@ -63,7 +63,7 @@ class DoorListTest
 	{
 		Occasion o = OccasionXml.load(Example.install(dir));
 		Event banquet = event(o, "Banquet");
-		List<DoorListPdf.Entry> entries = DoorListPdf.entries(banquet, o.getGuests().guests());
+		List<DoorListPdf.Entry> entries = DoorListPdf.entries(banquet, o.getGuests().guests(), true);
 		String at = DoorListPdf.splitLetter(entries);
 		assertNotNull(at);
 		int first = (int) entries.stream().filter(e -> e.letter().compareTo(at) < 0).count();
@@ -77,13 +77,13 @@ class DoorListTest
 		Occasion o = OccasionXml.load(Example.install(dir));
 		Event banquet = event(o, "Banquet");
 		Path pdf = dir.resolve("door.pdf");
-		DoorListPdf.write(o, banquet, true, pdf);
+		DoorListPdf.write(o, banquet, true, true, pdf);
 		PdfReader r = new PdfReader(pdf.toString());
 		assertEquals(2, r.getNumberOfPages(), "a half on each");
 		assertEquals(595, r.getPageSizeWithRotation(1).getWidth(), 1, "A4 portrait");
 		String first = PdfTextExtractor.getTextFromPage(r, 1), last = PdfTextExtractor.getTextFromPage(r, 2);
 		assertTrue(first.contains("Door list"), first);
-		assertTrue(first.contains("Juliet Capulet"), first);
+		assertTrue(first.contains("Capulet, Juliet"), first);
 		assertTrue(last.contains("expected:"), last);
 		r.close();
 	}

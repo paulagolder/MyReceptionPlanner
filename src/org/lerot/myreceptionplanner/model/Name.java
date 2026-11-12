@@ -39,6 +39,21 @@ public record Name(String title, String forenames, String family)
 		return forenames.isEmpty() ? family : forenames.split(" ")[0];
 	}
 
+	/*
+	 * "Fairweather, Dame Margot", for a list in order of family name; without
+	 * the title if titles is false ("Fairweather, Margot"). A name with no
+	 * family name is as written.
+	 */
+	public String listed(boolean titles)
+	{
+		if (family.isEmpty()) return titles ? full() : plain();
+		String rest = titles ? join(title, forenames) : forenames;
+		return rest.isEmpty() ? family : family + ", " + rest;
+	}
+
+	// what a list sorts it by first: the family name, else the forenames, else the title
+	public String sortWord() { return !family.isEmpty() ? family : !forenames.isEmpty() ? forenames : title; }
+
 	public Name withTitle(String t) { return new Name(t, forenames, family); }
 
 	public Name withForenames(String f) { return new Name(title, f, family); }

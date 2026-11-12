@@ -21,16 +21,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 
 /*
  * A door list, for those on the door of a big event where most have no seat
- * (a ball, a hall): everyone expected, by surname as on the seat finder (the
- * last word of the name, printed as written, under a letter for each
+ * (a ball, a hall): everyone expected, by family name as on the seat finder
+ * ("Capulet, Juliet", with or without titles, under a letter for each
  * initial), each with a box to tick as they come in. A lead brings the
  * places not yet named in their party ("+2"); anyone else in a party has the
  * party's name beside theirs, so the door can tell who came with whom. Those
@@ -42,7 +39,7 @@ import java.util.Locale;
 public class DoorListPdf
 {
 	/*
-	 * A guest's line: the name as written, their unnamed places, the party
+	 * A guest's line: the name, surname first, their unnamed places, the party
 	 * they came with ("" for a lead or no party), their reserved seat ("" for
 	 * none), whether they have yet to reply, and the letter they go under.
 	 */
@@ -60,12 +57,12 @@ public class DoorListPdf
 	private static final BaseColor LIGHT = new BaseColor(0x8A, 0x8A, 0x8E);
 	private static final BaseColor GOLD = new BaseColor(0xB8, 0x86, 0x0B);
 
-	// everyone expected, by surname and then the whole name; unnamed places go with their lead
-	public static List<Entry> entries(Event event, List<Guest> guests)
+	// everyone expected, by family name; unnamed places go with their lead
+	public static List<Entry> entries(Event event, List<Guest> guests, boolean titles)
 	{
 		Plan plan = event.getPlan();
 		List<Entry> out = new ArrayList<>();
-		for (Guest g : guests)
+		for (Guest g : guests.stream().sorted(Guest.byFamilyName()).toList())
 		{
 			if (!event.isInvited(g)) continue;
 			Party p = g.getParty();
@@ -79,14 +76,9 @@ public class DoorListPdf
 			Seat s = event.getSeating().seatOf(g);
 			Table t = s == null ? null : plan.find(s.tableId()).orElse(null);
 			if (t != null && s.chair() < t.places()) seat = plan.label(t) + " · " + t.seatNumber(s.chair());
-			String name = g.displayName();
-			out.add(new Entry(name, places, party, seat, event.invitation(g) != Invitation.ACCEPTED,
-					SeatFinderPdf.letter(SeatFinderPdf.surname(name))));
+			out.add(new Entry(g.listName(titles), places, party, seat, event.invitation(g) != Invitation.ACCEPTED,
+					SeatFinderPdf.letter(g.sortName().sortWord())));
 		}
-		Collator order = Collator.getInstance(Locale.UK);
-		order.setStrength(Collator.PRIMARY);
-		out.sort(Comparator.comparing((Entry x) -> SeatFinderPdf.surname(x.name()), order)
-				.thenComparing(Entry::name, order));
 		return out;
 	}
 
@@ -114,9 +106,9 @@ public class DoorListPdf
 		return new String[] { "A–" + (char) (at.charAt(0) - 1), at + "–Z" };
 	}
 
-	public static void write(Occasion occasion, Event event, boolean split, Path file) throws IOException
+	public static void write(Occasion occasion, Event event, boolean split, boolean titles, Path file) throws IOException
 	{
-		List<Entry> entries = entries(event, occasion.getGuests().guests());
+		List<Entry> entries = entries(event, occasion.getGuests().guests(), titles);
 		List<List<Entry>> parts = new ArrayList<>();
 		String at = split ? splitLetter(entries) : null;
 		if (at == null) parts.add(entries);

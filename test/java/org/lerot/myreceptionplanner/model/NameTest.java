@@ -4,6 +4,8 @@ import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 // A name in its parts: title, forenames, family name
@@ -64,5 +66,25 @@ class NameTest
 
 		Element old = DocumentHelper.parseText("<guests><guest id=\"1\" name=\"Lady Capulet\" gender=\"f\"/></guests>").getRootElement();
 		assertEquals(new Name("Lady", "Capulet", ""), GuestXml.read(old).guests().get(0).getNameParts());
+	}
+
+	@Test
+	void listsGoByFamilyNameAsTyped()
+	{
+		assertEquals("Fairweather, Dame Margot", new Name("Dame", "Margot", "Fairweather").listed(true));
+		assertEquals("Fairweather, Margot", new Name("Dame", "Margot", "Fairweather").listed(false));
+		assertEquals("Capulet, Lord", new Name("Lord", "", "Capulet").listed(true));
+		assertEquals("Capulet", new Name("Lord", "", "Capulet").listed(false));
+		assertEquals("Count Paris", new Name("Count", "Paris", "").listed(true), "no family name: as written");
+		assertEquals("Paris", new Name("Count", "Paris", "").listed(false));
+
+		GuestList list = new GuestList();
+		Party p = list.createParty(new Name("", "Agnes", "Van der Berg"), 2, "");
+		list.addGuest(new Name("", "Tom", "Berg"), Gender.MALE, null);
+		list.addGuest(new Name("", "Ann", "van Dyke"), Gender.FEMALE, null);
+		list.addGuest(new Name("Count", "Paris", ""), Gender.MALE, null);
+		assertEquals(List.of("Berg, Tom", "Paris", "Van der Berg, Agnes", "Van der Berg, Agnes+1", "van Dyke, Ann"),
+				list.guests().stream().sorted(Guest.byFamilyName()).map(g -> g.listName(false)).toList(),
+				"\"Van der Berg\" under V, case aside; a place after its lead");
 	}
 }

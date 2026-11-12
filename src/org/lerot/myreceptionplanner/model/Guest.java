@@ -123,6 +123,41 @@ public class Guest
 				.replace("'", "").toLowerCase(Locale.ROOT).strip();
 	}
 
+	/*
+	 * As a list in order of family name prints it, "Capulet, Juliet", with or
+	 * without the title; a place not named yet goes by its lead's name and
+	 * number, "Capulet, Lord+1".
+	 */
+	public String listName(boolean titles)
+	{
+		if (isNamed()) return name.listed(titles);
+		Guest lead = party == null ? null : party.getLead();
+		return lead != null && lead.isNamed() ? lead.listName(titles) + "+" + plus : displayName();
+	}
+
+	// the name it sorts by: its own, or for a place not named yet its lead's
+	public Name sortName()
+	{
+		if (isNamed()) return name;
+		Guest lead = party == null ? null : party.getLead();
+		return lead != null && lead.isNamed() ? lead.name : new Name("", displayName(), "");
+	}
+
+	/*
+	 * In order of family name as typed ("Van der Berg" under V), then
+	 * forenames, then title, with a lead's places after them; case and
+	 * accents left aside.
+	 */
+	public static java.util.Comparator<Guest> byFamilyName()
+	{
+		java.text.Collator order = java.text.Collator.getInstance(java.util.Locale.UK);
+		order.setStrength(java.text.Collator.PRIMARY);
+		return java.util.Comparator.comparing((Guest g) -> g.sortName().sortWord(), order)
+				.thenComparing(g -> g.sortName().forenames(), order)
+				.thenComparing(g -> g.sortName().title(), order)
+				.thenComparingInt(g -> g.isNamed() ? 0 : g.plus);
+	}
+
 	@Override
 	public String toString() { return displayName(); }
 }
