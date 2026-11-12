@@ -174,6 +174,9 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JMenuItem finder = eventsMenu.add("Seat finder (PDF)…");
 		finder.setToolTipText("For the door: the room with seat numbers, and every guest by surname with table and seat");
 		finder.addActionListener(e -> seatFinderPdf());
+		JMenuItem cards = eventsMenu.add("Place cards (PDF)…");
+		cards.setToolTipText("A folded card for each seated guest, table by table, for perforated card");
+		cards.addActionListener(e -> placeCardsPdf());
 		eventsMenu.add("Export layout…").addActionListener(e -> exportLayout());
 		eventsMenu.addSeparator();
 		eventsMenu.add("Save this event…").addActionListener(e -> saveEvent());
@@ -830,7 +833,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	// ---- reports ----
 
 	private static final String PAPER = "paper", LANDSCAPE = "landscape", CARD = "tableListCard",
-			FINDER_PAPER = "seatFinderPaper";
+			FINDER_PAPER = "seatFinderPaper",
+			CARD_STOCK = "placeCardStock", CARDS_FOR_STAFF = "placeCardsForStaff";
 
 	// asks for the paper, then where to save, then writes and opens it
 	private void tablePlanPdf()
@@ -874,6 +878,83 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 				JOptionPane.showMessageDialog(this, "The plan is crowded for " + paper.getSelectedItem()
 						+ " even with the smallest type; try a larger paper size.", "Table plan",
 						JOptionPane.WARNING_MESSAGE);
+			open(file);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot make the PDF", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	// a tent card for each seated guest, table by table in seat order
+	private void placeCardsPdf()
+	{
+		if (!event.isSeated() || event.getSeating().seatedCount() == 0)
+		{
+			JOptionPane.showMessageDialog(this, event.isSeated() ? "No one is seated at " + event.getName() + " yet."
+					: event.getName() + " is a party, unreserved: no one is given a seat,\nso there are no place cards.",
+					"Place cards", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		List<Table> tables = org.lerot.myreceptionplanner.model.Checks.inGuideOrder(plan()).stream()
+				.filter(t -> !event.getSeating().seatedAt(t.getId()).isEmpty()).toList();
+		int seated = event.getSeating().seatedCount();
+		List<Object> choices = new ArrayList<>();
+		choices.add("All tables (" + seated + " cards)");
+		choices.addAll(tables);
+		JComboBox<Object> which = new JComboBox<>(choices.toArray());
+		which.setRenderer(new DefaultListCellRenderer()
+		{
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean selected,
+					boolean focus)
+			{
+				String text = value instanceof Table t ? plan().label(t) + "  ("
+						+ event.getSeating().seatedAt(t.getId()).size() + " cards)" : String.valueOf(value);
+				return super.getListCellRendererComponent(list, text, index, selected, focus);
+			}
+		});
+		if (tables.contains(planPanel.getSelected())) which.setSelectedItem(planPanel.getSelected());
+		JComboBox<org.lerot.myreceptionplanner.reports.PlaceCardsPdf.Stock> stock =
+				new JComboBox<>(org.lerot.myreceptionplanner.reports.PlaceCardsPdf.Stock.values());
+		try
+		{
+			stock.setSelectedItem(org.lerot.myreceptionplanner.reports.PlaceCardsPdf.Stock.valueOf(
+					PREFS.get(CARD_STOCK, "DECADRY_6")));
+		} catch (IllegalArgumentException ignored)
+		{
+		}
+		JCheckBox forStaff = new JCheckBox("On the back, menu choices and dietary needs for the waiting staff",
+				PREFS.getBoolean(CARDS_FOR_STAFF, true));
+		JPanel form = new JPanel(new MigLayout("insets 0, wrap 2", "[right][grow,fill]"));
+		form.add(new JLabel("Tables"));
+		form.add(which);
+		form.add(new JLabel("Card"));
+		form.add(stock);
+		form.add(forStaff, "skip");
+		int unseated = org.lerot.myreceptionplanner.reports.SeatFinderPdf.unseated(event);
+		JLabel note = new JLabel("<html>The name large on the front, with the table and seat; the name<br>"
+				+ "again on the back, upside down so it reads when the card stands.<br>"
+				+ "Table by table, in seat order, ready to lay out."
+				+ (unseated > 0 ? "<br>" + unseated + (unseated == 1 ? " guest is" : " guests are")
+						+ " not seated yet, so have no card." : "")
+				+ "<br>Try a sheet on plain paper against the card first.</html>");
+		note.setForeground(Theme.EDGE);
+		form.add(note, "skip, gaptop 6");
+		if (JOptionPane.showConfirmDialog(this, form, "Place cards: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
+		var chosenStock = (org.lerot.myreceptionplanner.reports.PlaceCardsPdf.Stock) stock.getSelectedItem();
+		PREFS.put(CARD_STOCK, chosenStock.name());
+		PREFS.putBoolean(CARDS_FOR_STAFF, forStaff.isSelected());
+		Object chosen = which.getSelectedItem();
+		List<Table> printing = chosen instanceof Table t ? List.of(t) : tables;
+		String name = "place-cards-" + eventBase() + (chosen instanceof Table t ? "-"
+				+ plan().label(t).toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "") : "");
+		Path file = choosePdf(name + ".pdf");
+		if (file == null) return;
+		try
+		{
+			org.lerot.myreceptionplanner.reports.PlaceCardsPdf.write(occasion, event, printing, chosenStock,
+					forStaff.isSelected(), file);
 			open(file);
 		} catch (IOException e)
 		{

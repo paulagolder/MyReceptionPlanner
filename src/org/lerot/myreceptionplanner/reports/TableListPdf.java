@@ -35,8 +35,8 @@ import java.util.Optional;
  * from both sides of the table. One table's card is printed on a page its
  * own size. Every table at once goes on A4, to cut (or tear, on perforated
  * card) and fold: A5 two to a sheet, A6 four, folded A5 two, folded A4 one.
- * Short marks at the edges show where to cut and fold, so no line crosses
- * a card.
+ * Short marks at the edges show where to cut (darker, solid) and fold
+ * (lighter, dashed), so no line crosses a card.
  */
 public class TableListPdf
 {
@@ -59,7 +59,7 @@ public class TableListPdf
 	private record Face(float x, float y, float width, float height, int table) {}
 
 	// a sheet: its size, how many tables it takes, their faces, and the marks at its edges
-	private record Sheet(Rectangle page, int tables, List<Face> faces, List<float[]> marks) {}
+	private record Sheet(Rectangle page, int tables, List<Face> faces, List<float[]> folds, List<float[]> cuts) {}
 
 	// a guest's line: seat number, name, and whether a placeholder (Ann Smith+1)
 	public record Entry(int seat, String name, boolean placeholder) {}
@@ -69,7 +69,6 @@ public class TableListPdf
 	private static final BaseColor TEXT = new BaseColor(0x2B, 0x2B, 0x2B);
 	private static final BaseColor GREY = new BaseColor(0x6E, 0x6E, 0x72);
 	private static final BaseColor RULE = new BaseColor(0xB8, 0x86, 0x0B);
-	private static final BaseColor FOLD = new BaseColor(0xC8, 0xC8, 0xCC);
 
 	// the guests at the table in seat order, seat 1 first
 	public static List<Entry> entries(Table t, org.lerot.myreceptionplanner.model.Seating seating)
@@ -122,36 +121,36 @@ public class TableListPdf
 
 	private static Sheet whole(Rectangle page)
 	{
-		return new Sheet(page, 1, List.of(new Face(0, 0, page.getWidth(), page.getHeight(), 0)), List.of());
+		return new Sheet(page, 1, List.of(new Face(0, 0, page.getWidth(), page.getHeight(), 0)), List.of(), List.of());
 	}
 
 	// two faces side by side: one table front and back (folded), or two tables
 	private static Sheet across(Rectangle page, boolean folded)
 	{
 		float w = page.getWidth() / 2, h = page.getHeight();
-		return new Sheet(page, folded ? 1 : 2,
-				List.of(new Face(0, 0, w, h, 0), new Face(w, 0, w, h, folded ? 0 : 1)), down(w, 0, h));
+		List<float[]> middle = down(w, 0, h);
+		return new Sheet(page, folded ? 1 : 2, List.of(new Face(0, 0, w, h, 0), new Face(w, 0, w, h, folded ? 0 : 1)),
+				folded ? middle : List.of(), folded ? List.of() : middle);
 	}
 
 	// four cards, two across and two down, the first at the top left
 	private static Sheet four(Rectangle page)
 	{
 		float w = page.getWidth() / 2, h = page.getHeight() / 2;
-		List<float[]> marks = new ArrayList<>(down(w, 0, page.getHeight()));
-		marks.addAll(across(h, 0, page.getWidth()));
+		List<float[]> cuts = new ArrayList<>(down(w, 0, page.getHeight()));
+		cuts.addAll(across(h, 0, page.getWidth()));
 		return new Sheet(page, 4, List.of(new Face(0, h, w, h, 0), new Face(w, h, w, h, 1),
-				new Face(0, 0, w, h, 2), new Face(w, 0, w, h, 3)), marks);
+				new Face(0, 0, w, h, 2), new Face(w, 0, w, h, 3)), List.of(), cuts);
 	}
 
 	// two folded cards, one above the other, each folding down its middle
 	private static Sheet foldedPair(Rectangle page)
 	{
 		float w = page.getWidth() / 2, h = page.getHeight() / 2;
-		List<float[]> marks = new ArrayList<>(down(w, h, page.getHeight()));
-		marks.addAll(down(w, 0, h));
-		marks.addAll(across(h, 0, page.getWidth()));
+		List<float[]> folds = new ArrayList<>(down(w, h, page.getHeight()));
+		folds.addAll(down(w, 0, h));
 		return new Sheet(page, 2, List.of(new Face(0, h, w, h, 0), new Face(w, h, w, h, 0),
-				new Face(0, 0, w, h, 1), new Face(w, 0, w, h, 1)), marks);
+				new Face(0, 0, w, h, 1), new Face(w, 0, w, h, 1)), folds, across(h, 0, page.getWidth()));
 	}
 
 	private static final float MARK = 12;
@@ -194,7 +193,7 @@ public class TableListPdf
 						Table t = tables.get(first + face.table());
 						panel(cb, f, occasion, event, t, entries(t, event.getSeating()), emblem, face);
 					}
-					marks(cb, sheet.marks());
+					PlaceCardsPdf.drawMarks(cb, sheet.folds(), sheet.cuts());
 				}
 				doc.close();
 			}
@@ -304,22 +303,6 @@ public class TableListPdf
 		cb.setLineWidth(0.8f * k);
 		cb.moveTo(cx - length / 2, y);
 		cb.lineTo(cx + length / 2, y);
-		cb.stroke();
-		cb.restoreState();
-	}
-
-	// short marks at the edges where the sheet is to be cut or folded
-	private static void marks(PdfContentByte cb, List<float[]> marks)
-	{
-		if (marks.isEmpty()) return;
-		cb.saveState();
-		cb.setColorStroke(FOLD);
-		cb.setLineWidth(0.5f);
-		for (float[] m : marks)
-		{
-			cb.moveTo(m[0], m[1]);
-			cb.lineTo(m[2], m[3]);
-		}
 		cb.stroke();
 		cb.restoreState();
 	}

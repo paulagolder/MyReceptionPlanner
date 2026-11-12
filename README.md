@@ -1,7 +1,7 @@
 # MyReceptionPlanner
 
 Plan the tables at a reception: lay out the tables, seat the guests, and print
-the table plan, a list for each table and a place card for each guest.
+the table plan, a list for each table, a seat finder and a place card for each guest.
 
 ## Installing
 
@@ -495,7 +495,7 @@ international number for WhatsApp.
 
 ### Reports
 
-*Check…*, the table plan, the table lists and the seat finder are on **Event ▾**, and the catering reports
+*Check…*, the table plan, the table lists, the seat finder and the place cards are on **Event ▾**, and the catering reports
 on **Catering ▾** (above):
 
 - **Table plan (PDF)…**: one page to print and put up, with a panel for each
@@ -533,6 +533,20 @@ on **Catering ▾** (above):
   or three columns; the type is as large as fits. Anyone not yet seated is
   left out and counted at the foot. It is saved as
   `seat-finder-<event>.pdf` in Output and opened.
+- **Place cards (PDF)…**: a tent card for each seated guest, to fold along
+  its middle and stand at their place. The front has a small emblem, the
+  name large and, small, the table and seat; the back has the name again
+  (printed upside down, so it reads the right way up when the card
+  stands) and, if ticked, the guest's menu choices (each dish by its name,
+  without the description) and dietary needs, for the waiting staff. A
+  place not yet named has *Guest of Ann Smith*. The cards come table by
+  table in seat order, the head table first, ready to lay out; choose
+  **All tables** or one. The card: **6 to an A4 sheet**, 85 × 46 mm
+  folded, to fit DECAdry perforated place cards (DPOCB3713), or **4 to an
+  A4 sheet**, 105 × 74 mm folded, on plain card to cut. Short marks in the
+  margins show the folds and cuts; print a sheet on plain paper and hold
+  it against the card first. It is saved as `place-cards-<event>.pdf` in
+  Output and opened.
 - **Check…** lists what is still to settle at the event shown (for an
   unreserved party: who is invited, party by party, against its capacity):
 
