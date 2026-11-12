@@ -95,4 +95,28 @@ class TableListTest
 		assertEquals(2, text.split("Head table", -1).length - 1, "front and back");
 		r.close();
 	}
+
+	@Test
+	void allTablesAreAPageEachFoldedOrTwoA5ToASheet() throws Exception
+	{
+		Occasion o = OccasionXml.load(Example.install(dir));
+		Event e = banquet(o);
+		List<Table> tables = e.getPlan().tables();  // the head table and six others
+		assertEquals(7, tables.size());
+
+		Path folded = dir.resolve("folded.pdf");
+		TableListPdf.writeAll(o, e, tables, TableListPdf.Card.A4_FOLDED, folded);
+		PdfReader r = new PdfReader(folded.toString());
+		assertEquals(7, r.getNumberOfPages());
+		r.close();
+
+		Path a5 = dir.resolve("a5s.pdf");
+		TableListPdf.writeAll(o, e, tables, TableListPdf.Card.A5, a5);
+		r = new PdfReader(a5.toString());
+		assertEquals(4, r.getNumberOfPages(), "two to a sheet, the last on its own");
+		assertEquals(842, r.getPageSizeWithRotation(1).getWidth(), 1);
+		String first = PdfTextExtractor.getTextFromPage(r, 1);
+		assertTrue(first.contains(e.getPlan().label(tables.get(0))) && first.contains(e.getPlan().label(tables.get(1))), first);
+		r.close();
+	}
 }

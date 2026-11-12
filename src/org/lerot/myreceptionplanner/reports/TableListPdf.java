@@ -31,7 +31,8 @@ import java.util.Optional;
  *
  * On an A5 card, portrait, for a stand; or on A4 landscape folded down the
  * middle like a greetings card, the list on the front and again on the back
- * so it reads from both sides of the table.
+ * so it reads from both sides of the table. Every table at once: folded A4
+ * a page each, or A5 two to a sheet of A4 to cut in half.
  */
 public class TableListPdf
 {
@@ -83,31 +84,69 @@ public class TableListPdf
 
 	public static void write(Occasion occasion, Event event, Table table, Card card, Path file) throws IOException
 	{
+		write(occasion, event, List.of(table), card, file, false);
+	}
+
+	/*
+	 * A card for each of the tables, in the order given: on folded A4 a page
+	 * each; on A5 two to a sheet of A4 landscape, to cut down the middle.
+	 */
+	public static void writeAll(Occasion occasion, Event event, List<Table> tables, Card card, Path file)
+			throws IOException
+	{
+		if (tables.isEmpty()) throw new IOException("There are no tables to list");
+		write(occasion, event, tables, card, file, true);
+	}
+
+	private static void write(Occasion occasion, Event event, List<Table> tables, Card card, Path file,
+			boolean twoA5ToASheet) throws IOException
+	{
 		try
 		{
 			Fonts f = new Fonts();
-			Rectangle page = card == Card.A5 ? PageSize.A5 : PageSize.A4.rotate();
+			boolean a5Sheet = card == Card.A5 && !twoA5ToASheet;
+			Rectangle page = a5Sheet ? PageSize.A5 : PageSize.A4.rotate();
 			Files.createDirectories(file.toAbsolutePath().getParent());
 			Document doc = new Document(page);
 			try (OutputStream out = Files.newOutputStream(file))
 			{
 				PdfWriter writer = PdfWriter.getInstance(doc, out);
-				doc.addTitle(occasion.getName() + " – " + event.getName() + " – " + title(event.getPlan(), table));
+				doc.addTitle(occasion.getName() + " – " + event.getName()
+						+ (tables.size() == 1 ? " – " + title(event.getPlan(), tables.get(0)) : " – table lists"));
 				doc.addCreator("MyReceptionPlanner");
 				doc.open();
 				PdfContentByte cb = writer.getDirectContent();
-				List<Entry> entries = entries(table, event.getSeating());
 				SVGDocument emblem = Emblem.parse(occasion.getEmblem());
-				if (card == Card.A5)
+				float half = page.getWidth() / 2, height = page.getHeight();
+				if (a5Sheet)
 				{
-					panel(cb, f, occasion, event, table, entries, emblem, 0, page.getWidth(), page.getHeight());
+					Table t = tables.get(0);
+					panel(cb, f, occasion, event, t, entries(t, event.getSeating()), emblem, 0, page.getWidth(), height);
+				} else if (card == Card.A5)
+				{
+					// two tables to a sheet, side by side
+					for (int i = 0; i < tables.size(); i += 2)
+					{
+						if (i > 0) doc.newPage();
+						for (int k = 0; k < 2 && i + k < tables.size(); k++)
+						{
+							Table t = tables.get(i + k);
+							panel(cb, f, occasion, event, t, entries(t, event.getSeating()), emblem, k * half, half, height);
+						}
+						marks(cb, half, height);
+					}
 				} else
 				{
-					float half = page.getWidth() / 2;
-					// the back on the left, the front on the right, when folded
-					panel(cb, f, occasion, event, table, entries, emblem, 0, half, page.getHeight());
-					panel(cb, f, occasion, event, table, entries, emblem, half, half, page.getHeight());
-					foldMarks(cb, half, page.getHeight());
+					// a table to a sheet, the back on the left, the front on the right, when folded
+					for (int i = 0; i < tables.size(); i++)
+					{
+						if (i > 0) doc.newPage();
+						Table t = tables.get(i);
+						List<Entry> entries = entries(t, event.getSeating());
+						panel(cb, f, occasion, event, t, entries, emblem, 0, half, height);
+						panel(cb, f, occasion, event, t, entries, emblem, half, half, height);
+						marks(cb, half, height);
+					}
 				}
 				doc.close();
 			}
@@ -219,8 +258,8 @@ public class TableListPdf
 		cb.restoreState();
 	}
 
-	// short marks at the top and bottom of the fold, not across the card
-	private static void foldMarks(PdfContentByte cb, float x, float height)
+	// short marks at the top and bottom of the fold (or the cut), not across the card
+	private static void marks(PdfContentByte cb, float x, float height)
 	{
 		cb.saveState();
 		cb.setColorStroke(FOLD);

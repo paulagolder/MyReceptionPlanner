@@ -897,16 +897,21 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 					JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
-		JComboBox<Table> which = new JComboBox<>(tables.toArray(new Table[0]));
+		// every table with someone seated at it, or one table
+		List<Table> occupied = tables.stream().filter(t -> !event.getSeating().seatedAt(t.getId()).isEmpty()).toList();
+		String all = "All tables (" + occupied.size() + " with guests)";
+		List<Object> choices = new ArrayList<>();
+		if (!occupied.isEmpty()) choices.add(all);
+		choices.addAll(tables);
+		JComboBox<Object> which = new JComboBox<>(choices.toArray());
 		which.setRenderer(new DefaultListCellRenderer()
 		{
 			@Override
 			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean selected,
 					boolean focus)
 			{
-				Table t = (Table) value;
-				String text = t == null ? "" : plan().label(t) + "  (" + event.getSeating().seatedAt(t.getId()).size()
-						+ " seated)";
+				String text = value instanceof Table t ? plan().label(t) + "  ("
+						+ event.getSeating().seatedAt(t.getId()).size() + " seated)" : String.valueOf(value);
 				return super.getListCellRendererComponent(list, text, index, selected, focus);
 			}
 		});
@@ -926,21 +931,29 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		form.add(card);
 		JLabel note = new JLabel("<html>The emblem, the occasion and the event, the table large,<br>"
 				+ "then its guests in seat order. The folded card has the list<br>"
-				+ "on the front and again on the back.</html>");
+				+ "on the front and again on the back.<br>"
+				+ "All tables: folded A4 a page each, or A5 two to a sheet of A4<br>"
+				+ "to cut in half; tables with no one seated are left out.</html>");
 		note.setForeground(Theme.EDGE);
 		form.add(note, "skip, gaptop 6");
 		if (JOptionPane.showConfirmDialog(this, form, "Table list: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
 				JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
 		var chosenCard = (org.lerot.myreceptionplanner.reports.TableListPdf.Card) card.getSelectedItem();
 		PREFS.put(CARD, chosenCard.name());
-		Table t = (Table) which.getSelectedItem();
+		Object chosen = which.getSelectedItem();
 
-		String tableName = plan().label(t).toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
-		Path file = choosePdf("table-list-" + eventBase() + "-" + tableName + ".pdf");
+		String name = chosen instanceof Table t
+				? "table-list-" + eventBase() + "-"
+						+ plan().label(t).toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "")
+				: "table-lists-" + eventBase();
+		Path file = choosePdf(name + ".pdf");
 		if (file == null) return;
 		try
 		{
-			org.lerot.myreceptionplanner.reports.TableListPdf.write(occasion, event, t, chosenCard, file);
+			if (chosen instanceof Table t)
+				org.lerot.myreceptionplanner.reports.TableListPdf.write(occasion, event, t, chosenCard, file);
+			else
+				org.lerot.myreceptionplanner.reports.TableListPdf.writeAll(occasion, event, occupied, chosenCard, file);
 			open(file);
 		} catch (IOException e)
 		{

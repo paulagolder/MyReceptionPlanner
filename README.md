@@ -516,7 +516,10 @@ on **Catering ▾** (above):
   large (a table with a name of its own has its number underneath), then
   its guests in seat order with their seat numbers. Empty and disabled
   seats are left out, and so are dietary needs. It is saved as
-  `table-list-<event>-<table>.pdf` in Output and opened.
+  `table-list-<event>-<table>.pdf` in Output and opened. Choose **All
+  tables** to make them all at once, as `table-lists-<event>.pdf`: folded
+  A4 a page each, or A5 two to a sheet of A4 landscape to cut down the
+  middle; tables with no one seated are left out.
 - **Check…** lists what is still to settle at the event shown (for an
   unreserved party: who is invited, party by party, against its capacity):
 
