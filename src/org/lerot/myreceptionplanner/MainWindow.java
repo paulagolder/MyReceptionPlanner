@@ -171,6 +171,9 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JMenuItem tableList = eventsMenu.add("Table list (PDF)…");
 		tableList.setToolTipText("A card for one table: its name or number and its guests in seat order");
 		tableList.addActionListener(e -> tableListPdf());
+		JMenuItem finder = eventsMenu.add("Seat finder (PDF)…");
+		finder.setToolTipText("For the door: the room with seat numbers, and every guest by surname with table and seat");
+		finder.addActionListener(e -> seatFinderPdf());
 		eventsMenu.add("Export layout…").addActionListener(e -> exportLayout());
 		eventsMenu.addSeparator();
 		eventsMenu.add("Save this event…").addActionListener(e -> saveEvent());
@@ -826,7 +829,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 
 	// ---- reports ----
 
-	private static final String PAPER = "paper", LANDSCAPE = "landscape", CARD = "tableListCard";
+	private static final String PAPER = "paper", LANDSCAPE = "landscape", CARD = "tableListCard",
+			FINDER_PAPER = "seatFinderPaper";
 
 	// asks for the paper, then where to save, then writes and opens it
 	private void tablePlanPdf()
@@ -870,6 +874,47 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 				JOptionPane.showMessageDialog(this, "The plan is crowded for " + paper.getSelectedItem()
 						+ " even with the smallest type; try a larger paper size.", "Table plan",
 						JOptionPane.WARNING_MESSAGE);
+			open(file);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot make the PDF", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	// for the board at the door: the room, and everyone by surname with their table and seat
+	private void seatFinderPdf()
+	{
+		if (!event.isSeated())
+		{
+			JOptionPane.showMessageDialog(this, event.getName() + " is a party, unreserved: no one is given a seat,\n"
+					+ "so there is no seat finder.", "Seat finder", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		if (event.getSeating().seatedCount() == 0)
+		{
+			JOptionPane.showMessageDialog(this, "No one is seated at " + event.getName() + " yet.", "Seat finder",
+					JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		JComboBox<String> paper = new JComboBox<>(new String[] { "A4", "A3" });
+		paper.setSelectedItem(PREFS.get(FINDER_PAPER, "A3"));
+		JPanel form = new JPanel(new MigLayout("insets 0, wrap 2", "[right][grow,fill]"));
+		form.add(new JLabel("Paper"));
+		form.add(paper);
+		JLabel note = new JLabel("<html>Landscape: the room in the middle with each table's name and<br>"
+				+ "seat numbers, and down each side everyone seated, by surname,<br>"
+				+ "with their table and seat. A4 can be enlarged when printed.</html>");
+		note.setForeground(Theme.EDGE);
+		form.add(note, "skip, gaptop 6");
+		if (JOptionPane.showConfirmDialog(this, form, "Seat finder: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
+		PREFS.put(FINDER_PAPER, (String) paper.getSelectedItem());
+		Path file = choosePdf("seat-finder-" + eventBase() + ".pdf");
+		if (file == null) return;
+		try
+		{
+			org.lerot.myreceptionplanner.reports.SeatFinderPdf.write(occasion, event,
+					com.itextpdf.text.PageSize.getRectangle((String) paper.getSelectedItem()).rotate(), file);
 			open(file);
 		} catch (IOException e)
 		{

@@ -495,7 +495,7 @@ international number for WhatsApp.
 
 ### Reports
 
-*Check…*, the table plan and the table lists are on **Event ▾**, and the catering reports
+*Check…*, the table plan, the table lists and the seat finder are on **Event ▾**, and the catering reports
 on **Catering ▾** (above):
 
 - **Table plan (PDF)…**: one page to print and put up, with a panel for each
@@ -522,6 +522,17 @@ on **Catering ▾** (above):
   to a sheet, A6 four, A5 folded two, A4 folded one. Short marks at the
   sheet's edges show where to cut and fold. Tables with no one seated are
   left out. One table on its own is printed on a page its own size.
+- **Seat finder (PDF)…**: for the board at the door, landscape on A4 (to
+  enlarge when printed) or A3. The room is in the middle, each table as it
+  stands with its name or number and every chair's seat number, but no
+  guests' names, so it stays clear. Down the left, and on down the right,
+  is everyone seated in order of surname (the last word of the name, so
+  *Juliet Capulet* under C and *Leonardo da Vinci* under V), printed as
+  written under a letter for each initial, with their table and seat:
+  *Juliet Capulet … Head table · 7*. With more guests each side takes two
+  or three columns; the type is as large as fits. Anyone not yet seated is
+  left out and counted at the foot. It is saved as
+  `seat-finder-<event>.pdf` in Output and opened.
 - **Check…** lists what is still to settle at the event shown (for an
   unreserved party: who is invited, party by party, against its capacity):
 
