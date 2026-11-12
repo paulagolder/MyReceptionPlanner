@@ -174,6 +174,9 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		JMenuItem finder = eventsMenu.add("Seat finder (PDF)…");
 		finder.setToolTipText("For the door: the room with seat numbers, and every guest by surname with table and seat");
 		finder.addActionListener(e -> seatFinderPdf());
+		JMenuItem door = eventsMenu.add("Door list (PDF)…");
+		door.setToolTipText("For those on the door: everyone expected, by surname, with a box to tick");
+		door.addActionListener(e -> doorListPdf());
 		JMenuItem cards = eventsMenu.add("Place cards (PDF)…");
 		cards.setToolTipText("A folded card for each seated guest, table by table, for perforated card");
 		cards.addActionListener(e -> placeCardsPdf());
@@ -833,7 +836,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	// ---- reports ----
 
 	private static final String PAPER = "paper", LANDSCAPE = "landscape", CARD = "tableListCard",
-			FINDER_PAPER = "seatFinderPaper",
+			FINDER_PAPER = "seatFinderPaper", DOOR_SPLIT = "doorListSplit",
 			CARD_STOCK = "placeCardStock", CARDS_FOR_STAFF = "placeCardsForStaff";
 
 	// asks for the paper, then where to save, then writes and opens it
@@ -996,6 +999,45 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		{
 			org.lerot.myreceptionplanner.reports.SeatFinderPdf.write(occasion, event,
 					com.itextpdf.text.PageSize.getRectangle((String) paper.getSelectedItem()).rotate(), file);
+			open(file);
+		} catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot make the PDF", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	// for the door: everyone expected, by surname, with a box to tick as they come in
+	private void doorListPdf()
+	{
+		var entries = org.lerot.myreceptionplanner.reports.DoorListPdf.entries(event, occasion.getGuests().guests());
+		if (entries.isEmpty())
+		{
+			JOptionPane.showMessageDialog(this, "No one is expected at " + event.getName() + " yet.", "Door list",
+					JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		String at = org.lerot.myreceptionplanner.reports.DoorListPdf.splitLetter(entries);
+		String[] halves = at == null ? null : org.lerot.myreceptionplanner.reports.DoorListPdf.halves(at);
+		JCheckBox split = new JCheckBox(at == null ? "In two halves" : "In two halves, " + halves[0] + " and "
+				+ halves[1] + ", for two people on the door");
+		split.setEnabled(at != null);
+		split.setSelected(at != null && PREFS.getBoolean(DOOR_SPLIT, false));
+		JPanel form = new JPanel(new MigLayout("insets 0, wrap 1"));
+		form.add(split);
+		JLabel note = new JLabel("<html>A4, two columns: everyone expected by surname, with a box to tick.<br>"
+				+ "A lead's places not yet named are on their line (+2), others have<br>"
+				+ "their party beside them, reserved seats are in bold, and those who<br>"
+				+ "have not replied are marked. The totals are at the end.</html>");
+		note.setForeground(Theme.EDGE);
+		form.add(note, "gaptop 6");
+		if (JOptionPane.showConfirmDialog(this, form, "Door list: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
+		if (at != null) PREFS.putBoolean(DOOR_SPLIT, split.isSelected());
+		Path file = choosePdf("door-list-" + eventBase() + ".pdf");
+		if (file == null) return;
+		try
+		{
+			org.lerot.myreceptionplanner.reports.DoorListPdf.write(occasion, event, split.isSelected(), file);
 			open(file);
 		} catch (IOException e)
 		{

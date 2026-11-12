@@ -103,7 +103,7 @@ public class SeatFinderPdf
 	}
 
 	// the letter it goes under, as it sorts: "D" for d'Este, "O" for O'Neill, "E" for Élise
-	private static String letter(String surname)
+	static String letter(String surname)
 	{
 		for (char c : surname.toCharArray())
 		{
