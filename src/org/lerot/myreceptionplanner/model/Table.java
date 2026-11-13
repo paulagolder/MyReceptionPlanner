@@ -98,8 +98,15 @@ public abstract class Table
 
 	public boolean hasName() { return !name.isEmpty(); }
 
-	// goes by its number unless it has a name or is the head table
-	public boolean isNumbered() { return !hasName() && !head; }
+	/*
+	 * Has a number, by where it stands, whether or not it goes by it: a name,
+	 * or being the head table, shows instead, and the number is kept behind
+	 * it (so lists may skip it). Not an altar.
+	 */
+	public boolean isNumbered() { return true; }
+
+	// shown by its number: numbered, with no name of its own, not the head table
+	public boolean goesByNumber() { return isNumbered() && !hasName() && !head; }
 
 	public int getNumber() { return number; }
 

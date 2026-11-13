@@ -733,7 +733,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		int answer = JOptionPane.showConfirmDialog(this,
 				"Number the tables afresh by where they stand: in rows from the top of the plan,\n"
 						+ "left to right along each row; pews are numbered on their own the same way.\n"
-						+ "The head table and tables with their own name keep their names. Guests keep their seats.",
+						+ "The head table and tables with their own name are numbered too, but show their names,\n"
+						+ "so some numbers will not be seen. Guests keep their seats.",
 				"Renumber tables", JOptionPane.OK_CANCEL_OPTION);
 		if (answer != JOptionPane.OK_OPTION) return;
 		plan().renumber();

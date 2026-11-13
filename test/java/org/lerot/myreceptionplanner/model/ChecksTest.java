@@ -30,10 +30,11 @@ class ChecksTest
 		seating.seat(guests.addGuest("D", null, null), new Seat(2, 0));
 
 		List<Checks.SpareSeats> spare = Checks.spareSeats(plan, seating);
-		assertEquals(List.of("Head table", "Table 2", "Smith family"), spare.stream().map(Checks.SpareSeats::label).toList());
+		assertEquals(List.of("Head table", "Table 3", "Smith family"), spare.stream().map(Checks.SpareSeats::label).toList());
 		assertEquals(List.of(1, 3, 3), spare.stream().map(Checks.SpareSeats::spare).toList());
-		assertEquals(1, one.getNumber());
-		assertEquals(2, two.getNumber());
+		assertEquals(2, one.getNumber(), "the head table, at the top, is 1");
+		assertEquals(3, two.getNumber());
+		assertEquals(4, named.getNumber());
 	}
 
 	@Test

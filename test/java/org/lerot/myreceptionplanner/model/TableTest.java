@@ -242,7 +242,7 @@ class TableTest
 	}
 
 	@Test
-	void theHeadTableAndNamedTablesHaveNoNumber()
+	void theHeadTableAndNamedTablesHaveANumberBehindTheirName()
 	{
 		Plan plan = new Plan();
 		RectTable head = new RectTable(1, "", 5, 0);
@@ -254,14 +254,18 @@ class TableTest
 		smiths.setName("  Smith family ");
 		plan.renumber();
 		assertEquals("Head table", plan.label(head));
+		assertEquals(1, head.getNumber());
 		assertEquals("Smith family", plan.label(smiths));
-		assertEquals(0, smiths.getNumber());
-		assertEquals("Table 1", plan.label(other), "the numbers run on unbroken");
+		assertEquals(2, smiths.getNumber());
+		assertEquals("Table 3", plan.label(other), "the numbers shown skip those behind names");
 		smiths.setName("");
 		plan.numberUnnumbered();
-		assertEquals("Table 2", plan.label(smiths), "losing its name gives it the next number");
+		assertEquals("Table 2", plan.label(smiths), "losing its name, it goes by its number");
 		head.setName("Top table");
 		assertEquals("Top table", plan.label(head));
+		assertEquals(1, head.getNumber());
+		assertFalse(head.goesByNumber());
+		assertTrue(other.goesByNumber());
 	}
 
 	private static RoundTable at(Plan plan, int id, double x, double y)
@@ -296,7 +300,7 @@ class TableTest
 		assertEquals(head.getDisabledSeats(), copy.getDisabledSeats());
 		assertFalse(copy.isHead(), "only one head table");
 		assertFalse(copy.hasName());
-		assertEquals("Table 1", plan.label(copy));
+		assertEquals("Table 2", plan.label(copy), "the next number after the head table's");
 
 		((RectTable) copy).setPlaces(6, 0);
 		copy.setRotation(0);

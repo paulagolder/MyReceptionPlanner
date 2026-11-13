@@ -66,6 +66,12 @@ class TableListTest
 		RoundTable plain = new RoundTable(2, "", 8);
 		plain.setNumber(4);
 		assertEquals("", TableListPdf.subtitle(plain), "the number is already its title");
+		Plan plan = new Plan();
+		RoundTable head = new RoundTable(3, "Top table", 8);
+		plan.add(head);
+		plan.setHead(head);
+		head.setNumber(1);
+		assertEquals("", TableListPdf.subtitle(head), "not the head table's");
 	}
 
 	@Test

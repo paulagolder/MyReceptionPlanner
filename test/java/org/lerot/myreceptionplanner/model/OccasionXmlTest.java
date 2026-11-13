@@ -83,7 +83,7 @@ class OccasionXmlTest
 		assertEquals(45, t.getRotation());
 		assertEquals(3, t.getFirstSeat());
 		assertTrue(t.isHead());
-		assertEquals(1, b.getPlan().find(1).orElseThrow().getNumber());
+		assertEquals(2, b.getPlan().find(1).orElseThrow().getNumber(), "after the head table's 1");
 
 		// the guests and their seats
 		GuestList g = loaded.getGuests();

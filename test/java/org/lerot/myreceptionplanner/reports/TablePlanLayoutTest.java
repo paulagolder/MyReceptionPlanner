@@ -84,11 +84,11 @@ class TablePlanLayoutTest
 				assertTrue(apart, a.title() + " and " + b.title() + " overlap");
 			}
 		}
-		// the head table above the rest; table 1 left of table 2; the row of six above the three
+		// the head table (1) above the rest; table 2 left of table 3; the row of six above the three
 		TablePlanLayout.Panel headPanel = find(panels, "Head table");
-		assertTrue(headPanel.y() < find(panels, "Table 1").y());
-		assertTrue(find(panels, "Table 1").x() < find(panels, "Table 2").x());
-		assertTrue(find(panels, "Table 6").y() < find(panels, "Table 7").y());
+		assertTrue(headPanel.y() < find(panels, "Table 2").y());
+		assertTrue(find(panels, "Table 2").x() < find(panels, "Table 3").x());
+		assertTrue(find(panels, "Table 7").y() < find(panels, "Table 8").y());
 		// the head table is in the middle across, as in the room
 		double middle = headPanel.x() + headPanel.width() / 2;
 		assertEquals(w / 2, middle, w * 0.1);

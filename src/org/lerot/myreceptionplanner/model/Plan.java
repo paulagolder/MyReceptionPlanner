@@ -61,9 +61,10 @@ public class Plan
 
 	/*
 	 * Numbers the tables afresh by where they stand: in rows from the top of
-	 * the plan down, left to right along each row. The head table, and any
-	 * table with a name of its own, has no number, so the numbers run on
-	 * unbroken. Otherwise numbers stay put when tables move.
+	 * the plan down, left to right along each row. The head table and named
+	 * tables are numbered too, though their names show instead, so the
+	 * numbers shown may skip theirs. Otherwise numbers stay put when tables
+	 * move.
 	 */
 	public void renumber()
 	{
@@ -114,9 +115,9 @@ public class Plan
 		return rows;
 	}
 
-	// gives the next number up to any table going by its number that has
-	// none, or shares one with a table before it (a new table, or one that
-	// has lost its name or stopped being the head table)
+	// gives the next number up to any table that has none, or shares one
+	// with a table before it (a new table, or one from an older file whose
+	// named tables had none)
 	public void numberUnnumbered()
 	{
 		for (String series : series())
@@ -141,7 +142,7 @@ public class Plan
 	{
 		if (table.hasName()) return table.getName();
 		if (table.isHead()) return "Head table";
-		if (!table.isNumbered()) return table.series();
+		if (!table.isNumbered() || table.getNumber() == 0) return table.series();
 		return table.series() + " " + table.getNumber();
 	}
 
