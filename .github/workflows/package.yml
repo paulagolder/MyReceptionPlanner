@@ -2,14 +2,27 @@
 # for Linux and an .msi for Windows (each built on its own system; the .msi
 # needs the WiX Toolset 3, on GitHub's Windows images or else from Chocolatey).
 #
-#  - "Run workflow" on the repository's Actions page builds it; download it
-#    from the run's page (Artifacts).
-#  - Pushing a version tag also puts it on a release page:
+#  - Pushing a version tag builds the Linux installer and puts it on a
+#    release page:
 #        git tag v1.0.0 && git push origin v1.0.0
+#  - Windows only by choice, as it costs twice the minutes: "Run workflow" on
+#    the repository's Actions page, tick Windows (and Linux or not). Run it
+#    from a tag ("Use workflow from", Tags) to add the files to that tag's
+#    release page; from main, download them from the run's page (Artifacts),
+#    kept for 2 days.
 name: Package
 
 on:
   workflow_dispatch:
+    inputs:
+      linux:
+        description: Linux (.deb)
+        type: boolean
+        default: true
+      windows:
+        description: Windows (.msi)
+        type: boolean
+        default: false
   push:
     tags: ['v*']
 
@@ -18,6 +31,7 @@ permissions:
 
 jobs:
   package:
+    if: github.event_name == 'push' || inputs.linux
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -51,6 +65,7 @@ jobs:
 
   windows:
     needs: package   # after Linux, which makes the release page this adds to
+    if: ${{ !failure() && !cancelled() && inputs.windows }}   # only when chosen, Linux built or not
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
