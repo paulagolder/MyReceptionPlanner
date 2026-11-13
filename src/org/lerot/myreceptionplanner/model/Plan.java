@@ -1,5 +1,6 @@
 package org.lerot.myreceptionplanner.model;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -29,6 +30,7 @@ public class Plan
 
 	public void remove(Table table)
 	{
+		separate(table);
 		tables.remove(table);
 	}
 
@@ -146,6 +148,174 @@ public class Plan
 		return table.series() + " " + table.getNumber();
 	}
 
+	// ---- tables combined: pushed together, each keeping its own identity ----
+
+	private static final double TOUCHING = 5;  // cm between tops still counted as pushed together
+
+	// the table and those combined with it, or the table alone
+	public List<Table> groupOf(Table t)
+	{
+		if (t.getGroup() == 0) return List.of(t);
+		return tables.stream().filter(o -> o.getGroup() == t.getGroup()).toList();
+	}
+
+	// the tables not combined with it whose tops touch its own, that it could be combined with
+	public List<Table> touching(Table t)
+	{
+		if (!t.combines()) return List.of();
+		java.awt.geom.Area near = new java.awt.geom.Area(
+				new java.awt.BasicStroke((float) (2 * TOUCHING)).createStrokedShape(t.topOnFloor()));
+		near.add(new java.awt.geom.Area(t.topOnFloor()));
+		List<Table> out = new ArrayList<>();
+		for (Table o : tables)
+		{
+			if (o == t || !o.combines() || (t.getGroup() != 0 && o.getGroup() == t.getGroup())) continue;
+			java.awt.geom.Area both = new java.awt.geom.Area(o.topOnFloor());
+			both.intersect(near);
+			if (!both.isEmpty()) out.add(o);
+		}
+		return out;
+	}
+
+	/*
+	 * The chairs of each table in the group that its partners block: a chair
+	 * on or against another's top, and at an inside corner, where two
+	 * tables' chairs would clash, the chair of the later table. Seat 1 is
+	 * among them if blocked (see block).
+	 */
+	public java.util.Map<Table, Set<Integer>> blocked(List<Table> group)
+	{
+		// by id, so the same chair is chosen at a corner however the tables were last touched
+		List<Table> byId = group.stream().sorted(Comparator.comparingInt(Table::getId)).toList();
+		java.util.Map<Table, Set<Integer>> out = new java.util.LinkedHashMap<>();
+		double r = Table.SEAT_RADIUS;
+		for (Table t : byId)
+		{
+			Set<Integer> chairs = new java.util.TreeSet<>();
+			for (int c = 0; c < t.places(); c++)
+				for (Table o : byId)
+					if (o != t && overlapsCircle(o.topOnFloor(), t.seatOnFloor(c), r)) chairs.add(c);
+			out.put(t, chairs);
+		}
+		// inside corners: two tables' chairs on each other, neither on a top (whether turned off yet or not)
+		for (int i = 0; i < byId.size(); i++)
+			for (int j = i + 1; j < byId.size(); j++)
+			{
+				Table a = byId.get(i), b = byId.get(j);
+				for (int ca = 0; ca < a.places(); ca++)
+				{
+					if (out.get(a).contains(ca)) continue;
+					for (int cb = 0; cb < b.places(); cb++)
+						if (!out.get(b).contains(cb) && a.seatOnFloor(ca).distance(b.seatOnFloor(cb)) < 2 * r)
+							out.get(b).add(cb);
+				}
+			}
+		return out;
+	}
+
+	// whether the shape covers any of the circle (more than a sliver)
+	private static boolean overlapsCircle(java.awt.Shape shape, Point2D centre, double radius)
+	{
+		java.awt.geom.Area a = new java.awt.geom.Area(shape);
+		a.intersect(new java.awt.geom.Area(new java.awt.geom.Ellipse2D.Double(centre.getX() - radius,
+				centre.getY() - radius, 2 * radius, 2 * radius)));
+		java.awt.geom.Rectangle2D b = a.getBounds2D();
+		return !a.isEmpty() && b.getWidth() > 1 && b.getHeight() > 1;
+	}
+
+	// turns off the blocked chairs; seat 1, if blocked, moves on to the next chair that is not
+	public static void block(java.util.Map<Table, Set<Integer>> blocked)
+	{
+		blocked.forEach((t, chairs) ->
+		{
+			if (chairs.contains(t.getFirstSeat()))
+				for (int k = 1; k < t.places(); k++)
+				{
+					int c = (t.getFirstSeat() + k) % t.places();
+					if (!chairs.contains(c) && !t.isDisabled(c))
+					{
+						t.setFirstSeat(c);
+						break;
+					}
+				}
+			for (int c : chairs)
+				t.setDisabled(c, true);
+		});
+	}
+
+	// the chairs combining these tables would block, as block would turn them off
+	public java.util.Map<Table, Set<Integer>> blockedIfCombined(Table a, Table b)
+	{
+		List<Table> group = new ArrayList<>(groupOf(a));
+		for (Table o : groupOf(b))
+			if (!group.contains(o)) group.add(o);
+		return blocked(group);
+	}
+
+	// combines the two (and any already combined with either), turning off the chairs they block
+	public void combine(Table a, Table b)
+	{
+		if (!a.combines() || !b.combines()) throw new IllegalArgumentException("Pews and altars are not combined");
+		java.util.Map<Table, Set<Integer>> blocked = blockedIfCombined(a, b);
+		int g = a.getGroup() != 0 ? a.getGroup() : b.getGroup() != 0 ? b.getGroup()
+				: tables.stream().mapToInt(Table::getGroup).max().orElse(0) + 1;
+		for (Table t : blocked.keySet())
+			t.setGroup(g);
+		block(blocked);
+	}
+
+	// after a table of the group changed size or shape: turns off the chairs now blocked
+	public void reblock(Table t)
+	{
+		if (t.getGroup() != 0) block(blocked(groupOf(t)));
+	}
+
+	/*
+	 * Takes the table out of its group, turning back on the chairs that
+	 * combining had blocked: its own, and those of the rest that it alone
+	 * blocked. A group left with one table is no longer a group.
+	 */
+	public void separate(Table t)
+	{
+		if (t.getGroup() == 0) return;
+		List<Table> group = groupOf(t);
+		java.util.Map<Table, Set<Integer>> before = blocked(group);
+		List<Table> rest = group.stream().filter(o -> o != t).toList();
+		java.util.Map<Table, Set<Integer>> after = rest.size() > 1 ? blocked(rest) : java.util.Map.of();
+		t.setGroup(0);
+		if (rest.size() == 1) rest.get(0).setGroup(0);
+		before.forEach((table, chairs) ->
+		{
+			for (int c : chairs)
+				if (!after.getOrDefault(table, Set.of()).contains(c)) table.setDisabled(c, false);
+		});
+	}
+
+	// moves the table and those combined with it by this much
+	public void moveGroup(Table t, double dx, double dy)
+	{
+		List<Table> group = groupOf(t);
+		dx = Math.max(dx, -group.stream().mapToDouble(Table::getX).min().orElse(0));
+		dy = Math.max(dy, -group.stream().mapToDouble(Table::getY).min().orElse(0));
+		for (Table o : group)
+			o.moveTo(o.getX() + dx, o.getY() + dy);
+	}
+
+	// turns the table and those combined with it about their middle, clockwise by this many degrees
+	public void turnGroup(Table t, double degrees)
+	{
+		List<Table> group = groupOf(t);
+		double cx = group.stream().mapToDouble(Table::getX).average().orElse(t.getX());
+		double cy = group.stream().mapToDouble(Table::getY).average().orElse(t.getY());
+		java.awt.geom.AffineTransform turn = java.awt.geom.AffineTransform.getRotateInstance(Math.toRadians(degrees), cx, cy);
+		for (Table o : group)
+		{
+			Point2D p = turn.transform(new Point2D.Double(o.getX(), o.getY()), null);
+			o.moveTo(p.getX(), p.getY());
+			o.setRotation(o.getRotation() + degrees);
+		}
+	}
+
 	// two tables whose tops or chairs cover the same floor, and where
 	public record Overlap(Table a, Table b, java.awt.geom.Area where) {}
 
@@ -162,6 +332,7 @@ public class Plan
 			for (int j = i + 1; j < tables.size(); j++)
 			{
 				Table a = tables.get(i), b = tables.get(j);
+				if (a.getGroup() != 0 && a.getGroup() == b.getGroup()) continue;  // pushed together on purpose
 				if (!a.bounds().intersects(b.bounds())) continue;
 				java.awt.geom.Area both = new java.awt.geom.Area(covers.computeIfAbsent(a, Table::footprint));
 				both.intersect(covers.computeIfAbsent(b, Table::footprint));

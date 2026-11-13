@@ -37,6 +37,7 @@ public abstract class Table
 	private final int id;
 	private String name;
 	private int number;  // 0 for none
+	private int group;   // tables combined, pushed together, share one; 0 for none
 	private double x;
 	private double y;
 	private double rotation;
@@ -113,6 +114,17 @@ public abstract class Table
 	public void setNumber(int number) { this.number = Math.max(0, number); }
 
 	public void setName(String name) { this.name = name == null ? "" : name.trim(); }
+
+	// the tables combined with this one share its group (see Plan.combine); 0 if none
+	public int getGroup() { return group; }
+
+	public void setGroup(int group) { this.group = Math.max(0, group); }
+
+	// whether it can be combined with others: a table, not a pew or an altar
+	public boolean combines() { return true; }
+
+	// its top on the floor, as it stands
+	public Shape topOnFloor() { return toFloor().createTransformedShape(top()); }
 
 	public double getX() { return x; }
 

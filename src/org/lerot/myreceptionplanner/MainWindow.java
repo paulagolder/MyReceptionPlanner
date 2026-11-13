@@ -230,6 +230,25 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		edit.addSeparator();
 		renumberItem.addActionListener(e -> renumber());
 		edit.add(renumberItem);
+		// combining with the tables pushed against the selected one, worked out as the menu opens
+		JSeparator beforeCombining = new JSeparator();
+		edit.add(beforeCombining);
+		List<JMenuItem> combining = new ArrayList<>();
+		edit.addPopupMenuListener(new javax.swing.event.PopupMenuListener()
+		{
+			public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e)
+			{
+				combining.forEach(edit::remove);
+				combining.clear();
+				combining.addAll(planPanel.combineItems(planPanel.getSelected()));
+				combining.forEach(edit::add);
+				beforeCombining.setVisible(!combining.isEmpty());
+			}
+
+			public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {}
+
+			public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {}
+		});
 		tableButton = dropDown("Table", edit);
 		bar.add(tableButton);
 
@@ -775,6 +794,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		String before = table.arrangement();
 		if (!TableDialog.edit(this, plan, table)) return;
 		plan.numberUnnumbered();
+		plan.reblock(table);  // combined: the chairs its partners now block
 		// when the chairs are set out afresh no one keeps their seat; anyone
 		// on a chair that is now disabled (a new head table) loses theirs
 		int unseated = before.equals(table.arrangement()) ? 0 : seating.unseatTable(table.getId());
@@ -799,6 +819,42 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		if (answer != JOptionPane.OK_OPTION) return;
 		seating.unseatTable(table.getId());
 		plan().remove(table);
+		planChanged();
+		planPanel.planUpdated();
+	}
+
+	// pushed together: they move and turn as one, and the chairs they block are turned off
+	@Override
+	public void combineRequested(Table table, Table with)
+	{
+		Plan plan = plan();
+		Seating seating = event.getSeating();
+		List<Guest> losing = new ArrayList<>();
+		plan.blockedIfCombined(table, with).forEach((t, chairs) ->
+		{
+			for (int c : chairs)
+				seating.guestAt(t.getId(), c).ifPresent(losing::add);
+		});
+		if (!losing.isEmpty())
+		{
+			String names = String.join(", ", losing.stream().map(Guest::displayName).limit(8).toList())
+					+ (losing.size() > 8 ? " …" : "");
+			if (JOptionPane.showConfirmDialog(this, "Combining " + plan.label(table) + " and " + plan.label(with)
+					+ " turns off the chairs the join blocks.\n" + losing.size()
+					+ (losing.size() == 1 ? " guest is" : " guests are") + " seated on them and will go back to the guest list:\n"
+					+ names, "Combine tables", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+			losing.forEach(seating::unseat);
+		}
+		plan.combine(table, with);
+		planChanged();
+		planPanel.planUpdated();
+	}
+
+	// no longer combined: it moves on its own, and the chairs the join blocked come back
+	@Override
+	public void separateRequested(Table table)
+	{
+		plan().separate(table);
 		planChanged();
 		planPanel.planUpdated();
 	}

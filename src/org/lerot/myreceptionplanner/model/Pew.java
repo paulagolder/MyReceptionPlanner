@@ -103,4 +103,7 @@ public class Pew extends Table
 	{
 		return Math.floorMod(leftwards() ? getFirstSeat() - (n - 1) : getFirstSeat() + n - 1, places);
 	}
+
+	@Override
+	public boolean combines() { return false; }
 }

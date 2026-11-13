@@ -47,6 +47,11 @@ public class PlanPanel extends JPanel
 		void deleteRequested(Table table);
 
 		void duplicateRequested(Table table);
+
+		// pushed together: combine the two, or take the table out of those it is combined with
+		void combineRequested(Table table, Table with);
+
+		void separateRequested(Table table);
 	}
 
 	private static final double GRID = 100;         // cm between grid lines
@@ -244,8 +249,9 @@ public class PlanPanel extends JPanel
 		Shape top = t.top();
 		g.setColor(t instanceof Pew ? Theme.SEAT : t instanceof Altar ? Theme.ALTAR : Theme.TABLE);
 		g.fill(top);
-		Color edge = clashing.contains(t) ? Theme.CLASH : t == selected ? Theme.ACCENT : t.isHead() ? Theme.HEAD : Theme.EDGE;
-		float width = t == selected || t.isHead() || clashing.contains(t) ? 3f : 1.5f;
+		boolean partner = selected != null && t != selected && t.getGroup() != 0 && t.getGroup() == selected.getGroup();
+		Color edge = clashing.contains(t) ? Theme.CLASH : t == selected || partner ? Theme.ACCENT : t.isHead() ? Theme.HEAD : Theme.EDGE;
+		float width = t == selected || t.isHead() || clashing.contains(t) ? 3f : partner ? 2f : 1.5f;
 		g.setColor(edge);
 		g.setStroke(new BasicStroke((float) (width / scale)));
 		g.draw(top);
@@ -412,14 +418,15 @@ public class PlanPanel extends JPanel
 			{
 				double x = Math.max(0, floor.getX() + grabOffset.getX());
 				double y = Math.max(0, floor.getY() + grabOffset.getY());
-				selected.moveTo(Math.round(x), Math.round(y));
+				plan.moveGroup(selected, Math.round(x) - selected.getX(), Math.round(y) - selected.getY());
 			} else
 			{
 				double dx = floor.getX() - selected.getX();
 				double dy = floor.getY() - selected.getY();
 				double angle = Math.toDegrees(Math.atan2(dx, -dy));
 				if (!e.isShiftDown()) angle = Math.round(angle / ROTATE_STEP) * ROTATE_STEP;
-				selected.setRotation(Math.round(angle));
+				double by = ((Math.round(angle) - selected.getRotation()) % 360 + 540) % 360 - 180;
+				if (by != 0) plan.turnGroup(selected, by);
 			}
 			dragged = true;
 			revalidate();
@@ -528,7 +535,36 @@ public class PlanPanel extends JPanel
 		if (anyone) openAll.setToolTipText("Guests are seated here");
 		openAll.addActionListener(a -> seatChanged(() -> t.setAllOpen(true)));
 		menu.add("Delete").addActionListener(a -> listener.deleteRequested(t));
+		java.util.List<JMenuItem> combining = combineItems(t);
+		if (!combining.isEmpty())
+		{
+			menu.addSeparator();
+			combining.forEach(menu::add);
+		}
 		menu.show(this, e.getX(), e.getY());
+	}
+
+	// "Combine with Table 2" for each table pushed against it; "Separate from …" if combined
+	public java.util.List<JMenuItem> combineItems(Table t)
+	{
+		java.util.List<JMenuItem> items = new java.util.ArrayList<>();
+		if (t == null) return items;
+		for (Table o : plan.touching(t))
+		{
+			JMenuItem item = new JMenuItem("Combine with " + plan.label(o));
+			item.setToolTipText("Pushed together: they move and turn as one, each keeping its own name, number and guests; the chairs they block are turned off");
+			item.addActionListener(a -> listener.combineRequested(t, o));
+			items.add(item);
+		}
+		java.util.List<Table> others = plan.groupOf(t).stream().filter(o -> o != t).toList();
+		if (!others.isEmpty())
+		{
+			JMenuItem item = new JMenuItem("Separate from " + (others.size() == 1 ? plan.label(others.get(0)) : "the others"));
+			item.setToolTipText("No longer combined: it moves on its own, and the chairs the join blocked come back");
+			item.addActionListener(a -> listener.separateRequested(t));
+			items.add(item);
+		}
+		return items;
 	}
 
 	private void seatChanged(Runnable change)
@@ -540,14 +576,20 @@ public class PlanPanel extends JPanel
 
 	public void enableAllSeats()
 	{
-		if (selected != null) seatChanged(selected::enableAllSeats);
+		if (selected == null) return;
+		Table t = selected;
+		seatChanged(() ->
+		{
+			t.enableAllSeats();
+			plan.reblock(t);  // those its partners block stay off
+		});
 	}
 
 	// turns the selected table clockwise by this many degrees (negative: anticlockwise)
 	public void turn(double degrees)
 	{
 		if (selected == null) return;
-		selected.setRotation(selected.getRotation() + degrees);
+		plan.turnGroup(selected, degrees);
 		listener.planChanged();
 		planUpdated();
 	}
@@ -586,7 +628,7 @@ public class PlanPanel extends JPanel
 
 		private void nudge(double dx, double dy)
 		{
-			selected.moveTo(Math.max(0, selected.getX() + dx), Math.max(0, selected.getY() + dy));
+			plan.moveGroup(selected, dx, dy);
 			listener.planChanged();
 			planUpdated();
 		}

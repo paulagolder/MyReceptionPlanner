@@ -60,4 +60,7 @@ public class Altar extends Table
 
 	@Override
 	public double reach() { return Math.hypot(width() / 2, DEPTH / 2); }
+
+	@Override
+	public boolean combines() { return false; }
 }

@@ -34,6 +34,9 @@ import java.io.IOException;
  * bare="near"/> for each line of them (see ComposedTable), and
  * seated="holes" if the edges round its holes have seats. Ovals, polygons,
  * walks and composed tables number their chairs in the order walked.
+ * Tables pushed together and combined, each still a table of its own,
+ * share a combined="n" (see Plan.combine); the chairs they block are
+ * among the disabled.
  */
 public class PlanXml
 {
@@ -69,6 +72,7 @@ public class PlanXml
 			e.addAttribute("y", whole(t.getY()));
 			e.addAttribute("rotation", whole(t.getRotation()));
 			if (t.isHead()) e.addAttribute("head", "true");
+			if (t.getGroup() != 0) e.addAttribute("combined", Integer.toString(t.getGroup()));
 			if (t.getFirstSeat() != 0)
 				e.addAttribute("firstseat", Integer.toString(t.getFirstSeat() + 1));
 			if (!t.getDisabledSeats().isEmpty())
@@ -129,6 +133,7 @@ public class PlanXml
 		t.moveTo(number(e, "x", 0), number(e, "y", 0));
 		t.setRotation(number(e, "rotation", 0));
 		t.markHead("true".equals(e.attributeValue("head")));
+		if (t.combines()) t.setGroup(number(e, "combined", 0));
 		int first = number(e, "firstseat", 1);
 		if (first >= 1 && first <= t.places()) t.setFirstSeat(first - 1);
 		for (String chair : e.attributeValue("disabled", "").trim().split("\\s+"))
