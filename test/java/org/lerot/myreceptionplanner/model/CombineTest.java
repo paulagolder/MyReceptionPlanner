@@ -47,7 +47,58 @@ class CombineTest
 		assertEquals(21, one.usablePlaces());
 		assertEquals(21, two.usablePlaces());
 		assertTrue(plan.touching(one).isEmpty(), "already combined");
-		assertEquals("Table 1", plan.label(one), "each keeps its own number");
+		assertEquals("Table 1", plan.label(one), "each keeps what it was called, now as a name");
+		assertEquals("Table 2", plan.label(two));
+		assertTrue(one.isNameGiven() && two.isNameGiven());
+		assertEquals(1, one.getNumber(), "one number for the whole");
+		assertEquals(0, two.getNumber());
+	}
+
+	// a combined table counts as one when numbering; the tables after it carry on from its number
+	@Test
+	void aCombinedTableHasOneNumberAndItsPartsGoByName()
+	{
+		Plan plan = anL();
+		Table one = plan.find(1).orElseThrow(), two = plan.find(2).orElseThrow();
+		RectTable three = new RectTable(3, "", 4, 1);
+		three.moveTo(400, 1200);
+		plan.add(three);
+		plan.renumber();
+		plan.combine(one, two);
+		two.setName("Window");
+		plan.renumber();
+		assertEquals(1, one.getNumber());
+		assertEquals(0, two.getNumber());
+		assertEquals(2, three.getNumber(), "after the combined table, not after both its parts");
+		assertEquals("Window", plan.label(two));
+		assertTrue(plan.nameTaken("window", three), "names are the whole plan's, not told apart by capitals");
+		assertTrue(plan.nameTaken("Table 2", one), "nor may a name be another table's number");
+		assertFalse(plan.nameTaken("Bar", one));
+	}
+
+	@Test
+	void aNumberAPartIsNamedAfterIsPassedOver()
+	{
+		Plan plan = anL();
+		Table one = plan.find(1).orElseThrow(), two = plan.find(2).orElseThrow();
+		plan.combine(one, two);  // "Table 1" and "Table 2"
+		RectTable three = new RectTable(3, "", 4, 1);
+		three.moveTo(400, 1200);
+		plan.add(three);
+		plan.renumber();
+		assertEquals(3, three.getNumber(), "2 is a name already");
+	}
+
+	@Test
+	void separatedTablesGoBackToTheirNumbersButKeepNamesTyped()
+	{
+		Plan plan = anL();
+		Table one = plan.find(1).orElseThrow(), two = plan.find(2).orElseThrow();
+		plan.combine(one, two);
+		one.setName("Top");
+		plan.separate(two);
+		assertEquals("Top", plan.label(one));
+		assertFalse(two.hasName());
 		assertEquals("Table 2", plan.label(two));
 	}
 
@@ -122,6 +173,8 @@ class CombineTest
 		assertEquals(read.find(1).orElseThrow().getGroup(), read.find(2).orElseThrow().getGroup());
 		assertNotEquals(0, read.find(1).orElseThrow().getGroup());
 		assertTrue(read.overlaps().isEmpty());
+		assertTrue(read.find(2).orElseThrow().isNameGiven());
+		assertEquals("Table 2", read.label(read.find(2).orElseThrow()));
 	}
 
 	// table 2 at 45° to table 1, its end laid well over table 1's side

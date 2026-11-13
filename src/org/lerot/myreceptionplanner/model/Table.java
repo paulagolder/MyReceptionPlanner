@@ -36,6 +36,7 @@ public abstract class Table
 
 	private final int id;
 	private String name;
+	private boolean nameGiven;  // the name was given it on combining (see Plan.combine), not typed
 	private int number;  // 0 for none
 	private int group;   // tables combined, pushed together, share one; 0 for none
 	private double x;
@@ -113,7 +114,20 @@ public abstract class Table
 
 	public void setNumber(int number) { this.number = Math.max(0, number); }
 
-	public void setName(String name) { this.name = name == null ? "" : name.trim(); }
+	public void setName(String name)
+	{
+		this.name = name == null ? "" : name.trim();
+		nameGiven = false;
+	}
+
+	// a name given it, not typed: dropped again when it is separated (see Plan.separate)
+	public void giveName(String name)
+	{
+		setName(name);
+		nameGiven = hasName();
+	}
+
+	public boolean isNameGiven() { return nameGiven; }
 
 	// the tables combined with this one share its group (see Plan.combine); 0 if none
 	public int getGroup() { return group; }

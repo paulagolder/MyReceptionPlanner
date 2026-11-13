@@ -87,10 +87,11 @@ public class TableListPdf
 	// the table's own name, "Head table" or "Table 3"
 	public static String title(Plan plan, Table t) { return plan.label(t); }
 
-	// "Table 3" under a table with a name of its own, to find it on the plan by; not the head table's; else ""
+	// "Table 3" under a table with a name of its own, to find it on the plan by; not the head
+	// table's, nor a part of tables combined, which goes by its name; else ""
 	public static String subtitle(Table t)
 	{
-		return t.hasName() && !t.isHead() && t.getNumber() > 0 ? t.series() + " " + t.getNumber() : "";
+		return t.hasName() && !t.isHead() && t.getGroup() == 0 && t.getNumber() > 0 ? t.series() + " " + t.getNumber() : "";
 	}
 
 	public static void write(Occasion occasion, Event event, Table table, Card card, Path file) throws IOException

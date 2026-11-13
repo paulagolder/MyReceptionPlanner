@@ -4,8 +4,10 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -65,8 +67,10 @@ public class Plan
 	 * Numbers the tables afresh by where they stand: in rows from the top of
 	 * the plan down, left to right along each row. The head table and named
 	 * tables are numbered too, though their names show instead, so the
-	 * numbers shown may skip theirs. Otherwise numbers stay put when tables
-	 * move.
+	 * numbers shown may skip theirs. Tables combined count as one table:
+	 * one of them keeps the number for the whole and the rest have none, as
+	 * each goes by its own name. A number another table's name already says
+	 * ("Table 4") is passed over. Otherwise numbers stay put when tables move.
 	 */
 	public void renumber()
 	{
@@ -78,13 +82,30 @@ public class Plan
 		for (String series : series())
 		{
 			int next = 1;
+			Set<Integer> groups = new HashSet<>();
 			for (List<Table> row : rows(tables.stream()
 					.filter(t -> t.isNumbered() && t.series().equals(series)).toList()))
 			{
 				for (Table t : row)
+				{
+					if (t.getGroup() != 0 && !groups.add(t.getGroup()))
+					{
+						t.setNumber(0);
+						continue;
+					}
+					while (namedLike(series, next, t)) next++;
 					t.setNumber(next++);
+				}
 			}
 		}
+	}
+
+	// whether a table other than this one (or those combined with it) has the name "Table n"
+	private boolean namedLike(String series, int n, Table numbering)
+	{
+		String name = series + " " + n;
+		return tables.stream().anyMatch(o -> o.getName().equalsIgnoreCase(name)
+				&& !(o == numbering || o.getGroup() != 0 && o.getGroup() == numbering.getGroup()));
 	}
 
 	private List<String> series()
@@ -119,24 +140,68 @@ public class Plan
 
 	// gives the next number up to any table that has none, or shares one
 	// with a table before it (a new table, or one from an older file whose
-	// named tables had none)
+	// named tables had none); tables combined keep one number between them
 	public void numberUnnumbered()
 	{
 		for (String series : series())
 		{
 			List<Table> these = tables.stream().filter(t -> t.series().equals(series)).toList();
+			for (Table t : these)
+				if (t.getGroup() != 0) giveBranchName(t);  // combined in an older file
+			// in each group the first with a number keeps it for the whole
+			Map<Integer, Table> holders = new HashMap<>();
+			for (Table t : these)
+				if (t.getGroup() != 0 && t.getNumber() > 0) holders.putIfAbsent(t.getGroup(), t);
+			for (Table t : these)
+				if (t.getGroup() != 0) holders.putIfAbsent(t.getGroup(), t);
 			Set<Integer> used = new HashSet<>();
 			List<Table> needing = new ArrayList<>();
 			for (Table t : these)
 			{
 				if (!t.isNumbered()) continue;
+				if (t.getGroup() != 0 && holders.get(t.getGroup()) != t)
+				{
+					t.setNumber(0);
+					continue;
+				}
 				if (t.getNumber() > 0 && used.add(t.getNumber())) continue;
 				needing.add(t);
 			}
 			int next = these.stream().mapToInt(Table::getNumber).max().orElse(0) + 1;
 			for (Table t : needing)
+			{
+				while (namedLike(series, next, t)) next++;
 				t.setNumber(next++);
+			}
 		}
+	}
+
+	/*
+	 * Whether the name would be taken: another table already goes by it,
+	 * whether its own name or "Table 3", "Head table". Names are not told
+	 * apart by capitals.
+	 */
+	public boolean nameTaken(String name, Table by)
+	{
+		String n = name.trim();
+		return !n.isEmpty() && tables.stream().anyMatch(o -> o != by && label(o).equalsIgnoreCase(n));
+	}
+
+	/*
+	 * A table being combined with no name of its own is given what it is
+	 * called now ("Table 4"), so nothing changes to the eye; it can be
+	 * renamed ("Window") any time. If that is taken, the next free "Table n".
+	 */
+	public void giveBranchName(Table t)
+	{
+		if (t.hasName() || t.isHead() || !t.isNumbered()) return;
+		String name = label(t);
+		for (int n = 1; t.getNumber() == 0 || nameTaken(name, t); n++)
+		{
+			name = t.series() + " " + n;
+			if (!nameTaken(name, t)) break;
+		}
+		t.giveName(name);
 	}
 
 	// what the table is called: its own name, else "Head table", "Table 3" or "Pew 2"
@@ -278,8 +343,11 @@ public class Plan
 		int g = a.getGroup() != 0 ? a.getGroup() : b.getGroup() != 0 ? b.getGroup()
 				: tables.stream().mapToInt(Table::getGroup).max().orElse(0) + 1;
 		for (Table t : blocked.keySet())
+			giveBranchName(t);
+		for (Table t : blocked.keySet())
 			t.setGroup(g);
 		block(blocked);
+		numberUnnumbered();
 	}
 
 	// after a table of the group changed size or shape: turns off the chairs now blocked
@@ -301,12 +369,33 @@ public class Plan
 		List<Table> rest = group.stream().filter(o -> o != t).toList();
 		java.util.Map<Table, Set<Integer>> after = rest.size() > 1 ? blocked(rest) : java.util.Map.of();
 		t.setGroup(0);
-		if (rest.size() == 1) rest.get(0).setGroup(0);
+		dropGivenName(t);
+		if (rest.size() == 1)
+		{
+			rest.get(0).setGroup(0);
+			dropGivenName(rest.get(0));
+		}
+		numberUnnumbered();
 		before.forEach((table, chairs) ->
 		{
 			for (int c : chairs)
 				if (!after.getOrDefault(table, Set.of()).contains(c)) table.setDisabled(c, false);
 		});
+	}
+
+	// a table leaving a group goes back to its number: the one its given
+	// name says ("Table 4") if no other table has it, else a new one
+	private void dropGivenName(Table t)
+	{
+		if (!t.isNameGiven()) return;
+		String prefix = t.series() + " ";
+		String name = t.getName();
+		t.setName("");
+		if (!name.startsWith(prefix) || !name.substring(prefix.length()).matches("\\d{1,6}")) return;
+		int n = Integer.parseInt(name.substring(prefix.length()));
+		boolean free = tables.stream().noneMatch(o -> o != t && o.series().equals(t.series())
+				&& (o.getNumber() == n || o.getName().equalsIgnoreCase(name)));
+		t.setNumber(free ? n : 0);
 	}
 
 	/*

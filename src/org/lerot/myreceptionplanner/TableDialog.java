@@ -18,7 +18,9 @@ import java.awt.*;
 /*
  * Edits a table's own name, places, turn and whether it is the head table.
  * The name is optional: left empty, the table is called "Head table" or by
- * the number that follows where it stands.
+ * the number that follows where it stands. A table combined with others
+ * always has a name, each part of it being a place of its own to the
+ * caterers; left empty, it is given one. No two tables share a name.
  */
 public class TableDialog
 {
@@ -32,8 +34,11 @@ public class TableDialog
 		name.putClientProperty("JTextField.placeholderText", fallback);
 		form.add(new JLabel("Own name"));
 		form.add(name, "growx");
-		JLabel nameHint = new JLabel("<html>Leave empty to use " + (table.isHead() ? "“Head table”" : "the number")
-				+ ".<br>Table id " + table.getId() + ", which never changes.</html>");
+		boolean branch = table.getGroup() != 0 && !table.isHead();
+		JLabel nameHint = new JLabel("<html>" + (branch ? "Combined: each part goes by its own name,<br>"
+				+ "such as “Window” (left empty, it keeps the one it has)."
+				: "Leave empty to use " + (table.isHead() ? "“Head table”" : "the number") + ".")
+				+ "<br>Table id " + table.getId() + ", which never changes.</html>");
 		nameHint.setForeground(Theme.EDGE);
 		form.add(nameHint, "skip, gapbottom 6");
 
@@ -110,11 +115,20 @@ public class TableDialog
 			form.add(note, "span 2, gaptop 6");
 		}
 
-		int answer = JOptionPane.showConfirmDialog(parent, form, plan.label(table),
-				JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-		if (answer != JOptionPane.OK_OPTION) return false;
+		while (true)
+		{
+			int answer = JOptionPane.showConfirmDialog(parent, form, plan.label(table),
+					JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+			if (answer != JOptionPane.OK_OPTION) return false;
+			if (!plan.nameTaken(name.getText(), table)) break;
+			JOptionPane.showMessageDialog(parent, "Another table is already called “" + name.getText().trim()
+					+ "”.\nEach table needs a name of its own.", "Name taken", JOptionPane.WARNING_MESSAGE);
+		}
 
-		table.setName(name.getText());
+		String typed = name.getText().trim();
+		// a part of tables combined left empty keeps the name it had
+		if (!typed.equals(table.getName()) && !(branch && typed.isEmpty())) table.setName(typed);
+		if (branch && !table.hasName()) plan.giveBranchName(table);
 		if (table instanceof Altar altar)
 			altar.setLength((Integer) places.getValue());
 		else if (table instanceof Pew pew)

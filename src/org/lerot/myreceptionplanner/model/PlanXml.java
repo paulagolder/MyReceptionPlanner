@@ -36,7 +36,9 @@ import java.io.IOException;
  * walks and composed tables number their chairs in the order walked.
  * Tables pushed together and combined, each still a table of its own,
  * share a combined="n" (see Plan.combine); the chairs they block are
- * among the disabled.
+ * among the disabled. The whole has one number, kept by one of them; the
+ * others go by their names, name-given="true" on a name given on
+ * combining rather than typed.
  */
 public class PlanXml
 {
@@ -49,6 +51,7 @@ public class PlanXml
 					.addAttribute("id", Integer.toString(t.getId()));
 			if (t.getNumber() > 0) e.addAttribute("number", Integer.toString(t.getNumber()));
 			if (t.hasName()) e.addAttribute("name", t.getName());
+			if (t.isNameGiven()) e.addAttribute("name-given", "true");
 			e.addAttribute("shape", t.shape());
 			if (t instanceof RoundTable || t instanceof Pew)
 			{
@@ -134,6 +137,7 @@ public class PlanXml
 		t.setRotation(number(e, "rotation", 0));
 		t.markHead("true".equals(e.attributeValue("head")));
 		if (t.combines()) t.setGroup(number(e, "combined", 0));
+		if ("true".equals(e.attributeValue("name-given")) && t.hasName()) t.giveName(t.getName());
 		int first = number(e, "firstseat", 1);
 		if (first >= 1 && first <= t.places()) t.setFirstSeat(first - 1);
 		for (String chair : e.attributeValue("disabled", "").trim().split("\\s+"))
