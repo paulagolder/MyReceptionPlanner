@@ -1,4 +1,0 @@
-# the table designs that come with the planner, copied into the
-# "Table designs" folder the first time it is wanted
-t-top-table.xml
-e-top-table.xml

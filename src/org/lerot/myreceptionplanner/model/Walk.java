@@ -10,21 +10,18 @@ import java.util.List;
 import java.util.Locale;
 
 /*
- * A table described as a walk round its edge, like a waiter going round
- * serving each place (see docs/table-notation.md). Lengths are in seat units
+ * The edge of an oval or polygon table as a walk round it, like a waiter
+ * going round serving each place: how those tables get their top and their
+ * chairs spread evenly along it. Lengths are in seat units
  * (Table.SEAT_SPACING), turns in degrees.
  *
  * The walk starts at 0, 0 heading right and goes clockwise: the table on the
- * right, the seats on the left. A hole is a walk of its own, starting at its
- * point heading right, also clockwise; round a hole the table is on the left,
- * so its seats are on the right, facing into the hole. The seats come in the
- * order walked: round the outside, then round each hole.
+ * right, the seats on the left. The seats come in the order walked.
  *
  *   new Walk().step(20, 20).turn(90).step(2, 0).turn(90).step(20, 0).turn(90).step(2, 0)
- *   new Walk().arc(360, 3.18, 20).hole(0, 1.68).arc(360, 1.5, 0)
+ *   new Walk().arc(360, 10)
  *
- * Each step and arc adds to the latest loop: the outside, or the hole last
- * begun. Once a walk is given to a table it is not changed.
+ * Once a walk is given to a table it is not changed.
  */
 public final class Walk
 {
@@ -32,9 +29,6 @@ public final class Walk
 
 	// a step has a length, a turn and an arc a turn (by), an arc a radius
 	public record Move(Kind kind, double length, double by, double radius, int seats) {}
-
-	// the outside starts at 0, 0; a hole at its point
-	public record Loop(double x, double y, List<Move> moves) {}
 
 	// the table top and its seats, in centimetres about the centre of the
 	// box round the outline, and anything odd about it
@@ -46,12 +40,7 @@ public final class Walk
 	private static final double ARC_PIECE = 2;        // degrees of an arc drawn as one straight line
 	private static final double OFF = (Table.SEAT_GAP + Table.SEAT_RADIUS) / Table.SEAT_SPACING;
 
-	private final List<Loop> loops = new ArrayList<>();
-
-	public Walk()
-	{
-		loops.add(new Loop(0, 0, new ArrayList<>()));
-	}
+	private final List<Move> moves = new ArrayList<>();
 
 	// straight on, with the seats spread evenly along it (no more than its length)
 	public Walk step(double length, int seats)
@@ -83,19 +72,11 @@ public final class Walk
 		return arc(by, seats / Math.toRadians(Math.abs(by)), seats);
 	}
 
-	// begins the walk round a hole, from this point (seat units from the
-	// outside's start); the steps and arcs after go round it
-	public Walk hole(double x, double y)
-	{
-		loops.add(new Loop(x, y, new ArrayList<>()));
-		return this;
-	}
-
-	public List<Loop> loops() { return Collections.unmodifiableList(loops); }
+	public List<Move> moves() { return Collections.unmodifiableList(moves); }
 
 	private Walk add(Move move)
 	{
-		loops.get(loops.size() - 1).moves().add(move);
+		moves.add(move);
 		return this;
 	}
 
@@ -110,43 +91,35 @@ public final class Walk
 	// ---- tracing ----
 
 	/*
-	 * Walks it: the outline and the seats. Every loop must come back to where
-	 * it began (the last turn, back to heading right, can be left out), else
+	 * Walks it: the outline and the seats. It must come back to where it
+	 * began (the last turn, back to heading right, can be left out), else
 	 * IllegalArgumentException says how far out it ends. Seats so close that
 	 * their chairs would collide are warned of, not moved.
 	 */
 	public Traced trace()
 	{
-		List<List<Point2D>> outlines = new ArrayList<>();
 		List<Point2D> seats = new ArrayList<>();
-		for (int i = 0; i < loops.size(); i++)
-			outlines.add(trace(loops.get(i), i > 0, i == 0 ? "The walk" : "The walk round hole " + i, seats));
+		List<Point2D> outline = trace(moves, seats);
 
 		// about the centre of the box round the outline, in centimetres
 		Rectangle2D box = null;
-		for (List<Point2D> outline : outlines)
+		for (Point2D p : outline)
 		{
-			for (Point2D p : outline)
-			{
-				if (box == null) box = new Rectangle2D.Double(p.getX(), p.getY(), 0, 0);
-				else box.add(p);
-			}
+			if (box == null) box = new Rectangle2D.Double(p.getX(), p.getY(), 0, 0);
+			else box.add(p);
 		}
 		double cx = box == null ? 0 : box.getCenterX();
 		double cy = box == null ? 0 : box.getCenterY();
 		double unit = Table.SEAT_SPACING;
 		Path2D.Double top = new Path2D.Double(Path2D.WIND_EVEN_ODD);
-		for (List<Point2D> outline : outlines)
+		for (int k = 0; k < outline.size(); k++)
 		{
-			for (int k = 0; k < outline.size(); k++)
-			{
-				double x = (outline.get(k).getX() - cx) * unit;
-				double y = (outline.get(k).getY() - cy) * unit;
-				if (k == 0) top.moveTo(x, y);
-				else top.lineTo(x, y);
-			}
-			top.closePath();
+			double x = (outline.get(k).getX() - cx) * unit;
+			double y = (outline.get(k).getY() - cy) * unit;
+			if (k == 0) top.moveTo(x, y);
+			else top.lineTo(x, y);
 		}
+		top.closePath();
 		List<Point2D> placed = new ArrayList<>();
 		for (Point2D s : seats)
 			placed.add(new Point2D.Double((s.getX() - cx) * unit, (s.getY() - cy) * unit));
@@ -163,15 +136,14 @@ public final class Walk
 		return new Traced(top, Collections.unmodifiableList(placed), Collections.unmodifiableList(warnings));
 	}
 
-	// one loop, in seat units: its outline, and its seats added to seats
-	private static List<Point2D> trace(Loop loop, boolean hole, String what, List<Point2D> seats)
+	// in seat units: the outline, and its seats added to seats
+	private static List<Point2D> trace(List<Move> moves, List<Point2D> seats)
 	{
-		double side = hole ? -1 : 1;   // 1: the seats on the left of the way
-		double px = loop.x(), py = loop.y();
+		double px = 0, py = 0;
 		double hx = 1, hy = 0;         // heading right
 		List<Point2D> outline = new ArrayList<>();
 		outline.add(new Point2D.Double(px, py));
-		for (Move m : loop.moves())
+		for (Move m : moves)
 		{
 			switch (m.kind())
 			{
@@ -187,7 +159,7 @@ public final class Walk
 					for (int k = 0; k < m.seats(); k++)
 					{
 						double f = (k + 0.5) * m.length() / m.seats();
-						seats.add(new Point2D.Double(px + hx * f + side * lx * OFF, py + hy * f + side * ly * OFF));
+						seats.add(new Point2D.Double(px + hx * f + lx * OFF, py + hy * f + ly * OFF));
 					}
 					px += hx * m.length();
 					py += hy * m.length();
@@ -199,7 +171,7 @@ public final class Walk
 					double ccx = px - hy * r, ccy = py + hx * r;  // the centre, to the right
 					double a0 = Math.atan2(py - ccy, px - ccx);
 					double sweep = Math.toRadians(m.by());
-					double rr = r + side * OFF;
+					double rr = r + OFF;
 					for (int k = 0; k < m.seats(); k++)
 					{
 						double a = a0 + sweep * (k + 0.5) / m.seats();
@@ -219,10 +191,9 @@ public final class Walk
 				}
 			}
 		}
-		double out = Math.hypot(px - loop.x(), py - loop.y());
-		if (out > CLOSE)
-			throw new IllegalArgumentException(what + " does not come back to where it began: it ends "
-					+ number(px - loop.x()) + " across and " + number(py - loop.y()) + " down from it");
+		if (Math.hypot(px, py) > CLOSE)
+			throw new IllegalArgumentException("The walk does not come back to where it began: it ends "
+					+ number(px) + " across and " + number(py) + " down from it");
 		outline.remove(outline.size() - 1);
 		return outline;
 	}
@@ -243,29 +214,22 @@ public final class Walk
 
 	// ---- in words ----
 
-	// "step 20 (20 seats) · turn 90 · step 2 · …; hole at 0 1.68: arc 360, radius 1.5"
+	// "step 20 (20 seats) · turn 90 · step 2 · …"
 	@Override
 	public String toString()
 	{
-		StringBuilder text = new StringBuilder();
-		for (int i = 0; i < loops.size(); i++)
+		List<String> words = new ArrayList<>();
+		for (Move m : moves)
 		{
-			Loop loop = loops.get(i);
-			if (i > 0) text.append("; hole at ").append(number(loop.x())).append(' ').append(number(loop.y())).append(": ");
-			List<String> words = new ArrayList<>();
-			for (Move m : loop.moves())
+			String seats = m.seats() == 0 ? "" : " (" + m.seats() + (m.seats() == 1 ? " seat)" : " seats)");
+			words.add(switch (m.kind())
 			{
-				String seats = m.seats() == 0 ? "" : " (" + m.seats() + (m.seats() == 1 ? " seat)" : " seats)");
-				words.add(switch (m.kind())
-				{
-					case STEP -> "step " + number(m.length()) + seats;
-					case TURN -> "turn " + number(m.by());
-					case ARC -> "arc " + number(m.by()) + ", radius " + number(m.radius()) + seats;
-				});
-			}
-			text.append(String.join(" · ", words));
+				case STEP -> "step " + number(m.length()) + seats;
+				case TURN -> "turn " + number(m.by());
+				case ARC -> "arc " + number(m.by()) + ", radius " + number(m.radius()) + seats;
+			});
 		}
-		return text.toString();
+		return String.join(" · ", words);
 	}
 
 	// up to four decimals, no trailing zeros

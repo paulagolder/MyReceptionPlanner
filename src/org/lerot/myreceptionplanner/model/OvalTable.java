@@ -4,8 +4,8 @@ package org.lerot.myreceptionplanner.model;
  * An oval table, given by the box round it in seat units: length along,
  * width across, the width no more than the length. It is four arcs, as
  * joiners make an oval: two flat ones along the sides and two tight ones at
- * the ends, each with as many seats as its length allows (see
- * docs/table-notation.md). Seat 1 is where the left end meets the far side.
+ * the ends, each with as many seats as its length allows (see Walk).
+ * Seat 1 is where the left end meets the far side.
  * As wide as it is long, it is round.
  */
 public class OvalTable extends WalkTable

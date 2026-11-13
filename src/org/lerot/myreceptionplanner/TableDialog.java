@@ -4,7 +4,6 @@ import net.miginfocom.swing.MigLayout;
 import org.lerot.myreceptionplanner.model.Altar;
 import org.lerot.myreceptionplanner.model.Pew;
 import org.lerot.myreceptionplanner.model.Plan;
-import org.lerot.myreceptionplanner.model.ComposedTable;
 import org.lerot.myreceptionplanner.model.OvalTable;
 import org.lerot.myreceptionplanner.model.PolygonTable;
 import org.lerot.myreceptionplanner.model.RectTable;
@@ -85,11 +84,6 @@ public class TableDialog
 			form.add(side, "growx");
 			form.add(new JLabel("Places at each end"));
 			form.add(end, "growx");
-		}
-		if (table instanceof ComposedTable composed)
-		{
-			form.add(new JLabel("Made of"));
-			form.add(new JLabel(composed.pickListText() + " tables"), "growx");
 		}
 		if (table instanceof WalkTable walked && !walked.warnings().isEmpty())
 		{

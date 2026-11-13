@@ -6,35 +6,24 @@ import java.awt.geom.Point2D;
 import java.util.List;
 
 /*
- * A table of any shape, given as a walk round its edge (see Walk). Its
- * chairs are the walk's seats, in the order walked; the table is moved and
+ * An oval or polygon table: its top and chairs come from a walk round its
+ * edge (see Walk), the chairs in the order walked; the table is moved and
  * turned like any other.
  */
-public class WalkTable extends Table
+public abstract class WalkTable extends Table
 {
-	public static final String SHAPE = "walk";
-
 	private Walk walk;
 	private Walk.Traced traced;
 
 	// IllegalArgumentException if the walk does not come back to its start
-	public WalkTable(int id, String name, Walk walk)
+	protected WalkTable(int id, String name, Walk walk)
 	{
 		super(id, name);
 		setWalk(walk);
 	}
 
 	@Override
-	public String shape() { return SHAPE; }
-
-	@Override
 	public int places() { return traced.seats().size(); }
-
-	@Override
-	protected Table sameShape(int id) { return new WalkTable(id, "", walk); }
-
-	@Override
-	public String arrangement() { return SHAPE + " " + walk; }
 
 	public Walk getWalk() { return walk; }
 
