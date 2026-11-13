@@ -151,12 +151,26 @@ public class Plan
 	// ---- tables combined: pushed together, each keeping its own identity ----
 
 	private static final double TOUCHING = 5;  // cm between tops still counted as pushed together
+	private static final double TOPS_OVER = 3; // cm one combined table's top may lie over another's
 
 	// the table and those combined with it, or the table alone
 	public List<Table> groupOf(Table t)
 	{
 		if (t.getGroup() == 0) return List.of(t);
 		return tables.stream().filter(o -> o.getGroup() == t.getGroup()).toList();
+	}
+
+	// the tables combined with it whose tops lie over its own (see overlaps), to push apart
+	public List<Table> lyingOver(Table t)
+	{
+		List<Table> out = new ArrayList<>();
+		for (Overlap o : overlaps())
+		{
+			if (o.a().getGroup() == 0 || o.a().getGroup() != o.b().getGroup()) continue;
+			if (o.a() == t) out.add(o.b());
+			else if (o.b() == t) out.add(o.a());
+		}
+		return out;
 	}
 
 	// the tables not combined with it whose tops touch its own, that it could be combined with
@@ -291,6 +305,63 @@ public class Plan
 		});
 	}
 
+	/*
+	 * Slides the table (and those combined with it) until its top just
+	 * meets the other's: a table lying over the other is drawn back, one a
+	 * little apart is pushed up to it. A long table slides along its own
+	 * length, so one laid at an angle ends with its corner on the other's
+	 * edge (a chevron); a round one along the line between their middles.
+	 * False if they cannot be brought together that way.
+	 */
+	public boolean pushTogether(Table t, Table other)
+	{
+		Point2D axis = t instanceof RoundTable || t instanceof PolygonTable ? null
+				: t.toFloor().deltaTransform(new Point2D.Double(1, 0), null);
+		Point2D towards = new Point2D.Double(other.getX() - t.getX(), other.getY() - t.getY());
+		if (axis == null || Math.abs(axis.getX() * towards.getX() + axis.getY() * towards.getY()) < 1e-6) axis = towards;
+		double length = Math.hypot(axis.getX(), axis.getY());
+		if (length == 0) return false;
+		double ux = axis.getX() / length, uy = axis.getY() / length;
+		if (ux * towards.getX() + uy * towards.getY() < 0)
+		{
+			ux = -ux;
+			uy = -uy;
+		}
+		// now (ux, uy) points towards the other: out of it if over it, into it if apart
+		boolean over = topsMeet(t, other, 0, 0, 0);
+		double sign = over ? -1 : 1, clear = 0, meet = -1;
+		for (double s = 1; s <= 600; s += 1)
+		{
+			if (topsMeet(t, other, sign * ux, sign * uy, s) != over) { meet = s; break; }
+			clear = s;
+		}
+		if (meet < 0) return false;
+		// between the last step one way and the first the other, to half a centimetre
+		double lo = clear, hi = meet;
+		while (hi - lo > 0.5)
+		{
+			double mid = (lo + hi) / 2;
+			if (topsMeet(t, other, sign * ux, sign * uy, mid) == over) lo = mid; else hi = mid;
+		}
+		double s = over ? hi : lo;  // just clear of it, or just short of it
+		if (t.getGroup() != 0 && t.getGroup() == other.getGroup())
+		{
+			// combined already, one lying over the other: this one alone, then the chairs it now blocks
+			t.moveTo(t.getX() + sign * ux * s, t.getY() + sign * uy * s);
+			reblock(t);
+		} else moveGroup(t, sign * ux * s, sign * uy * s);
+		return true;
+	}
+
+	// whether the table's top, moved by s along (ux, uy), covers part of the other's
+	private static boolean topsMeet(Table t, Table other, double ux, double uy, double s)
+	{
+		java.awt.geom.Area a = new java.awt.geom.Area(t.topOnFloor());
+		a.transform(java.awt.geom.AffineTransform.getTranslateInstance(ux * s, uy * s));
+		a.intersect(new java.awt.geom.Area(other.topOnFloor()));
+		return !a.isEmpty();
+	}
+
 	// moves the table and those combined with it by this much
 	public void moveGroup(Table t, double dx, double dy)
 	{
@@ -322,7 +393,8 @@ public class Plan
 	/*
 	 * Every pair of tables standing on each other: a top or a chair in use
 	 * of one covering part of the other's, by more than a centimetre each
-	 * way (tables pushed edge to edge only touch).
+	 * way (tables pushed edge to edge only touch). Tables combined count
+	 * only if one's top lies over the other's by more than a few cm.
 	 */
 	public List<Overlap> overlaps()
 	{
@@ -332,8 +404,17 @@ public class Plan
 			for (int j = i + 1; j < tables.size(); j++)
 			{
 				Table a = tables.get(i), b = tables.get(j);
-				if (a.getGroup() != 0 && a.getGroup() == b.getGroup()) continue;  // pushed together on purpose
 				if (!a.bounds().intersects(b.bounds())) continue;
+				if (a.getGroup() != 0 && a.getGroup() == b.getGroup())
+				{
+					// pushed together on purpose: only their tops lying over each other
+					java.awt.geom.Area tops = new java.awt.geom.Area(a.topOnFloor());
+					tops.intersect(new java.awt.geom.Area(b.topOnFloor()));
+					java.awt.geom.Rectangle2D r = tops.getBounds2D();
+					if (!tops.isEmpty() && r.getWidth() > TOPS_OVER && r.getHeight() > TOPS_OVER)
+						out.add(new Overlap(a, b, tops));
+					continue;
+				}
 				java.awt.geom.Area both = new java.awt.geom.Area(covers.computeIfAbsent(a, Table::footprint));
 				both.intersect(covers.computeIfAbsent(b, Table::footprint));
 				java.awt.geom.Rectangle2D r = both.getBounds2D();

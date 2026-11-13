@@ -549,6 +549,22 @@ public class PlanPanel extends JPanel
 	{
 		java.util.List<JMenuItem> items = new java.util.ArrayList<>();
 		if (t == null) return items;
+		java.util.List<Table> pushable = new java.util.ArrayList<>(plan.touching(t));
+		pushable.addAll(plan.lyingOver(t));
+		for (Table o : pushable)
+		{
+			JMenuItem push = new JMenuItem("Push together with " + plan.label(o));
+			push.setToolTipText("Slides it until its top just meets " + plan.label(o) + "'s: back off it if over it, up to it if apart; along its length, so at an angle its corner meets the edge");
+			push.addActionListener(a ->
+			{
+				if (plan.pushTogether(t, o))
+				{
+					listener.planChanged();
+					planUpdated();
+				}
+			});
+			items.add(push);
+		}
 		for (Table o : plan.touching(t))
 		{
 			JMenuItem item = new JMenuItem("Combine with " + plan.label(o));

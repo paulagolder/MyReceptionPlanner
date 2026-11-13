@@ -123,4 +123,57 @@ class CombineTest
 		assertNotEquals(0, read.find(1).orElseThrow().getGroup());
 		assertTrue(read.overlaps().isEmpty());
 	}
+
+	// table 2 at 45° to table 1, its end laid well over table 1's side
+	private static Plan aChevronTooFarIn()
+	{
+		Plan plan = new Plan();
+		RectTable one = new RectTable(1, "", 10, 2);
+		one.moveTo(600, 400);
+		plan.add(one);
+		RectTable two = new RectTable(2, "", 7, 1);
+		two.setRotation(45);
+		two.moveTo(600 + 100, 400 - 230);
+		plan.add(two);
+		return plan;
+	}
+
+	private static boolean topsOverlap(Table a, Table b)
+	{
+		java.awt.geom.Area x = new java.awt.geom.Area(a.topOnFloor());
+		x.intersect(new java.awt.geom.Area(b.topOnFloor()));
+		return !x.isEmpty();
+	}
+
+	@Test
+	void pushingTogetherAtAnAngleLeavesTheCornerOnTheEdge()
+	{
+		Plan plan = aChevronTooFarIn();
+		Table one = plan.find(1).orElseThrow(), two = plan.find(2).orElseThrow();
+		assertTrue(topsOverlap(one, two), "laid over it");
+		double rotation = two.getRotation();
+		assertTrue(plan.pushTogether(two, one));
+		assertFalse(topsOverlap(one, two), "drawn back off it");
+		assertEquals(List.of(one), plan.touching(two), "but still against it");
+		assertEquals(rotation, two.getRotation(), "at the same angle");
+		assertEquals(0, one.getX() - 600, 1e-9, "only the one pushed moves");
+
+		two.moveTo(two.getX() + 3, two.getY() - 3);  // a little apart
+		assertTrue(plan.pushTogether(two, one));
+		assertFalse(topsOverlap(one, two));
+		assertEquals(List.of(one), plan.touching(two), "pushed up to it");
+	}
+
+	@Test
+	void combinedTablesWhoseTopsLieOverEachOtherAreFlagged()
+	{
+		Plan plan = aChevronTooFarIn();
+		Table one = plan.find(1).orElseThrow(), two = plan.find(2).orElseThrow();
+		plan.combine(one, two);
+		assertEquals(1, plan.overlaps().size(), "combined, but one top over the other");
+		assertEquals(List.of(one), plan.lyingOver(two));
+		assertTrue(plan.pushTogether(two, one));
+		assertTrue(plan.overlaps().isEmpty());
+		assertTrue(plan.lyingOver(two).isEmpty());
+	}
 }
