@@ -20,7 +20,8 @@ public final class Theme
 	public static final Color FIRST = new Color(0x2E8B57);    // seat 1's outline
 	public static final Color FIRST_FILL = new Color(0xC9E6D3);
 	public static final Color OFF = new Color(0xBDBDBD);      // a disabled chair's outline
-	public static final Color ALTAR = new Color(0xEADFC4);    // an altar or speakers' table
+	public static final Color ALTAR = new Color(0xEADFC4);
+	public static final Color CLASH = new Color(0xC62828);    // tables standing on each other    // an altar or speakers' table
 
 	private Theme() {}
 

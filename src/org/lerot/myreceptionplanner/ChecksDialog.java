@@ -51,8 +51,23 @@ public class ChecksDialog
 				+ " in " + unseated.size() + (unseated.size() == 1 ? " party" : " parties")
 				+ " to seat"));
 
+		addOverlapCheck(p, event, 2);
 		addMenuChecks(p, event, 2);
 		JOptionPane.showMessageDialog(parent, p, "Progress: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
+	}
+
+	// tables standing on each other on the plan, each pair; nothing if there are no tables
+	private static void addOverlapCheck(JPanel p, Event event, int span)
+	{
+		var plan = event.getPlan();
+		if (plan.tables().size() < 2) return;
+		var overlaps = plan.overlaps();
+		JLabel l = new JLabel(overlaps.isEmpty() ? "Layout: no tables overlap."
+				: "<html>⚠ Layout: " + String.join("; ", overlaps.stream()
+						.map(o -> plan.label(o.a()) + " and " + plan.label(o.b())).toList())
+						+ (overlaps.size() == 1 ? " overlap" : " overlap, each pair") + " (shown in red on the plan)</html>");
+		l.setForeground(overlaps.isEmpty() ? Theme.FIRST : Theme.CLASH);
+		p.add(l, "span " + span + ", gaptop 8, wmax 640");
 	}
 
 	// for an event with a menu: who has yet to choose, and choices that do not suit
@@ -89,6 +104,7 @@ public class ChecksDialog
 				+ (event.overCapacity() > 0 ? ": " + event.overCapacity() + " too many" : ""));
 		fit.setForeground(event.overCapacity() > 0 ? Theme.HEAD.darker() : Theme.FIRST);
 		p.add(fit);
+		addOverlapCheck(p, event, 1);
 		addMenuChecks(p, event, 1);
 		JOptionPane.showMessageDialog(parent, p, "Progress: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}
@@ -119,6 +135,7 @@ public class ChecksDialog
 			total.setForeground(Theme.HEAD.darker());
 		} else total.setForeground(event.getCapacity() > 0 ? Theme.FIRST : Theme.EDGE);
 		p.add(total);
+		addOverlapCheck(p, event, 1);
 		addMenuChecks(p, event, 1);
 		JOptionPane.showMessageDialog(parent, p, "Progress: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}

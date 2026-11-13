@@ -1581,7 +1581,10 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 					+ (event.getCapacity() > 0 ? " of a capacity of " + event.getCapacity() : "");
 		};
 		if (event.overCapacity() > 0) people += "  ⚠ " + event.overCapacity() + " more than the " + event.capacityWord();
-		status.setForeground(event.overCapacity() > 0 ? Theme.HEAD.darker() : UIManager.getColor("Label.foreground"));
+		String overlap = plan.overlapText();
+		if (!overlap.isEmpty()) people += "   ⚠ " + overlap;
+		status.setForeground(!overlap.isEmpty() ? Theme.CLASH : event.overCapacity() > 0 ? Theme.HEAD.darker()
+				: UIManager.getColor("Label.foreground"));
 		status.setText(occasion.heading() + "   ·   " + occasion.headingOf(event) + "   ·   "
 				+ plan.tables().size() + " tables, " + plan.places() + " places, " + head + ",   " + people);
 	}

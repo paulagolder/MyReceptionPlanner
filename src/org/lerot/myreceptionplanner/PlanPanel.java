@@ -166,9 +166,31 @@ public class PlanPanel extends JPanel
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		paintGrid(g);
+		java.util.List<Plan.Overlap> overlaps = plan.overlaps();
+		clashing = new java.util.HashSet<>();
+		for (Plan.Overlap o : overlaps)
+		{
+			clashing.add(o.a());
+			clashing.add(o.b());
+		}
 		for (Table t : plan.tables())
 			paintTable(g, t);
+		paintOverlaps(g, overlaps);
 		if (selected != null && mode == Mode.LAYOUT) paintHandle(g, selected);
+		g.dispose();
+	}
+
+	// tables standing on each other: where, in red over both
+	private java.util.Set<Table> clashing = java.util.Set.of();
+
+	private void paintOverlaps(Graphics2D g0, java.util.List<Plan.Overlap> overlaps)
+	{
+		if (overlaps.isEmpty()) return;
+		Graphics2D g = (Graphics2D) g0.create();
+		g.scale(scale, scale);
+		g.setColor(new Color(Theme.CLASH.getRed(), Theme.CLASH.getGreen(), Theme.CLASH.getBlue(), 90));
+		for (Plan.Overlap o : overlaps)
+			g.fill(o.where());
 		g.dispose();
 	}
 
@@ -222,8 +244,8 @@ public class PlanPanel extends JPanel
 		Shape top = t.top();
 		g.setColor(t instanceof Pew ? Theme.SEAT : t instanceof Altar ? Theme.ALTAR : Theme.TABLE);
 		g.fill(top);
-		Color edge = t == selected ? Theme.ACCENT : t.isHead() ? Theme.HEAD : Theme.EDGE;
-		float width = t == selected || t.isHead() ? 3f : 1.5f;
+		Color edge = clashing.contains(t) ? Theme.CLASH : t == selected ? Theme.ACCENT : t.isHead() ? Theme.HEAD : Theme.EDGE;
+		float width = t == selected || t.isHead() || clashing.contains(t) ? 3f : 1.5f;
 		g.setColor(edge);
 		g.setStroke(new BasicStroke((float) (width / scale)));
 		g.draw(top);

@@ -300,6 +300,22 @@ public abstract class Table
 		return toFloor().transform(seats().get(index), null);
 	}
 
+	// the floor the table top and its chairs in use cover, as they stand
+	public java.awt.geom.Area footprint()
+	{
+		java.awt.geom.Area a = new java.awt.geom.Area(top());
+		List<Point2D> seats = seats();
+		for (int i = 0; i < seats.size(); i++)
+		{
+			if (isDisabled(i)) continue;
+			Point2D s = seats.get(i);
+			a.add(new java.awt.geom.Area(new java.awt.geom.Ellipse2D.Double(s.getX() - SEAT_RADIUS,
+					s.getY() - SEAT_RADIUS, 2 * SEAT_RADIUS, 2 * SEAT_RADIUS)));
+		}
+		a.transform(toFloor());
+		return a;
+	}
+
 	// the floor area the table and its chairs cover
 	public Rectangle2D bounds()
 	{

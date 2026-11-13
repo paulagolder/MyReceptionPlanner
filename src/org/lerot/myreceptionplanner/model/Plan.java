@@ -146,6 +146,40 @@ public class Plan
 		return table.series() + " " + table.getNumber();
 	}
 
+	// two tables whose tops or chairs cover the same floor, and where
+	public record Overlap(Table a, Table b, java.awt.geom.Area where) {}
+
+	/*
+	 * Every pair of tables standing on each other: a top or a chair in use
+	 * of one covering part of the other's, by more than a centimetre each
+	 * way (tables pushed edge to edge only touch).
+	 */
+	public List<Overlap> overlaps()
+	{
+		List<Overlap> out = new ArrayList<>();
+		java.util.Map<Table, java.awt.geom.Area> covers = new java.util.HashMap<>();
+		for (int i = 0; i < tables.size(); i++)
+			for (int j = i + 1; j < tables.size(); j++)
+			{
+				Table a = tables.get(i), b = tables.get(j);
+				if (!a.bounds().intersects(b.bounds())) continue;
+				java.awt.geom.Area both = new java.awt.geom.Area(covers.computeIfAbsent(a, Table::footprint));
+				both.intersect(covers.computeIfAbsent(b, Table::footprint));
+				java.awt.geom.Rectangle2D r = both.getBounds2D();
+				if (!both.isEmpty() && r.getWidth() > 1 && r.getHeight() > 1) out.add(new Overlap(a, b, both));
+			}
+		return out;
+	}
+
+	// "Table 3 and Table 4 overlap", or how many pairs do; "" if none
+	public String overlapText()
+	{
+		List<Overlap> o = overlaps();
+		if (o.isEmpty()) return "";
+		if (o.size() == 1) return label(o.get(0).a()) + " and " + label(o.get(0).b()) + " overlap";
+		return o.size() + " pairs of tables overlap";
+	}
+
 	// the places that can be given to guests
 	public int reservedPlaces()
 	{
