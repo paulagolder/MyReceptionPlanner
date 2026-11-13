@@ -71,6 +71,7 @@ public class Event
 	// each guest's dish for each course, and any note for this event
 	private final Map<Guest, Map<Menu.Course, Menu.Dish>> choices = new LinkedHashMap<>();
 	private final Map<Guest, String> notes = new LinkedHashMap<>();
+	private Approval approval;  // of the table layout; null if never approved or withdrawn
 
 	public Event(String name, String file, Plan plan, Seating seating)
 	{
@@ -141,6 +142,38 @@ public class Event
 	public Seating getSeating() { return seating; }
 
 	// ---- the menu and what guests choose ----
+
+	/*
+	 * The table layout approved, by whom (may be "") and when, and the
+	 * layout as it was then (Plan.fingerprint). Any change to the layout
+	 * leaves it no longer approved; putting it back exactly approves it again.
+	 */
+	public record Approval(String by, LocalDate on, String layout)
+	{
+		public Approval
+		{
+			by = by == null ? "" : by.trim();
+		}
+
+		// "13 Nov 2026 by Jane Smith"
+		public String text()
+		{
+			return on.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", java.util.Locale.UK))
+					+ (by.isEmpty() ? "" : " by " + by);
+		}
+	}
+
+	public Approval getApproval() { return approval; }
+
+	public void setApproval(Approval approval) { this.approval = approval; }
+
+	public void approveLayout(String by, LocalDate on) { approval = new Approval(by, on, plan.fingerprint()); }
+
+	// approved, and the layout not changed since
+	public boolean isLayoutApproved() { return approval != null && approval.layout().equals(plan.fingerprint()); }
+
+	// approved once, but the layout has changed since
+	public boolean layoutChangedSinceApproval() { return approval != null && !isLayoutApproved(); }
 
 	public Menu getMenu() { return menu; }
 

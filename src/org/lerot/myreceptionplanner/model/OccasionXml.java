@@ -69,7 +69,9 @@ import java.time.format.DateTimeParseException;
  * guest's choice names one dish of each course they have chosen for. type is
  * seated, or unreserved for a party where no one has a seat, which may have
  * a capacity="150"; so may a hall, whose capacity is otherwise its seats. catered="yes" if food is served there (its menu, choices
- * and kitchen lists apply).
+ * and kitchen lists apply). An event whose table layout has been approved
+ * has <approved by="Jane Smith" on="2026-11-13" layout="9f2c…"/>, layout
+ * being the layout as it was then (see Plan.fingerprint).
  */
 public class OccasionXml
 {
@@ -181,6 +183,12 @@ public class OccasionXml
 			List<String> ids = event.invitations().entrySet().stream().filter(x -> x.getValue() == state)
 					.map(x -> Integer.toString(x.getKey().getId())).toList();
 			if (!ids.isEmpty()) inv.addAttribute(state.code(), String.join(" ", ids));
+		}
+		if (event.getApproval() != null)
+		{
+			Element a = root.addElement("approved");
+			if (!event.getApproval().by().isEmpty()) a.addAttribute("by", event.getApproval().by());
+			a.addAttribute("on", event.getApproval().on().toString()).addAttribute("layout", event.getApproval().layout());
 		}
 		PlanXml.write(event.getPlan(), root);
 		Element seating = root.addElement("seating");
@@ -402,6 +410,18 @@ public class OccasionXml
 		Event event = new Event(root.attributeValue("name", "Event"), file, plan, seating);
 		event.setKind(Event.Kind.fromCode(root.attributeValue("type", "seated")));
 		event.setCapacity(PlanXml.number(root, "capacity", 0));
+		Element approved = root.element("approved");
+		if (approved != null)
+		{
+			try
+			{
+				event.setApproval(new Event.Approval(approved.attributeValue("by", ""),
+						java.time.LocalDate.parse(approved.attributeValue("on", "")), approved.attributeValue("layout", "")));
+			} catch (java.time.format.DateTimeParseException e)
+			{
+				// a date not understood: not approved
+			}
+		}
 		String catered = root.attributeValue("catered");
 		Element inv = root.element("invitations");
 		Element old = root.element("invited");  // before replies were kept: all to be invited

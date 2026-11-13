@@ -19,6 +19,7 @@ import org.lerot.myreceptionplanner.model.RoundTable;
 import org.lerot.myreceptionplanner.model.Seating;
 import org.lerot.myreceptionplanner.model.Table;
 import org.lerot.myreceptionplanner.reports.TablePlanPdf;
+import org.lerot.myreceptionplanner.reports.LayoutPlanPdf;
 
 import javax.swing.*;
 import java.awt.*;
@@ -174,7 +175,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		eventsMenu.addSeparator();
 		JMenuItem check = eventsMenu.add("Progress…");
 		check.setToolTipText("Spare places at the tables, and guests not yet seated");
-		check.addActionListener(e -> ChecksDialog.show(this, occasion, event));
+		check.addActionListener(e -> ChecksDialog.show(this, occasion, event, () -> approveLayout(event)));
 		eventsMenu.add("Table plan (PDF)…").addActionListener(e -> tablePlanPdf());
 		JMenuItem tableList = eventsMenu.add("Table list (PDF)…");
 		tableList.setToolTipText("A card for one table: its name or number and its guests in seat order");
@@ -201,6 +202,14 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		add.addSeparator();
 		add.add("Altar / speakers' table").addActionListener(e -> addAltar());
 		add.addSeparator();
+		JMenuItem approve = add.add("Approve layout…");
+		approve.setToolTipText("Sign off the layout for setting up; any change to it after undoes this");
+		approve.addActionListener(e -> approveLayout(event));
+		add.add(new JSeparator());
+		JMenuItem layoutPdf = add.add("Layout plan (PDF)…");
+		layoutPdf.setToolTipText("For setting up the room: the tables to scale with their chairs and names, no guests");
+		layoutPdf.addActionListener(e -> layoutPlanPdf());
+		add.add(new JSeparator());
 		add.add("Import layout…").addActionListener(e -> importLayout());
 		add.add("Export layout…").addActionListener(e -> exportLayout());
 		addTableButton = dropDown("Layout", add);
@@ -555,6 +564,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 				setMode(PlanPanel.Mode.LAYOUT);
 				return true;
 			}
+			case LAYOUT -> approveLayout(e);
 			case MENU ->
 			{
 				if (MenuDialog.edit(this, occasion, e, menuFolder(), MenuDialog.Start.MENU)) changed();
@@ -895,6 +905,95 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 			FINDER_PAPER = "seatFinderPaper", DOOR_SPLIT = "doorListSplit",
 			DOOR_TITLES = "doorListTitles", FINDER_TITLES = "seatFinderTitles",
 			CARD_STOCK = "placeCardStock", CARDS_FOR_STAFF = "placeCardsForStaff";
+
+	private static final String APPROVER = "layoutApprovedBy";
+
+	/*
+	 * Signs off the event's table layout as it stands, asking who approved
+	 * it; or, if it is approved and unchanged, offers to withdraw that.
+	 * True if anything changed.
+	 */
+	private boolean approveLayout(Event e)
+	{
+		if (!e.isSeated() || e.getPlan().tables().isEmpty())
+		{
+			JOptionPane.showMessageDialog(this, e.getName() + " has no tables to approve.", "Approve layout",
+					JOptionPane.INFORMATION_MESSAGE);
+			return false;
+		}
+		if (e.isLayoutApproved())
+		{
+			String[] options = { "Withdraw approval", "Keep it" };
+			if (JOptionPane.showOptionDialog(this, "The layout of " + e.getName() + " was approved "
+					+ e.getApproval().text() + " and has not changed since.", "Approve layout",
+					JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[1]) != 0) return false;
+			e.setApproval(null);
+			changed();
+			return true;
+		}
+		JTextField by = new JTextField(PREFS.get(APPROVER, ""), 20);
+		JPanel form = new JPanel(new MigLayout("insets 0, wrap 2", "[right][grow,fill]"));
+		form.add(new JLabel("<html>Approve the table layout of <b>" + escape(e.getName()) + "</b> as it stands"
+				+ (e.layoutChangedSinceApproval() ? ",<br>changed since it was approved " + escape(e.getApproval().text()) : "")
+				+ "?</html>"), "span 2, gapbottom 8");
+		form.add(new JLabel("Approved by"));
+		form.add(by);
+		JLabel note = new JLabel("<html>Dated today. Moving, turning, adding, removing or renaming a table,<br>"
+				+ "or changing its chairs, undoes the approval; Layout ▾ → Layout plan (PDF)<br>"
+				+ "shows whether the layout printed is approved.</html>");
+		note.setForeground(Theme.EDGE);
+		form.add(note, "skip, gaptop 6");
+		if (JOptionPane.showConfirmDialog(this, form, "Approve layout", JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return false;
+		PREFS.put(APPROVER, by.getText().trim());
+		e.approveLayout(by.getText(), java.time.LocalDate.now());
+		changed();
+		return true;
+	}
+
+	// the layout for setting up the room: the paper, then where to save
+	private void layoutPlanPdf()
+	{
+		if (plan().tables().isEmpty())
+		{
+			JOptionPane.showMessageDialog(this, "There are no tables to print.", "Layout plan",
+					JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		JComboBox<String> paper = new JComboBox<>(new String[] { "A4", "A3", "A2", "A1" });
+		paper.setSelectedItem(PREFS.get(PAPER, "A3"));
+		JComboBox<String> turn = new JComboBox<>(new String[] { "Landscape", "Portrait" });
+		turn.setSelectedIndex(PREFS.getBoolean(LANDSCAPE, true) ? 0 : 1);
+		JPanel form = new JPanel(new MigLayout("insets 0, wrap 2", "[right][grow,fill]"));
+		form.add(new JLabel("Paper"));
+		form.add(paper);
+		form.add(new JLabel("Orientation"));
+		form.add(turn);
+		JLabel state = new JLabel(LayoutPlanPdf.stamp(event));
+		state.setForeground(event.isLayoutApproved() ? Theme.FIRST : Theme.CLASH);
+		form.add(new JLabel("Layout"));
+		form.add(state);
+		JLabel note = new JLabel("<html>The tables to scale where they stand, with their chairs and names:<br>"
+				+ "no guests, no seat numbers. Approve it with Layout ▾ → Approve layout.</html>");
+		note.setForeground(Theme.EDGE);
+		form.add(note, "skip, gaptop 6");
+		if (JOptionPane.showConfirmDialog(this, form, "Layout plan: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
+		PREFS.put(PAPER, (String) paper.getSelectedItem());
+		PREFS.putBoolean(LANDSCAPE, turn.getSelectedIndex() == 0);
+		Path file = choosePdf("layout-" + event.getFile().replaceFirst("\\.xml$", "") + ".pdf");
+		if (file == null) return;
+		com.itextpdf.text.Rectangle page = com.itextpdf.text.PageSize.getRectangle((String) paper.getSelectedItem());
+		if (turn.getSelectedIndex() == 0) page = page.rotate();
+		try
+		{
+			LayoutPlanPdf.write(occasion, event, page, file);
+			open(file);
+		} catch (IOException ex)
+		{
+			JOptionPane.showMessageDialog(this, ex.getMessage(), "Cannot make the PDF", JOptionPane.ERROR_MESSAGE);
+		}
+	}
 
 	// asks for the paper, then where to save, then writes and opens it
 	private void tablePlanPdf()

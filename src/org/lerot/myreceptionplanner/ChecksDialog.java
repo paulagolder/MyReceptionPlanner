@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class ChecksDialog
 {
-	public static void show(Component parent, Occasion occasion, Event event)
+	public static void show(Component parent, Occasion occasion, Event event, Runnable approve)
 	{
 		if (!event.isSeated())
 		{
@@ -26,7 +26,7 @@ public class ChecksDialog
 		}
 		if (event.getKind() == Event.Kind.HALL)
 		{
-			showHall(parent, occasion, event);
+			showHall(parent, occasion, event, approve);
 			return;
 		}
 		List<Checks.SpareSeats> spare = Checks.spareSeats(event.getPlan(), event.getSeating());
@@ -52,6 +52,7 @@ public class ChecksDialog
 				+ " to seat"));
 
 		addOverlapCheck(p, event, 2);
+		addApproval(p, event, 2, approve);
 		addMenuChecks(p, event, 2);
 		JOptionPane.showMessageDialog(parent, p, "Progress: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}
@@ -68,6 +69,33 @@ public class ChecksDialog
 						+ (overlaps.size() == 1 ? " overlap" : " overlap, each pair") + " (shown in red on the plan)</html>");
 		l.setForeground(overlaps.isEmpty() ? Theme.FIRST : Theme.CLASH);
 		p.add(l, "span " + span + ", gaptop 8, wmax 640");
+	}
+
+	// whether the table layout is signed off, with a button to approve it (or withdraw approval)
+	private static void addApproval(JPanel p, Event event, int span, Runnable approve)
+	{
+		if (event.getPlan().tables().isEmpty()) return;
+		JLabel l = new JLabel();
+		JButton b = new JButton();
+		Runnable show = () ->
+		{
+			l.setText(event.isLayoutApproved() ? "Table layout approved " + event.getApproval().text() + "."
+					: event.layoutChangedSinceApproval() ? "⚠ Table layout changed since approved "
+					+ event.getApproval().text() + ": not approved."
+					: "Table layout not yet approved.");
+			l.setForeground(event.isLayoutApproved() ? Theme.FIRST : event.layoutChangedSinceApproval() ? Theme.CLASH : Theme.EDGE);
+			b.setText(event.isLayoutApproved() ? "Withdraw…" : "Approve…");
+		};
+		show.run();
+		b.addActionListener(e ->
+		{
+			approve.run();
+			show.run();
+		});
+		JPanel row = new JPanel(new MigLayout("insets 0", "[]12[]"));
+		row.add(l);
+		row.add(b);
+		p.add(row, "span " + span + ", gaptop 8");
 	}
 
 	// for an event with a menu: who has yet to choose, and choices that do not suit
@@ -87,7 +115,7 @@ public class ChecksDialog
 	}
 
 	// a hall: reserved seats not yet given, and the seats against those invited
-	private static void showHall(Component parent, Occasion occasion, Event event)
+	private static void showHall(Component parent, Occasion occasion, Event event, Runnable approve)
 	{
 		var plan = event.getPlan();
 		List<Checks.SpareSeats> spare = Checks.spareSeats(plan, event.getSeating());
@@ -105,6 +133,7 @@ public class ChecksDialog
 		fit.setForeground(event.overCapacity() > 0 ? Theme.HEAD.darker() : Theme.FIRST);
 		p.add(fit);
 		addOverlapCheck(p, event, 1);
+		addApproval(p, event, 1, approve);
 		addMenuChecks(p, event, 1);
 		JOptionPane.showMessageDialog(parent, p, "Progress: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}

@@ -18,14 +18,14 @@ public final class Progress
 	{
 		OCCASION("Define occasion"), EVENTS("Define events"), GUESTS("Manage guests"),
 		INVITATIONS("Send invitations"), MENUS_SENT("Send out menus"), REPLIES("Process replies"),
-		TABLES("Tables and seats"), MENU("Menu"), SEATS("Allocate seats"), CHOICES("Menu choices");
+		TABLES("Tables and seats"), LAYOUT("Approve table layout"), MENU("Menu"), SEATS("Allocate seats"), CHOICES("Menu choices");
 
 		public final String label;
 
 		Step(String label) { this.label = label; }
 
 		public static final List<Step> OCCASION_STEPS = List.of(OCCASION, EVENTS, GUESTS, INVITATIONS, MENUS_SENT, REPLIES);
-		public static final List<Step> EVENT_STEPS = List.of(TABLES, MENU, SEATS, CHOICES);
+		public static final List<Step> EVENT_STEPS = List.of(TABLES, LAYOUT, MENU, SEATS, CHOICES);
 	}
 
 	public enum State { NOT_NEEDED, NOT_STARTED, PART_DONE, DONE }
@@ -59,7 +59,7 @@ public final class Progress
 
 	public static List<Stage> ofEvent(Occasion o, Event e)
 	{
-		return List.of(tables(e), menu(o, e), seats(o, e), choices(e));
+		return List.of(tables(e), layout(e), menu(o, e), seats(o, e), choices(e));
 	}
 
 	static Stage details(Occasion o)
@@ -187,6 +187,18 @@ public final class Progress
 		if (e.overCapacity() > 0) note += ": " + e.overCapacity() + " too many";
 		if (invited == 0) return new Stage(Step.TABLES, 0, 0, note, State.DONE, false);
 		return counted(Step.TABLES, room, invited, note, e.overCapacity() > 0);
+	}
+
+	// the table layout signed off for the setting-up crew; undone by any change to it
+	static Stage layout(Event e)
+	{
+		if (!e.isSeated()) return notNeeded(Step.LAYOUT, "unreserved: no tables to set out");
+		if (e.getPlan().tables().isEmpty()) return notStarted(Step.LAYOUT, "no tables yet");
+		if (e.isLayoutApproved()) return counted(Step.LAYOUT, 1, 1, "approved " + e.getApproval().text(), false);
+		if (e.layoutChangedSinceApproval())
+			return new Stage(Step.LAYOUT, 0, 1, "changed since approved " + e.getApproval().text()
+					+ "; not approved", State.NOT_STARTED, true);
+		return new Stage(Step.LAYOUT, 0, 1, "not yet approved", State.NOT_STARTED, false);
 	}
 
 	// a menu with a dish in every course for every invited guest's needs

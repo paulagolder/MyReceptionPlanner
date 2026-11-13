@@ -213,6 +213,32 @@ public class Plan
 		return table.series() + " " + table.getNumber();
 	}
 
+	/*
+	 * The layout as the setting-up crew see it, as a short code: each table's
+	 * shape and places, where it stands and how it is turned (to the
+	 * millimetre and tenth of a degree), its chairs turned off, what it is
+	 * called and what it is combined with. The same layout, put back exactly,
+	 * gives the same code; seating, seat 1 and open seats play no part.
+	 */
+	public String fingerprint()
+	{
+		StringBuilder b = new StringBuilder();
+		tables.stream().sorted(Comparator.comparingInt(Table::getId)).forEach(t -> b
+				.append(t.getId()).append('|').append(t.arrangement()).append('|')
+				.append(String.format(java.util.Locale.ROOT, "%.1f|%.1f|%.1f|", t.getX(), t.getY(), t.getRotation()))
+				.append(t.getDisabledSeats()).append('|').append(label(t)).append('|')
+				.append(groupOf(t).stream().map(Table::getId).sorted().toList()).append('\n'));
+		try
+		{
+			byte[] hash = java.security.MessageDigest.getInstance("SHA-256")
+					.digest(b.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+			return java.util.HexFormat.of().formatHex(hash, 0, 12);
+		} catch (java.security.NoSuchAlgorithmException e)
+		{
+			throw new IllegalStateException(e);  // every Java has SHA-256
+		}
+	}
+
 	// ---- tables combined: pushed together, each keeping its own identity ----
 
 	private static final double TOUCHING = 5;  // cm between tops still counted as pushed together

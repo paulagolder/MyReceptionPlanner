@@ -99,6 +99,16 @@ The toolbar starts with:
   *About MyReceptionPlanner…* (the version, when it was built, who developed
   it, the Java it runs on, and the occasion open and its folder).
 
+### Setting up the room
+
+- **Layout ▾ → Layout plan (PDF)…** prints the tables to scale where they
+  stand, with their chairs and names. It has no guests or seat numbers, but
+  it does have a scale bar and the number of tables and chairs.
+- **Layout ▾ → Approve layout…** signs off the layout with who approved it
+  and the date, and the plan then says *Approved* instead of *Draft*. If a
+  table is moved, turned, added, removed or renamed, or its chairs are
+  changed, the approval is undone and shown in red in *Progress*.
+
 ### Layouts and menus as files
 
 A room's layout or a menu can be kept in a file of its own, to use again in
