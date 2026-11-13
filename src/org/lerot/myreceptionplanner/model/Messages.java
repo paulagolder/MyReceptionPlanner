@@ -50,8 +50,8 @@ public final class Messages
 		FILL_INS.put("menustochoose", "each catered event the party is invited to with choices still to make or "
 				+ "confirm: who, what they have chosen so far, and the menu; or nothing");
 		FILL_INS.put("missing", "what is still needed from the party: names, dietary needs, menu choices");
-		FILL_INS.put("from", "who the message is from (Occasion details)");
-		FILL_INS.put("reply", "how to reply (Occasion details)");
+		FILL_INS.put("from", "who the message is from (View occasion)");
+		FILL_INS.put("reply", "how to reply (View occasion)");
 	}
 
 	public static List<MessageTemplate> standard()

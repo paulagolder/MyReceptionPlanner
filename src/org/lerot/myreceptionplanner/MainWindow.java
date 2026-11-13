@@ -127,19 +127,16 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		bar.setFloatable(false);
 
 		JPopupMenu occasionMenu = new JPopupMenu();
-		occasionMenu.add("Progress…").addActionListener(e -> ProgressDialog.show(this, occasion, this::progressStep));
-		occasionMenu.addSeparator();
-		occasionMenu.add("Occasion details…").addActionListener(e -> editOccasion());
-		occasionMenu.add("Invitations…").addActionListener(e -> setGuestView(true));
-		occasionMenu.addSeparator();
 		occasionMenu.add("New occasion…").addActionListener(e -> newOccasion());
 		occasionMenu.add("Open occasion…").addActionListener(e -> openOccasion());
+		occasionMenu.add("View occasion…").addActionListener(e -> editOccasion());
+		occasionMenu.add("Save occasion…").addActionListener(e -> save());
+		occasionMenu.addSeparator();
+		occasionMenu.add("Progress…").addActionListener(e -> ProgressDialog.show(this, occasion, this::progressStep));
+		occasionMenu.addSeparator();
 		JMenuItem example = occasionMenu.add("Open the example…");
 		example.setToolTipText("A fresh copy of Romeo and Juliette's Wedding, an example occasion to try things on");
 		example.addActionListener(e -> openExample());
-		occasionMenu.addSeparator();
-		occasionMenu.add("Save…").addActionListener(e -> save());
-		occasionMenu.addSeparator();
 		JMenuItem backup = occasionMenu.add("Backup…");
 		backup.setToolTipText("A copy of the whole occasion folder, as it stands now, in a folder of its own");
 		backup.addActionListener(e -> backup());
@@ -866,7 +863,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		form.add(turn);
 		JLabel note = new JLabel("<html>Each table where it stands, with its guests in seat order.<br>"
 				+ "Renumber the tables first if they have moved. The heading comes from<br>"
-				+ "Occasion ▾ → Occasion details and Event ▾ → View event.</html>");
+				+ "Occasion ▾ → View occasion and Event ▾ → View event.</html>");
 		note.setForeground(Theme.EDGE);
 		form.add(note, "skip, gaptop 6");
 		if (JOptionPane.showConfirmDialog(this, form, "Table plan: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,

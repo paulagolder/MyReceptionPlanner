@@ -69,22 +69,24 @@ shows the weekday the date fell on, replacing any that was typed; before
 
 The toolbar starts with:
 
-- **Occasion ▾** → *Progress…* (below), *Occasion details…* (name and
-  date), *Invitations…* (opens the Guests view), *New occasion…*, *Open occasion…* and
-  *Save…* (saves the whole occasion).
+- **Occasion ▾** → *New occasion…*, *Open occasion…*, *View occasion…* (name
+  and date) and *Save occasion…* (saves the whole occasion); *Progress…*
+  (below); *Open the example…* and *Backup…* (a copy of the whole occasion
+  folder, unsaved changes too, in a folder of its own, offered as
+  `<occasion>_bak_1`).
 - **Event | Guests** switches between the two views. The **Guests** view is
   the guest list of the whole occasion (below); the plan's controls are
   hidden there. The **Event** view shows the plan of one event, with:
   - the **event chooser**, picking which;
-  - **Event ▾** → *Event details…* (name, place, date and time, leaving the
-    date empty if it is on the occasion's day; type, capacity, and
-    **Catered**, ticked when food is served), *Check…* and *Table plan
-    (PDF)…* (below), *Export layout…* (below), *Save this event…* (only its
-    file; an event or occasion never saved before saves the whole occasion),
-    *New event…* (starting with an empty room, a copy of another event's
-    tables or a layout file, and inviting everyone, no one or the guests of
-    another event) and *Delete this event…*;
-  - **Layout ▾** (add a table, pew or altar, or *Import layout…*) and
+  - **Event ▾** → *New event…* (starting with an empty room, a copy of
+    another event's tables or a layout file, and inviting everyone, no one
+    or the guests of another event), *View event…* (name, place, date and
+    time, leaving the date empty if it is on the occasion's day; type,
+    capacity, and **Catered**, ticked when food is served), *Save event…*
+    (only its file; an event or occasion never saved before saves the whole
+    occasion) and *Delete event…*; then *Progress…* and the prints (below);
+  - **Layout ▾** (add a table, pew or altar, or *Import layout…* and
+    *Export layout…*) and
     **Table ▾** (below);
   - **Seating**, on to seat the guests (it shows blue, and the seat panel
     opens on the right) and off to set out the tables;
@@ -103,7 +105,7 @@ A room's layout or a menu can be kept in a file of its own, to use again in
 another event or occasion: a venue's standard room, say, or a caterer's
 menu. Imported, it can be changed like any other.
 
-- **Event ▾ → Export layout…** writes the event's tables to
+- **Layout ▾ → Export layout…** writes the event's tables to
   `Output/<event>_layout.xml` (such as `wedding-breakfast_layout.xml`)
   unless you choose another name or place.
 - **Layout ▾ → Import layout…** puts a layout file's tables in place of the
@@ -240,7 +242,7 @@ counted or asked for. An older event file with a menu opens as catered.
   counts them from the start. Only named guests have needs and menu choices,
   so they follow the person wherever they are seated; a place not yet named
   (Ann Smith+1) chooses once it is named, and a guest whose name is cleared
-  loses theirs. The catering list and Check… count places not yet named
+  loses theirs. The catering list and Progress… count places not yet named
   apart.
 - **Catering ▾ → Menu…** sets out the shown event's menu: a line for each
   dish, with its course (Starter, Main, Dessert …) and ticks for the diets it
@@ -266,12 +268,12 @@ counted or asked for. An older event file with a menu opens as catered.
   it the table's dishes counted, to plate up a table at a time. Invited
   guests without a seat come last. "?" is a dish not yet chosen, "–" a place
   not yet named. *Save as PDF, a page per table…* gives a sheet for each
-  table. *Check…* also says who has yet to choose and any unsuitable
+  table. *Progress…* also says who has yet to choose and any unsuitable
   choices, and the table plan PDF gives each guest's needs after their name.
 
 ### Seated events, halls and unreserved parties
 
-Each event is one of three types, set in *New event…* or *Event details…*:
+Each event is one of three types, set in *New event…* or *View event…*:
 
 - **Seated** (the Wedding Breakfast): guests are invited and each is given
   a seat.
@@ -279,12 +281,12 @@ Each event is one of three types, set in *New event…* or *Event details…*:
   are open to all; only the seats you reserve (the front rows, places for
   ushers or for guests who need them) are given to guests in Seating. Its
   capacity is all its usable seats, and you're warned when more guests are
-  invited than that. *Check…* lists the reserved seats not yet given and
+  invited than that. *Progress…* lists the reserved seats not yet given and
   the open seats.
 - **Party, unreserved** (the evening do): guests are invited, and tables can
   be set out in Layout for the staff preparing the room, but no one is given
   a seat, so Seating is switched off. It can have a **capacity** (0 for no
-  limit): the status bar, the Guests view's totals and *Check…* warn when more guests
+  limit): the status bar, the Guests view's totals and *Progress…* warn when more guests
   are invited than it allows. Its table plan PDF shows each table with its
   number of places instead of names. Making a seated event unreserved clears
   its seats, after asking.
@@ -296,7 +298,7 @@ guests).
 
 Each event has its own list of who is invited, and only those expected can
 be seated there. Invitations and replies are changed only in the **Guests
-view** (*Occasion ▾ → Invitations…* opens it): a column of marks for each
+view** (the **Guests** button opens it): a column of marks for each
 event, click one to change it (see The Guests view). The only other place
 is *New event…*, which can start the new event with everyone, no one or
 another event's guests to be invited.
@@ -430,7 +432,7 @@ In both modes, a chair with a guest in it carries a mark: **● a woman,
 
 ### The occasion's emblem
 
-**Occasion ▾ → Occasion details…** has an *Emblem*: an SVG picture that heads
+**Occasion ▾ → View occasion…** has an *Emblem*: an SVG picture that heads
 the table plan, the letters and the reports (catering, kitchen, service),
 drawn as lines and shapes so it prints sharp at any size. *Import SVG…* takes
 any SVG file (from Inkscape, say); *Hearts* (two entwined hearts with an
@@ -442,7 +444,7 @@ are plain text, so they cannot carry it.
 ### Messages to the guests
 
 Messages go to each party's lead, from the details in **Occasion ▾ →
-Occasion details…**: *From* signs them ("Janet and John"), *Reply to* says
+View occasion…**: *From* signs them ("Janet and John"), *Reply to* says
 how to answer, and the *phone country code* (44) turns 07700 900123 into an
 international number for WhatsApp.
 
@@ -495,7 +497,7 @@ international number for WhatsApp.
 
 ### Reports
 
-*Check…*, the table plan, the table lists, the seat finder and the place cards are on **Event ▾**, and the catering reports
+*Progress…*, the table plan, the table lists, the seat finder and the place cards are on **Event ▾**, and the catering reports
 on **Catering ▾** (above):
 
 - **Table plan (PDF)…**: one page to print and put up, with a panel for each
@@ -547,7 +549,7 @@ on **Catering ▾** (above):
   margins show the folds and cuts; print a sheet on plain paper and hold
   it against the card first. It is saved as `place-cards-<event>.pdf` in
   Output and opened.
-- **Check…** lists what is still to settle at the event shown (for an
+- **Event ▾ → Progress…** lists what is still to settle at the event shown (for an
   unreserved party: who is invited, party by party, against its capacity):
 
   - **Spare places**: each table with seats free, how many, and out of how
@@ -583,7 +585,7 @@ named from the occasion ("Janet and John's Wedding" is
   kitchen and service reports, letters, labels, contact lists). The PDF
   chooser opens here with a name filled in.
 
-**Save…** shows the folder it will save in and asks before writing. Choose
+**Save occasion…** shows the folder it will save in and asks before writing. Choose
 another folder there to save a copy somewhere else; from then on the occasion
 saves to that folder. A new occasion is saved the first time in its own
 folder in MyReceptions (with a warning if that folder already holds an
