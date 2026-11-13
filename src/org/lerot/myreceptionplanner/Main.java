@@ -1,5 +1,8 @@
 package org.lerot.myreceptionplanner;
 
+import org.lerot.myreceptionplanner.gui.MainWindow;
+import org.lerot.myreceptionplanner.gui.Theme;
+
 import javax.swing.SwingUtilities;
 
 // Starts MyReceptionPlanner

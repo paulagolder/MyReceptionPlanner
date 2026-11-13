@@ -2,6 +2,8 @@ package org.lerot.myreceptionplanner.model;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.RoundTable;
 
 import java.io.IOException;
 import java.nio.file.Files;

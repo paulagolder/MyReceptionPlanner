@@ -1,5 +1,7 @@
 package org.lerot.myreceptionplanner.model;
 
+import org.lerot.myreceptionplanner.model.tables.Plan;
+
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Collections;

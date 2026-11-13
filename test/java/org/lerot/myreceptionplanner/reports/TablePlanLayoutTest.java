@@ -3,6 +3,16 @@ package org.lerot.myreceptionplanner.reports;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.lerot.myreceptionplanner.model.*;
+import org.lerot.myreceptionplanner.model.Event;
+import org.lerot.myreceptionplanner.model.GuestList;
+import org.lerot.myreceptionplanner.model.Occasion;
+import org.lerot.myreceptionplanner.model.Party;
+import org.lerot.myreceptionplanner.model.Seat;
+import org.lerot.myreceptionplanner.model.Seating;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.RectTable;
+import org.lerot.myreceptionplanner.model.tables.RoundTable;
+import org.lerot.myreceptionplanner.model.tables.Table;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

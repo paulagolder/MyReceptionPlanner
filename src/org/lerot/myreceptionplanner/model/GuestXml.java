@@ -1,6 +1,7 @@
 package org.lerot.myreceptionplanner.model;
 
 import org.dom4j.Element;
+import org.lerot.myreceptionplanner.model.tables.PlanXml;
 
 import java.awt.Color;
 import java.io.IOException;

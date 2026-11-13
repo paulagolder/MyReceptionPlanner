@@ -1,5 +1,6 @@
 package org.lerot.myreceptionplanner.reports;
 
+import com.github.weisj.jsvg.SVGDocument;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -8,12 +9,11 @@ import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfWriter;
-import com.github.weisj.jsvg.SVGDocument;
 import org.lerot.myreceptionplanner.model.Event;
 import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.Occasion;
-import org.lerot.myreceptionplanner.model.Plan;
-import org.lerot.myreceptionplanner.model.Table;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.Table;
 
 import java.io.IOException;
 import java.io.OutputStream;

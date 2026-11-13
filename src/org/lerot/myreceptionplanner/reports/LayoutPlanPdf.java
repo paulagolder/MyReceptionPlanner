@@ -7,12 +7,12 @@ import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfWriter;
-import org.lerot.myreceptionplanner.model.Altar;
 import org.lerot.myreceptionplanner.model.Event;
 import org.lerot.myreceptionplanner.model.Occasion;
-import org.lerot.myreceptionplanner.model.Pew;
-import org.lerot.myreceptionplanner.model.Plan;
-import org.lerot.myreceptionplanner.model.Table;
+import org.lerot.myreceptionplanner.model.tables.Altar;
+import org.lerot.myreceptionplanner.model.tables.Pew;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.Table;
 
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;

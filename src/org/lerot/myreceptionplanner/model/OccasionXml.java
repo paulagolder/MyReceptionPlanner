@@ -7,14 +7,16 @@ import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.PlanXml;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.util.List;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 /*
  * An occasion is a folder. occasion.xml holds its name and date, the files of

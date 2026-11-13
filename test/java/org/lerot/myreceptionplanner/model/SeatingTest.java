@@ -1,6 +1,8 @@
 package org.lerot.myreceptionplanner.model;
 
 import org.junit.jupiter.api.Test;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.RoundTable;
 
 import java.util.List;
 

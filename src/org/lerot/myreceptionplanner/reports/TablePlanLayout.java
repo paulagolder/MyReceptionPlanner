@@ -2,10 +2,10 @@ package org.lerot.myreceptionplanner.reports;
 
 import org.lerot.myreceptionplanner.model.Diet;
 import org.lerot.myreceptionplanner.model.Guest;
-import org.lerot.myreceptionplanner.model.Pew;
-import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.Seating;
-import org.lerot.myreceptionplanner.model.Table;
+import org.lerot.myreceptionplanner.model.tables.Pew;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.Table;
 
 import java.util.ArrayList;
 import java.util.List;

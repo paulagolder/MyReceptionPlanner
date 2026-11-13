@@ -13,9 +13,9 @@ import org.lerot.myreceptionplanner.model.Guest;
 import org.lerot.myreceptionplanner.model.Invitation;
 import org.lerot.myreceptionplanner.model.Occasion;
 import org.lerot.myreceptionplanner.model.Party;
-import org.lerot.myreceptionplanner.model.Plan;
 import org.lerot.myreceptionplanner.model.Seat;
-import org.lerot.myreceptionplanner.model.Table;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.Table;
 
 import java.io.IOException;
 import java.io.OutputStream;

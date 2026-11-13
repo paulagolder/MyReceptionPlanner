@@ -1,5 +1,7 @@
 package org.lerot.myreceptionplanner.model;
 
+import org.lerot.myreceptionplanner.model.tables.Table;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;

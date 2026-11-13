@@ -4,6 +4,8 @@ import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.RoundTable;
 import org.lerot.myreceptionplanner.reports.DoorListPdf;
 
 import java.nio.file.Path;

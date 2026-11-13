@@ -3,6 +3,10 @@ package org.lerot.myreceptionplanner.model;
 import com.itextpdf.text.PageSize;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.lerot.myreceptionplanner.model.tables.Plan;
+import org.lerot.myreceptionplanner.model.tables.RectTable;
+import org.lerot.myreceptionplanner.model.tables.RoundTable;
+import org.lerot.myreceptionplanner.model.tables.Table;
 import org.lerot.myreceptionplanner.reports.LayoutPlanPdf;
 
 import java.nio.file.Files;
