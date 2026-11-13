@@ -79,7 +79,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private JButton cateringButton;  // only for a catered event
 	private final JComboBox<Event> eventChooser = new JComboBox<>();
 	private boolean fillingChooser;
-	private final JMenuItem deleteEventItem = new JMenuItem("Delete this event…");
+	private final JMenuItem deleteEventItem = new JMenuItem("Delete event…");
 	private final JLabel status = new JLabel();
 	private final JMenuItem editItem = new JMenuItem("Edit…");
 	private final JMenuItem turnLeftItem = new JMenuItem("Turn left 15°");
@@ -167,29 +167,30 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		bar.add(eventOnly(eventChooser));
 
 		JPopupMenu eventsMenu = new JPopupMenu();
-		eventsMenu.add("Event details…").addActionListener(e -> editEvent());
-		JMenuItem check = eventsMenu.add("Check…");
-		check.setToolTipText("Spare places at the tables, and guests not yet seated");
-		check.addActionListener(e -> ChecksDialog.show(this, occasion, event));
 		eventsMenu.add("New event…").addActionListener(e -> newEvent());
+		eventsMenu.add("View event…").addActionListener(e -> editEvent());
+		JMenuItem saveEvent = eventsMenu.add("Save event…");
+		saveEvent.setToolTipText("This event's file on its own");
+		saveEvent.addActionListener(e -> saveEvent());
 		deleteEventItem.addActionListener(e -> deleteEvent());
 		eventsMenu.add(deleteEventItem);
 		eventsMenu.addSeparator();
+		JMenuItem check = eventsMenu.add("Progress…");
+		check.setToolTipText("Spare places at the tables, and guests not yet seated");
+		check.addActionListener(e -> ChecksDialog.show(this, occasion, event));
 		eventsMenu.add("Table plan (PDF)…").addActionListener(e -> tablePlanPdf());
 		JMenuItem tableList = eventsMenu.add("Table list (PDF)…");
 		tableList.setToolTipText("A card for one table: its name or number and its guests in seat order");
 		tableList.addActionListener(e -> tableListPdf());
 		JMenuItem finder = eventsMenu.add("Seat finder (PDF)…");
-		finder.setToolTipText("For the door: the room with seat numbers, and every guest by surname with table and seat");
+		finder.setToolTipText("For the door: the room with seat numbers, and every guest by family name with table and seat");
 		finder.addActionListener(e -> seatFinderPdf());
 		JMenuItem door = eventsMenu.add("Door list (PDF)…");
-		door.setToolTipText("For those on the door: everyone expected, by surname, with a box to tick");
+		door.setToolTipText("For those on the door: everyone expected, by family name, with a box to tick");
 		door.addActionListener(e -> doorListPdf());
 		JMenuItem cards = eventsMenu.add("Place cards (PDF)…");
 		cards.setToolTipText("A folded card for each seated guest, table by table, for perforated card");
 		cards.addActionListener(e -> placeCardsPdf());
-		eventsMenu.addSeparator();
-		eventsMenu.add("Save this event…").addActionListener(e -> saveEvent());
 		bar.add(eventOnly(dropDown("Event", eventsMenu)));
 		bar.add(eventOnly(separator()));
 
@@ -865,7 +866,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		form.add(turn);
 		JLabel note = new JLabel("<html>Each table where it stands, with its guests in seat order.<br>"
 				+ "Renumber the tables first if they have moved. The heading comes from<br>"
-				+ "Occasion ▾ → Occasion details and Event ▾ → Event details.</html>");
+				+ "Occasion ▾ → Occasion details and Event ▾ → View event.</html>");
 		note.setForeground(Theme.EDGE);
 		form.add(note, "skip, gaptop 6");
 		if (JOptionPane.showConfirmDialog(this, form, "Table plan: " + event.getName(), JOptionPane.OK_CANCEL_OPTION,
@@ -1414,14 +1415,14 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		if (folder == null || !Files.isRegularFile(folder.resolve(event.getFile())))
 		{
 			JOptionPane.showMessageDialog(this, event.getName() + " has not been saved before, so the whole occasion "
-					+ "is saved.", "Save this event", JOptionPane.INFORMATION_MESSAGE);
+					+ "is saved.", "Save event", JOptionPane.INFORMATION_MESSAGE);
 			save();
 			return;
 		}
 		String others = unsaved ? "\nOther changes (the guest list, other events, the occasion's details) are not "
 				+ "saved by this." : "";
 		if (JOptionPane.showConfirmDialog(this, "Save only " + event.getName() + " (" + event.getFile() + ") in\n"
-				+ folder.toAbsolutePath() + "?" + others, "Save this event", JOptionPane.OK_CANCEL_OPTION)
+				+ folder.toAbsolutePath() + "?" + others, "Save event", JOptionPane.OK_CANCEL_OPTION)
 				!= JOptionPane.OK_OPTION) return;
 		try
 		{

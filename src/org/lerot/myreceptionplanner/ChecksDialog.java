@@ -52,7 +52,7 @@ public class ChecksDialog
 				+ " to seat"));
 
 		addMenuChecks(p, event, 2);
-		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
+		JOptionPane.showMessageDialog(parent, p, "Progress: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}
 
 	// for an event with a menu: who has yet to choose, and choices that do not suit
@@ -90,7 +90,7 @@ public class ChecksDialog
 		fit.setForeground(event.overCapacity() > 0 ? Theme.HEAD.darker() : Theme.FIRST);
 		p.add(fit);
 		addMenuChecks(p, event, 1);
-		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
+		JOptionPane.showMessageDialog(parent, p, "Progress: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}
 
 	// a party with no seats: who is invited, party by party, against its capacity
@@ -120,7 +120,7 @@ public class ChecksDialog
 		} else total.setForeground(event.getCapacity() > 0 ? Theme.FIRST : Theme.EDGE);
 		p.add(total);
 		addMenuChecks(p, event, 1);
-		JOptionPane.showMessageDialog(parent, p, "Check: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
+		JOptionPane.showMessageDialog(parent, p, "Progress: " + event.getName(), JOptionPane.PLAIN_MESSAGE);
 	}
 
 	private static JComponent heading(String text)
