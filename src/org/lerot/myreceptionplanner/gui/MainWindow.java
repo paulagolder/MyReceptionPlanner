@@ -869,7 +869,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 	private static final String PAPER = "paper", LANDSCAPE = "landscape", CARD = "tableListCard",
 			FINDER_PAPER = "seatFinderPaper", DOOR_SPLIT = "doorListSplit",
 			DOOR_TITLES = "doorListTitles", FINDER_TITLES = "seatFinderTitles",
-			CARD_STOCK = "placeCardStock", CARDS_FOR_STAFF = "placeCardsForStaff";
+			CARD_STOCK = "placeCardStock", CARD_DESIGN = "placeCardDesign", CARDS_FOR_STAFF = "placeCardsForStaff";
 
 	private static final String APPROVER = "layoutApprovedBy";
 
@@ -1047,6 +1047,17 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		} catch (IllegalArgumentException ignored)
 		{
 		}
+		JComboBox<org.lerot.myreceptionplanner.reports.PlaceCardsPdf.Design> design =
+				new JComboBox<>(org.lerot.myreceptionplanner.reports.PlaceCardsPdf.Design.values());
+		try
+		{
+			design.setSelectedItem(org.lerot.myreceptionplanner.reports.PlaceCardsPdf.Design.valueOf(
+					PREFS.get(CARD_DESIGN, "EMBLEM_LEFT")));
+		} catch (IllegalArgumentException ignored)
+		{
+		}
+		design.setEnabled(occasion.getEmblem() != null && !occasion.getEmblem().isEmpty());
+		if (!design.isEnabled()) design.setToolTipText("The occasion has no emblem: the name has the whole front");
 		JCheckBox forStaff = new JCheckBox("On the back, menu choices and dietary needs for the waiting staff",
 				PREFS.getBoolean(CARDS_FOR_STAFF, true));
 		JPanel form = new JPanel(new MigLayout("insets 0, wrap 2", "[right][grow,fill]"));
@@ -1054,6 +1065,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		form.add(which);
 		form.add(new JLabel("Card"));
 		form.add(stock);
+		form.add(new JLabel("Front"));
+		form.add(design);
 		form.add(forStaff, "skip");
 		int unseated = org.lerot.myreceptionplanner.reports.SeatFinderPdf.unseated(event);
 		JLabel note = new JLabel("<html>The name large on the front, with the table and seat; the name<br>"
@@ -1068,6 +1081,8 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 				JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
 		var chosenStock = (org.lerot.myreceptionplanner.reports.PlaceCardsPdf.Stock) stock.getSelectedItem();
 		PREFS.put(CARD_STOCK, chosenStock.name());
+		var chosenDesign = (org.lerot.myreceptionplanner.reports.PlaceCardsPdf.Design) design.getSelectedItem();
+		PREFS.put(CARD_DESIGN, chosenDesign.name());
 		PREFS.putBoolean(CARDS_FOR_STAFF, forStaff.isSelected());
 		Object chosen = which.getSelectedItem();
 		List<Table> printing = chosen instanceof Table t ? List.of(t) : tables;
@@ -1078,7 +1093,7 @@ public class MainWindow extends JFrame implements PlanPanel.Listener, SeatingPan
 		try
 		{
 			org.lerot.myreceptionplanner.reports.PlaceCardsPdf.write(occasion, event, printing, chosenStock,
-					forStaff.isSelected(), file);
+					chosenDesign, forStaff.isSelected(), file);
 			open(file);
 		} catch (IOException e)
 		{

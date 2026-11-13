@@ -60,7 +60,7 @@ class PlaceCardsTest
 		Occasion o = OccasionXml.load(Example.install(dir));
 		Event e = banquet(o);
 		Path pdf = dir.resolve("cards.pdf");
-		PlaceCardsPdf.write(o, e, Checks.inGuideOrder(e.getPlan()), PlaceCardsPdf.Stock.DECADRY_6, true, pdf);
+		PlaceCardsPdf.write(o, e, Checks.inGuideOrder(e.getPlan()), PlaceCardsPdf.Stock.DECADRY_6, PlaceCardsPdf.Design.EMBLEM_LEFT, true, pdf);
 		PdfReader r = new PdfReader(pdf.toString());
 		assertEquals(12, r.getNumberOfPages(), "67 cards, 6 to a sheet");
 		assertEquals(595, r.getPageSizeWithRotation(1).getWidth(), 1);
@@ -68,7 +68,7 @@ class PlaceCardsTest
 		assertTrue(text.contains("Prince Escalus"), text);
 		r.close();
 
-		PlaceCardsPdf.write(o, e, Checks.inGuideOrder(e.getPlan()), PlaceCardsPdf.Stock.LARGE_4, false, pdf);
+		PlaceCardsPdf.write(o, e, Checks.inGuideOrder(e.getPlan()), PlaceCardsPdf.Stock.LARGE_4, PlaceCardsPdf.Design.EMBLEM_TOP, false, pdf);
 		r = new PdfReader(pdf.toString());
 		assertEquals(17, r.getNumberOfPages(), "4 to a sheet");
 		r.close();

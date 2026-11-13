@@ -27,8 +27,10 @@ import java.util.Optional;
 
 /*
  * Place cards: a tent card for each seated guest, folded along its middle to
- * stand on the table. The front (the lower half as printed) has a small
- * emblem, the guest's name large and, small, the table and seat. The back
+ * stand on the table. The front (the lower half as printed) has the
+ * emblem, the guest's name large and, small, the table and seat, set out
+ * as the Design chosen: the emblem large on the left, the words beside it,
+ * or small at the top, the words under it. The back
  * (the upper half, printed upside down so it reads the right way up when the
  * card stands) has the name again for those across the table and, if asked,
  * the guest's menu choices and dietary needs for the waiting staff.
@@ -66,6 +68,65 @@ public class PlaceCardsPdf
 
 		@Override
 		public String toString() { return label; }
+	}
+
+	/*
+	 * How the front is set out: where the emblem goes and how large, the
+	 * name and the table and seat in the room left. A card with no emblem
+	 * has the words across the whole front, whatever the design. More
+	 * designs go here, each saying where its emblem and words go (front).
+	 */
+	public enum Design
+	{
+		EMBLEM_LEFT("Emblem large, on the left"),
+		EMBLEM_TOP("Emblem small, at the top");
+
+		private final String label;
+
+		Design(String label) { this.label = label; }
+
+		@Override
+		public String toString() { return label; }
+	}
+
+	/*
+	 * Where things go on the front, the same on every card, in points from
+	 * the front's lower left (the fold at the top): the emblem's box, and
+	 * the room for the words, left to right, below top.
+	 */
+	private record Front(float emblemX, float emblemY, float emblemW, float emblemH,
+			float left, float right, float top)
+	{
+		float room() { return right - left; }
+
+		float middle() { return (left + right) / 2; }
+	}
+
+	private static Front front(Design design, Image emblem, float w, float half, float pad, float edge, float fold)
+	{
+		float under = half - fold;  // the top of the front, by the fold
+		if (emblem == null) return new Front(0, 0, 0, 0, pad, w - pad, under);
+		float aspect = emblem.getWidth() / emblem.getHeight();
+		return switch (design)
+		{
+			case EMBLEM_TOP ->
+			{
+				float eh = half * 0.17f, ew = eh * aspect;
+				yield new Front((w - ew) / 2, under - eh, ew, eh, pad, w - pad, under - eh - half * 0.05f);
+			}
+			case EMBLEM_LEFT ->
+			{
+				// as tall as the front allows, no wider than about a third of the card
+				float eh = under - edge * 0.7f, ew = eh * aspect;
+				if (ew > w * 0.36f)
+				{
+					ew = w * 0.36f;
+					eh = ew / aspect;
+				}
+				float x = pad * 0.5f;
+				yield new Front(x, under - eh, ew, eh, x + ew + w * 0.04f, w - pad * 0.6f, under);
+			}
+		};
 	}
 
 	// what goes on one card: the name, "Table 3 · Seat 5", and for the staff the
@@ -131,8 +192,8 @@ public class PlaceCardsPdf
 		return lead != null && lead.isNamed() ? "Guest of " + lead.getName() : g.displayName();
 	}
 
-	public static void write(Occasion occasion, Event event, List<Table> tables, Stock stock, boolean forStaff,
-			Path file) throws IOException
+	public static void write(Occasion occasion, Event event, List<Table> tables, Stock stock, Design design,
+			boolean forStaff, Path file) throws IOException
 	{
 		List<Card> cards = cards(event, tables, forStaff);
 		if (cards.isEmpty()) throw new IOException("No one is seated there yet, so there are no place cards");
@@ -155,7 +216,7 @@ public class PlaceCardsPdf
 				// sized for every guest at the event, so a table printed on its own
 				// matches the others, whenever they are printed
 				List<Card> everyone = cards(event, event.getPlan().tables(), forStaff);
-				Sizes sizes = sizes(everyone, regular, bold, emblem, forStaff, stock.width, stock.height / 2);
+				Sizes sizes = sizes(everyone, regular, bold, emblem, design, forStaff, stock.width, stock.height / 2);
 
 				float left = (page.getWidth() - stock.across * stock.width) / 2;
 				float bottom = (page.getHeight() - stock.down * stock.height) / 2;
@@ -185,23 +246,24 @@ public class PlaceCardsPdf
 	 * most, broken between words. pad is kept clear at the card's sides,
 	 * edge at its outer edge (where printers falter), fold by the fold.
 	 */
-	private record Sizes(float pad, float edge, float fold, float name, float back, float place, float small) {}
+	private record Sizes(float pad, float edge, float fold, Front front, float name, float back, float place, float small) {}
 
-	private static Sizes sizes(List<Card> cards, BaseFont regular, BaseFont bold, Image emblem, boolean forStaff,
-			float w, float half)
+	private static Sizes sizes(List<Card> cards, BaseFont regular, BaseFont bold, Image emblem, Design design,
+			boolean forStaff, float w, float half)
 	{
 		float pad = w * 0.12f, edge = half * 0.17f, fold = half * 0.08f;
 		float room = w - 2 * pad;
 		float place = half * 0.075f;
+		Front front = front(design, emblem, w, half, pad, edge, fold);
 
-		// the front: under the emblem, over the table and seat
-		float space = half - edge - fold - (emblem == null ? 0 : emblem.getHeight() + half * 0.05f) - place * 2.4f;
+		// the front: in the room the emblem leaves, over the table and seat
+		float space = front.top() - edge - place * 2.4f;
 		float name = half * 0.17f;
 		for (Card c : cards)
-			name = Math.min(name, twoLineSize(bold, c.name(), name, room));
+			name = Math.min(name, twoLineSize(bold, c.name(), name, front.room()));
 		boolean twoLines = false;
 		for (Card c : cards)
-			twoLines |= lines(bold, c.name(), name, room).size() > 1;
+			twoLines |= lines(bold, c.name(), name, front.room()).size() > 1;
 		if (twoLines) name = Math.min(name, space / (2 * 1.15f));
 
 		// the back: the name again, smaller under the staff's notes
@@ -224,7 +286,7 @@ public class PlaceCardsPdf
 			}
 			small = Math.max(4.5f, small);
 		}
-		return new Sizes(pad, edge, fold, name, back, place, small);
+		return new Sizes(pad, edge, fold, front, name, back, place, small);
 	}
 
 	// one card, flat, its lower left at x, y: the front below the fold, the back above, upside down
@@ -234,19 +296,16 @@ public class PlaceCardsPdf
 		float half = h / 2;
 		float room = w - 2 * z.pad();
 
-		// the front, upright: the emblem at the top (by the fold), the table and seat at the foot
+		// the front, upright: the emblem as the design has it, the name in the
+		// room left, the table and seat at its foot
 		cb.saveState();
 		cb.concatCTM(1, 0, 0, 1, x, y);
-		float top = half - z.fold();
+		Front f = z.front();
 		if (emblem != null)
-		{
-			float eh = emblem.getHeight(), ew = emblem.getWidth();
-			cb.addImage(emblem, ew, 0, 0, eh, (w - ew) / 2, top - eh);
-			top -= eh + half * 0.05f;
-		}
+			cb.addImage(emblem, f.emblemW(), 0, 0, f.emblemH(), f.emblemX(), f.emblemY());
 		float foot = z.edge() + z.place() * 2.4f;
-		text(cb, regular, z.place(), GREY, card.place(), w / 2, z.edge());
-		block(cb, bold, z.name(), TEXT, lines(bold, card.name(), z.name(), room), w / 2, (top + foot) / 2);
+		text(cb, regular, fit(regular, card.place(), z.place(), f.room()), GREY, card.place(), f.middle(), z.edge());
+		block(cb, bold, z.name(), TEXT, lines(bold, card.name(), z.name(), f.room()), f.middle(), (f.top() + foot) / 2);
 		cb.restoreState();
 
 		// the back, turned half round about the card's top half

@@ -542,8 +542,11 @@ on **Catering ▾** (above):
   left out and counted at the foot. It is saved as
   `seat-finder-<event>.pdf` in Output and opened.
 - **Place cards (PDF)…**: a tent card for each seated guest, to fold along
-  its middle and stand at their place. The front has a small emblem, the
-  name large and, small, the table and seat; the back has the name again
+  its middle and stand at their place. The front has the emblem, the
+  name large and, small, the table and seat. Under **Front** you choose
+  **Emblem large, on the left** (the words beside it) or **Emblem small,
+  at the top** (the words under it); with no emblem the name has the whole
+  front. The back has the name again
   (printed upside down, so it reads the right way up when the card
   stands) and, if ticked, the guest's menu choices (each dish by its name,
   without the description) and dietary needs, for the waiting staff. A
