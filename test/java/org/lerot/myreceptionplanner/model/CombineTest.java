@@ -36,15 +36,15 @@ class CombineTest
 		assertEquals(List.of(two), plan.touching(one));
 		assertEquals(1, plan.overlaps().size(), "pushed together, their chairs are under each other");
 		Map<Table, Set<Integer>> blocked = plan.blockedIfCombined(one, two);
-		assertEquals(2, blocked.get(one).size(), "the two chairs under table 2's end");
-		assertEquals(3, blocked.get(two).size(), "its end chairs, and the one at the inside corner");
+		assertEquals(3, blocked.get(one).size(), "the two chairs under table 2's end, and the one at the inside corner");
+		assertEquals(3, blocked.get(two).size(), "its end chairs, and the one at the inside corner: both of a clashing pair");
 
 		plan.combine(one, two);
 		assertNotEquals(0, one.getGroup());
 		assertEquals(one.getGroup(), two.getGroup());
 		assertEquals(List.of(one, two), plan.groupOf(two));
 		assertTrue(plan.overlaps().isEmpty());
-		assertEquals(22, one.usablePlaces());
+		assertEquals(21, one.usablePlaces());
 		assertEquals(21, two.usablePlaces());
 		assertTrue(plan.touching(one).isEmpty(), "already combined");
 		assertEquals("Table 1", plan.label(one), "each keeps its own number");

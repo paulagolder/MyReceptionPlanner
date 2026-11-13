@@ -194,12 +194,11 @@ public class Plan
 	/*
 	 * The chairs of each table in the group that its partners block: a chair
 	 * on or against another's top, and at an inside corner, where two
-	 * tables' chairs would clash, the chair of the later table. Seat 1 is
-	 * among them if blocked (see block).
+	 * tables' chairs would clash, both (there is never room to serve them).
+	 * Seat 1 is among them if blocked (see block).
 	 */
 	public java.util.Map<Table, Set<Integer>> blocked(List<Table> group)
 	{
-		// by id, so the same chair is chosen at a corner however the tables were last touched
 		List<Table> byId = group.stream().sorted(Comparator.comparingInt(Table::getId)).toList();
 		java.util.Map<Table, Set<Integer>> out = new java.util.LinkedHashMap<>();
 		double r = Table.SEAT_RADIUS;
@@ -212,6 +211,7 @@ public class Plan
 			out.put(t, chairs);
 		}
 		// inside corners: two tables' chairs on each other, neither on a top (whether turned off yet or not)
+		java.util.Map<Table, Set<Integer>> clashing = new java.util.HashMap<>();
 		for (int i = 0; i < byId.size(); i++)
 			for (int j = i + 1; j < byId.size(); j++)
 			{
@@ -221,9 +221,13 @@ public class Plan
 					if (out.get(a).contains(ca)) continue;
 					for (int cb = 0; cb < b.places(); cb++)
 						if (!out.get(b).contains(cb) && a.seatOnFloor(ca).distance(b.seatOnFloor(cb)) < 2 * r)
-							out.get(b).add(cb);
+						{
+							clashing.computeIfAbsent(a, k -> new java.util.TreeSet<>()).add(ca);
+							clashing.computeIfAbsent(b, k -> new java.util.TreeSet<>()).add(cb);
+						}
 				}
 			}
+		clashing.forEach((t, chairs) -> out.get(t).addAll(chairs));
 		return out;
 	}
 
