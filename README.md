@@ -32,8 +32,10 @@ your Documents, OneDrive included), and the settings in the registry.
                       build the installer (a .deb on Linux, an .msi on
                       Windows, which needs the WiX Toolset 3) in build/package
 
-A release is made by pushing a version tag; GitHub then builds the
-installers, Linux and Windows, and puts them on a release page:
+A release is made by pushing a version tag; GitHub then builds the Linux
+installer and puts it on a release page. Windows is built from the same tag
+when asked (Actions → Package → Run workflow). Step by step:
+[docs/releasing.md](docs/releasing.md).
 
     git tag v1.0.0 && git push origin v1.0.0
 
