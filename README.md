@@ -3,10 +3,22 @@
 Plan the tables at a reception: lay out the tables, seat the guests, and print
 the table plan, a list for each table, a seat finder and a place card for each guest.
 
+## Download
+
+No GitHub account is needed. The latest version, with what's new in it, is on
+the **[latest release page](https://github.com/paulagolder/MyReceptionPlanner/releases/latest)**:
+
+- **Windows (10 or 11):** `MyReceptionPlanner-<version>.msi`
+- **Linux (Debian, Ubuntu, Mint):** `myreceptionplanner_<version>_amd64.deb`
+
+Under *Assets*, click the file to download it. Each installer includes its
+own Java. Earlier versions are on the
+[releases page](https://github.com/paulagolder/MyReceptionPlanner/releases).
+
 ## Installing
 
 On Linux (Debian, Ubuntu, Mint), download `myreceptionplanner_<version>_amd64.deb`
-from the latest release on GitHub and install it:
+(see [Download](#download)) and install it:
 
     sudo apt install ./myreceptionplanner_1.0.0_amd64.deb
 
