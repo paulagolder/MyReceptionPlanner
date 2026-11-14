@@ -605,3 +605,13 @@ MyReceptions. When closing or opening another occasion with unsaved changes, you
 asked whether to save them.
 
 A rectangular table has *N* places along each long side and *M* at each end.
+
+## Licence and contributions
+
+MyReceptionPlanner is free to use, copy and change under the
+[MIT licence](LICENSE). The installers also include other libraries, each
+under its own licence; the PDF library, iText 5, is under the AGPL (see
+[THIRD-PARTY.md](THIRD-PARTY.md) for the list).
+
+It is shared as it is: I'm not taking contributions or pull requests, but
+you are welcome to fork it and make it your own.
