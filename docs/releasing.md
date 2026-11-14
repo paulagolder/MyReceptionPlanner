@@ -69,5 +69,10 @@ the `!` prompt in Claude Code cannot), or double-click the file.
 - **A run failed**: open it on the Actions tab; the red step says why. Fix,
   commit, push, then move the tag to the fix and push it again:
   `git tag -f v1.0.17 && git push -f origin v1.0.17`.
+- **"Artifact storage quota has been hit"**: the account's 500 MB of
+  stored builds is full, from any of your private repositories. A release
+  no longer stores one (its page has the files), but trial builds do. List
+  and delete old ones on each repository's Actions page (or ask Claude);
+  GitHub takes 6–12 hours to notice the space freed.
 - **A wrong tag pushed**: `git push origin :refs/tags/v1.0.17` and
   `git tag -d v1.0.17` remove it; delete its release page on GitHub too.

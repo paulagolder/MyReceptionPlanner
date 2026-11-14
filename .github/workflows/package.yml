@@ -53,8 +53,9 @@ jobs:
         run: ./gradlew packageApp -PappVersion=$APP_VERSION
 
       - uses: actions/upload-artifact@v7
+        if: github.ref_type != 'tag'   # a release has its page; a copy would only fill the storage
         with:
-          retention-days: 2   # the release page keeps the files; this copy only to download a trial build
+          retention-days: 2   # only to download a trial build
           name: MyReceptionPlanner-Linux
           path: build/package/*
       - name: Release page
@@ -93,8 +94,9 @@ jobs:
         run: ./gradlew packageApp -PappVersion=$APP_VERSION
 
       - uses: actions/upload-artifact@v7
+        if: github.ref_type != 'tag'   # a release has its page; a copy would only fill the storage
         with:
-          retention-days: 2   # the release page keeps the files; this copy only to download a trial build
+          retention-days: 2   # only to download a trial build
           name: MyReceptionPlanner-Windows
           path: build/package/*
       - name: Release page
